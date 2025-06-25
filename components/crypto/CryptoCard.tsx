@@ -7,6 +7,7 @@ import {
 } from "../ui/card";
 import { formatNumber, prettifyNumber } from "@/lib/numbers";
 import { CryptoIcon } from "./CryptoIcon";
+import { CryptoLineChart } from "./CryptoLineChart";
 
 export type CryptoCardProps = {
   name: string;
@@ -55,6 +56,9 @@ export function CryptoCard({
           <p>
             Circulating Supply: {prettifyNumber(circulatingSupply)} {symbol}
           </p>
+        </div>
+        <div>
+          <CryptoLineChart></CryptoLineChart>
         </div>
       </CardContent>
     </Card>
