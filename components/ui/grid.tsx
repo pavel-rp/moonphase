@@ -51,7 +51,7 @@ export function GridItem({
     <div className={clsx(spanClass, className)} {...props}>
       {children}
     </div>
-  );
+  );  
 }
 
 Grid.Item = GridItem;

@@ -4,7 +4,6 @@ import { Asset, fetchAssets } from "@/lib/data/assets";
 
 export default async function Home() {
   const assets = await fetchAssets();
-  console.log(assets);
   const isFeatured = (asset: Asset) => asset.symbol === "BTC";
 
   return (
