@@ -5,31 +5,26 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import { formatNumber, prettifyNumber } from "@/lib/numbers";
+import {
+  formatNumber,
+  formatPercent,
+  prettifyNumber,
+} from "@/lib/utils/numbers";
 import { CryptoIcon } from "./CryptoIcon";
-
-export type CryptoCardProps = {
-  name: string;
-  symbol: string;
-  price: number;
-  priceChange24h: number;
-  marketCap: number;
-  volume24h: number;
-  circulatingSupply: number;
-};
+import { Asset } from "@/lib/data/assets";
 
 export function CryptoCard({
   name,
   symbol,
-  price,
-  priceChange24h,
-  marketCap,
-  volume24h,
-  circulatingSupply,
-}: CryptoCardProps) {
+  priceUsd,
+  changePercent24Hr,
+  marketCapUsd,
+  volumeUsd24Hr,
+  supply,
+  maxSupply,
+}: Asset) {
   let shadowClass = "text-shadow-[0_0_4px_rgb(255_255_255_/_0.5)]";
-  shadowClass +=
-    priceChange24h >= 0 ? " text-green-700" : " text-red-700";
+  shadowClass += changePercent24Hr >= 0 ? " text-green-700" : " text-red-700";
   return (
     <Card className="glassmorphic">
       <CardHeader className="flex items-center justify-between">
@@ -40,20 +35,19 @@ export function CryptoCard({
         <CryptoIcon symbol={symbol} size={30} name={name} />
       </CardHeader>
       <CardContent className="flex flex-col items-start">
-        <div className={`flex items-center space-x-2 ${shadowClass}`}>
+        <div
+          className={`flex w-full items-center justify-between space-x-2 ${shadowClass}`}
+        >
           <span className={`text-2xl font-bold ${shadowClass}`}>
-            ${formatNumber(price)}
+            ${formatNumber(priceUsd)}
           </span>
-          <span className="text-sm">
-            {priceChange24h >= 0 ? "+" : ""}
-            {priceChange24h.toFixed(2)}%
-          </span>
+          <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
         </div>
         <div className="mt-4 text-sm">
-          <p>Market Cap: ${prettifyNumber(marketCap)}</p>
-          <p>24h Volume: ${prettifyNumber(volume24h)}</p>
+          <p>Market Cap: ${prettifyNumber(marketCapUsd)}</p>
+          <p>24h Volume: ${prettifyNumber(volumeUsd24Hr)}</p>
           <p>
-            Circulating Supply: {prettifyNumber(circulatingSupply)} {symbol}
+            Supply: {prettifyNumber(supply)} {symbol}
           </p>
         </div>
       </CardContent>
