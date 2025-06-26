@@ -1,4 +1,4 @@
-export const prettifyNumber = (num: number): string => {
+export const prettifyNumber = (num: number | null | undefined): string => {
   num = num ?? 0;
   const options: Intl.NumberFormatOptions =
     num <= 10000
