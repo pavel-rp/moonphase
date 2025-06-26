@@ -1,3 +1,4 @@
+import { getCryptoIconPath, isValidCryptoIcon } from "@/lib/utils/crypto-icons";
 import Image from "next/image";
 
 export type CryptoIconStyle = "black" | "white" | "color" | "icon";
@@ -16,7 +17,10 @@ export function CryptoIcon({
   name = symbol,
   className,
 }: CryptoIconProps) {
-  const iconUrl = `/crypto-icons/${style}/${symbol.toLowerCase()}.svg`;
+  symbol = symbol.toLowerCase(); 
+  const iconUrl = isValidCryptoIcon(symbol)
+    ? getCryptoIconPath(symbol, style)
+    : getCryptoIconPath("generic", style);
 
   return (
     <Image
