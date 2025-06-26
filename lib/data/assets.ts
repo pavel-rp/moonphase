@@ -12,7 +12,6 @@ export interface Asset {
   changePercent24Hr: number;
   vwap24Hr: number;
   explorer: string;
-  tokens: Record<string, unknown>;
 }
 
 export async function fetchAssets(): Promise<Array<Asset>> {
