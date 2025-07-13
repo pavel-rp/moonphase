@@ -1,23 +1,23 @@
 import { Suspense } from "react";
 import { Sparkline } from "../ui/sparkline";
-import { generateRandomWalk } from "@/lib/utils/random-walk";
+import { priceDataService } from "@/lib/services/price-data";
 import React from "react"; // Added missing import
 import LoadingSparkline from "./LoadingSparkline";
 
 async function CryptoSparklineLoader({ symbol }: { symbol: string }) {
-  const getData = new Promise<number[]>((resolve) => {
-    setTimeout(() => {
-      resolve(generateRandomWalk());
-    }, Math.random() * 10000 + 1000);
-  });
+  try {
+    const sparklineData = await priceDataService.getSparklineData(symbol, { period: '24h' });
+    
+    const isAscending = sparklineData.changePercent24h >= 0;
+    const color = isAscending ? "text-green-700" : "text-red-700";
 
-  // This will suspend if not ready
-  const data = await getData;
-
-  const isAscending = data[0] < data[data.length - 1];
-  const color = isAscending ? "text-green-700" : "text-red-700";
-
-  return <Sparkline data={data} className={color} />;
+    return <Sparkline data={sparklineData.prices} className={color} />;
+  } catch (error) {
+    console.error(`Failed to load sparkline for ${symbol}:`, error);
+    
+    // Fallback to a simple error state or empty sparkline
+    return <div className="h-8 w-full bg-gray-200 rounded opacity-50"></div>;
+  }
 }
 
 export function CryptoSparkline({ symbol }: { symbol: string }) {
