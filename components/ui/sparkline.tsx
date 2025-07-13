@@ -30,7 +30,6 @@ export function Sparkline({
     console.warn("Sparkline requires at least two data points");
     return null;
   }
-  console.log(data);
 
   // Compute min/max and normalized points in a 1×1 box
   const min = Math.min(...data);
