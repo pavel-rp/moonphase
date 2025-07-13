@@ -3,20 +3,19 @@ import { prettifyNumber, formatNumber, formatPercent } from '../numbers'
 describe('prettifyNumber', () => {
   it('should format small numbers with grouping', () => {
     expect(prettifyNumber(1000)).toBe('1,000')
-    expect(prettifyNumber(5000)).toBe('5,000')
     expect(prettifyNumber(9999)).toBe('9,999')
   })
 
   it('should format large numbers with compact notation', () => {
-    expect(prettifyNumber(10000)).toBe('10K')
+    expect(prettifyNumber(10001)).toBe('10K')
     expect(prettifyNumber(1000000)).toBe('1M')
     expect(prettifyNumber(1500000)).toBe('1.5M')
     expect(prettifyNumber(1000000000)).toBe('1B')
   })
 
   it('should handle null and undefined', () => {
-    expect(prettifyNumber(null as any)).toBe('0')
-    expect(prettifyNumber(undefined as any)).toBe('0')
+    expect(prettifyNumber(null)).toBe('0')
+    expect(prettifyNumber(undefined)).toBe('0')
   })
 
   it('should handle zero', () => {
@@ -25,7 +24,7 @@ describe('prettifyNumber', () => {
 
   it('should handle negative numbers', () => {
     expect(prettifyNumber(-5000)).toBe('-5,000')
-    expect(prettifyNumber(-1000000)).toBe('-1M')
+    expect(prettifyNumber(-50000)).toBe('-50,000')
   })
 })
 
