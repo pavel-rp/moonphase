@@ -21,6 +21,10 @@ export async function fetchAssets(): Promise<Array<Asset>> {
     throw new Error(`API error ${res.status}`);
   }
 
+  await new Promise((resolve) => {
+    setTimeout(() => resolve(null), 8000);
+  });
+
   const { data: assets } = await res.json();
   
   return assets.map((asset: any) => ({

@@ -15,7 +15,9 @@ export const prettifyNumber = (num: number | null | undefined): string => {
 
 export const formatNumber = (num: number) => {
   num = num ?? 0;
-  return new Intl.NumberFormat("en-US").format(num);
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+  }).format(num);
 };
 
 export const formatPercent = (num: number) => {

@@ -46,12 +46,12 @@ export function GridItem({
   children,
   ...props
 }: GridItemProps) {
-  const spanClass = spanClasses[span as keyof typeof spanClasses] || spanClasses[1];
+  const spanClass = `${spanClasses[1]} md:${spanClasses[span as keyof typeof spanClasses]}`;
   return (
     <div className={clsx(spanClass, className)} {...props}>
       {children}
     </div>
-  );  
+  );
 }
 
 Grid.Item = GridItem;

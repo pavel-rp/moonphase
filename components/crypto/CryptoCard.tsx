@@ -12,6 +12,8 @@ import {
 } from "@/lib/utils/numbers";
 import { CryptoIcon } from "./CryptoIcon";
 import { Asset } from "@/lib/data/assets";
+import { Sparkline } from "../ui/sparkline";
+import { CryptoSparkline } from "./CryptoSparkline";
 
 export function CryptoCard({
   name,
@@ -23,8 +25,10 @@ export function CryptoCard({
   supply,
   maxSupply,
 }: Asset) {
-  let shadowClass = "text-shadow-[0_0_4px_rgb(255_255_255_/_0.5)]";
-  shadowClass += changePercent24Hr >= 0 ? " text-green-700" : " text-red-700";
+  const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
+  const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
+  const shadowColorClass =
+    changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
   return (
     <Card className="glassmorphic">
       <CardHeader className="flex items-center justify-between">
@@ -34,22 +38,25 @@ export function CryptoCard({
         </div>
         <CryptoIcon symbol={symbol} size={30} name={name} />
       </CardHeader>
-      <CardContent className="flex flex-col items-start">
+      <CardContent className="flex flex-col items-start gap-4">
         <div
-          className={`flex w-full items-center justify-between space-x-2 ${shadowClass}`}
+          className={`flex w-full items-center justify-between ${shadowClass}`}
         >
-          <span className={`text-2xl font-bold ${shadowClass}`}>
+          <span
+            className={`text-2xl font-bold ${shadowClass} ${shadowColorClass}`}
+          >
             ${formatNumber(priceUsd)}
           </span>
           <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
         </div>
-        <div className="mt-4 text-sm">
+        <CryptoSparkline symbol={symbol} />
+        {/* <div className="text-sm">
           <p>Market Cap: ${prettifyNumber(marketCapUsd)}</p>
           <p>24h Volume: ${prettifyNumber(volumeUsd24Hr)}</p>
           <p>
             Supply: {prettifyNumber(supply)} {symbol}
           </p>
-        </div>
+        </div> */}
       </CardContent>
     </Card>
   );
