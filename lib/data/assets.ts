@@ -22,7 +22,7 @@ export async function fetchAssets(): Promise<Array<Asset>> {
   }
 
   await new Promise((resolve) => {
-    setTimeout(() => resolve(null), 0);
+    setTimeout(() => resolve(null), 8000);
   });
 
   const { data: assets } = await res.json();
