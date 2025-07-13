@@ -21,7 +21,6 @@ export function Sparkline({
 }: SparklineProps) {
   const id = useId();
 
-  console.log(data);
 
   // Use unique IDs for gradient and filter
   const gradientId = `sparkline-fade-${id}`;
