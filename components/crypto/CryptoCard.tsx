@@ -13,7 +13,7 @@ import {
 import { CryptoIcon } from "./CryptoIcon";
 import { Asset } from "@/lib/data/assets";
 import { Sparkline } from "../ui/sparkline";
-import { CryptoSparkline } from "./CryptoSparkline";
+import { CryptoSparklineRSC } from "./CryptoSparklineRSC";
 
 export function CryptoCard({
   name,
@@ -49,7 +49,7 @@ export function CryptoCard({
           </span>
           <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
         </div>
-        <CryptoSparkline symbol={symbol} />
+        <CryptoSparklineRSC symbol={symbol} />
         {/* <div className="text-sm">
           <p>Market Cap: ${prettifyNumber(marketCapUsd)}</p>
           <p>24h Volume: ${prettifyNumber(volumeUsd24Hr)}</p>
