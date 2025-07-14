@@ -29,9 +29,10 @@ export default function CryptoCardsHoverEffect() {
       cards.forEach((el) => {
         // Determine the glow color based on the 24h change sign
         const isPositive = el.dataset.changePositive === "true";
+        // Slightly stronger colored glow for glass effect
         const glowColor = isPositive
-          ? "rgba(0, 255, 0, 0.35)"
-          : "rgba(255, 0, 0, 0.35)";
+          ? "rgba(0, 255, 0, 0.45)"
+          : "rgba(255, 0, 0, 0.45)";
 
         // Ensure perspective so the rotation has depth
         gsap.set(el, { transformPerspective: 800 });
@@ -42,7 +43,7 @@ export default function CryptoCardsHoverEffect() {
 
           tl.to(el, {
             rotateX: -8,
-            boxShadow: `0 0 8px ${glowColor}, 0 0 20px rgba(255,255,255,0.15)`,
+            boxShadow: `0 0 12px ${glowColor}, 0 0 24px rgba(255,255,255,0.25), 0 0 48px rgba(255,255,255,0.15)`,
             duration: 0.18,
             ease: "power2.out",
           })
