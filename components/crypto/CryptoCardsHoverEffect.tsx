@@ -35,20 +35,23 @@ export default function CryptoCardsHoverEffect() {
           : "rgba(255, 0, 0, 0.45)";
         const defaultBorderColor = "rgba(255,255,255,0.3)";
 
-        // Ensure perspective so the rotation has depth
         gsap.set(el, { transformPerspective: 800 });
 
-        const defaultPriceShadow = (color: string) =>
-          `0 0 4px ${color}, 0 0 6px ${color}, 0 0 10px ${color}`;
+        const defaultPriceFilter = "drop-shadow(0 0 0px transparent)";
 
-        const hoverPriceShadow = (color: string) =>
-          `0 0 6px ${color}, 0 0 12px ${color}, 0 0 22px ${color}, 0 0 32px ${color}`;
+        const hoverPriceFilter = (color: string) =>
+          `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 8px ${color}) drop-shadow(0 0 14px ${color})`;
+
+        const priceEl = el.querySelector<HTMLElement>(".neon-price");
+        if (priceEl) {
+          gsap.set(priceEl, { filter: defaultPriceFilter });
+        }
 
         const onEnter = () => {
           // Create a timeline for the bounce then settle animation.
           const tl = gsap.timeline();
 
-          const priceEl = el.querySelector<HTMLElement>(".neon-price");
+          // priceEl already queried above
           
           tl.to(el, {
             rotateX: -8,
@@ -74,14 +77,13 @@ export default function CryptoCardsHoverEffect() {
           if (priceEl) {
             tl.to(
               priceEl,
-              { textShadow: hoverPriceShadow(glowColor), duration: 0.25, ease: "power2.out" },
+              { filter: hoverPriceFilter(glowColor), duration: 0.25, ease: "power2.out" },
               0
             );
           }
         };
 
         const onLeave = () => {
-          const priceEl = el.querySelector<HTMLElement>(".neon-price");
           gsap.to(el, {
             rotateX: 0,
             boxShadow: "0 0 0px rgba(0,0,0,0)",
@@ -92,7 +94,7 @@ export default function CryptoCardsHoverEffect() {
 
           if (priceEl) {
             gsap.to(priceEl, {
-              textShadow: defaultPriceShadow(glowColor),
+              filter: defaultPriceFilter,
               duration: 0.3,
               ease: "power2.out",
             });

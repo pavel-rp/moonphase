@@ -148,6 +148,11 @@
            bg-[url("/noise.png")] bg-repeat
            mix-blend-overlay opacity-1;
   }
+
+  /* LED price label base style */
+  .neon-price {
+    @apply inline-block relative;
+  }
 }
 
 @keyframes rotate-ice {
