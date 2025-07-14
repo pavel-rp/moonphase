@@ -38,10 +38,18 @@ export default function CryptoCardsHoverEffect() {
         // Ensure perspective so the rotation has depth
         gsap.set(el, { transformPerspective: 800 });
 
+        const defaultPriceShadow = (color: string) =>
+          `0 0 4px ${color}, 0 0 6px ${color}, 0 0 10px ${color}`;
+
+        const hoverPriceShadow = (color: string) =>
+          `0 0 6px ${color}, 0 0 12px ${color}, 0 0 22px ${color}, 0 0 32px ${color}`;
+
         const onEnter = () => {
           // Create a timeline for the bounce then settle animation.
           const tl = gsap.timeline();
 
+          const priceEl = el.querySelector<HTMLElement>(".neon-price");
+          
           tl.to(el, {
             rotateX: -8,
             boxShadow: `0 0 12px ${glowColor}, 0 0 24px rgba(255,255,255,0.25), 0 0 48px rgba(255,255,255,0.15)`,
@@ -61,9 +69,19 @@ export default function CryptoCardsHoverEffect() {
               duration: 0.2,
               ease: "power2.out",
             });
+
+            // Animate price neon glow in parallel (start at same time as first tween)
+          if (priceEl) {
+            tl.to(
+              priceEl,
+              { textShadow: hoverPriceShadow(glowColor), duration: 0.25, ease: "power2.out" },
+              0
+            );
+          }
         };
 
         const onLeave = () => {
+          const priceEl = el.querySelector<HTMLElement>(".neon-price");
           gsap.to(el, {
             rotateX: 0,
             boxShadow: "0 0 0px rgba(0,0,0,0)",
@@ -71,6 +89,14 @@ export default function CryptoCardsHoverEffect() {
             duration: 0.3,
             ease: "power2.out",
           });
+
+          if (priceEl) {
+            gsap.to(priceEl, {
+              textShadow: defaultPriceShadow(glowColor),
+              duration: 0.3,
+              ease: "power2.out",
+            });
+          }
         };
 
         el.addEventListener("mouseenter", onEnter);

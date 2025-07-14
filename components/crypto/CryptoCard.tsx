@@ -25,7 +25,12 @@ export function CryptoCard({
   maxSupply,
 }: Asset) {
   const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
+  // Base frosted-glass sheen
   const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
+
+  // Neon bulb glow for the price label
+  const neonColor = changePercent24Hr >= 0 ? "rgba(0,255,0,0.9)" : "rgba(255,0,0,0.9)";
+  const neonShadow = `0 0 4px ${neonColor}, 0 0 6px ${neonColor}, 0 0 10px ${neonColor}`;
   return (
     <Card
       className="glassmorphic crypto-card"
@@ -42,7 +47,10 @@ export function CryptoCard({
         <div
           className={`flex w-full items-center justify-between ${shadowClass} ${colorClass}`}
         >
-          <span className={`text-2xl font-bold ${shadowClass} ${colorClass}`}>
+          <span
+            className={`neon-price text-2xl font-bold ${shadowClass} ${colorClass}`}
+            style={{ textShadow: neonShadow }}
+          >
             ${formatNumber(priceUsd)}
           </span>
           <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
