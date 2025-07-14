@@ -108,8 +108,45 @@ export default function CryptoCardsHoverEffect() {
         innerGlow.appendChild(igComposite2);
         innerGlow.appendChild(igBlend);
 
+        // Chromatic aberration filter
+        const chromAb = document.createElementNS(svgNS, "filter");
+        chromAb.setAttribute("id", "chrom-ab");
+        chromAb.setAttribute("color-interpolation-filters", "sRGB");
+
+        const caRed = document.createElementNS(svgNS, "feOffset");
+        caRed.setAttribute("dx", "1");
+        caRed.setAttribute("dy", "0");
+        caRed.setAttribute("in", "SourceGraphic");
+        caRed.setAttribute("result", "redShift");
+
+        const caRedColor = document.createElementNS(svgNS, "feColorMatrix");
+        caRedColor.setAttribute("in", "redShift");
+        caRedColor.setAttribute("type", "matrix");
+        caRedColor.setAttribute("values", "1 0 0 0 0   0 0 0 0 0   0 0 0 0 0   0 0 0 1 0");
+
+        const caGreen = document.createElementNS(svgNS, "feOffset");
+        caGreen.setAttribute("dx", "-1");
+        caGreen.setAttribute("dy", "0");
+        caGreen.setAttribute("in", "SourceGraphic");
+        caGreen.setAttribute("result", "greenShift");
+
+        const caGreenColor = document.createElementNS(svgNS, "feColorMatrix");
+        caGreenColor.setAttribute("in", "greenShift");
+        caGreenColor.setAttribute("type", "matrix");
+        caGreenColor.setAttribute("values", "0 0 0 0 0   0 1 0 0 0   0 0 0 0 0   0 0 0 1 0");
+
+        const caMerge = document.createElementNS(svgNS, "feMerge");
+        [caRedColor, caGreenColor].forEach((node) => caMerge.appendChild(node));
+
+        chromAb.appendChild(caRed);
+        chromAb.appendChild(caRedColor);
+        chromAb.appendChild(caGreen);
+        chromAb.appendChild(caGreenColor);
+        chromAb.appendChild(caMerge);
+
         svg.appendChild(dynNoise);
         svg.appendChild(innerGlow);
+        svg.appendChild(chromAb);
         document.body.appendChild(svg);
       };
 
@@ -129,7 +166,7 @@ export default function CryptoCardsHoverEffect() {
           : "rgba(255, 0, 0, 0.45)";
         const defaultBorderColor = "rgba(255,255,255,0.3)";
 
-        gsap.set(el, { transformPerspective: 800 });
+        gsap.set(el, { transformPerspective: 800, filter: "url(#inner-glow) url(#chrom-ab)" });
 
         const defaultPriceFilter = "url(#dynamic-noise) drop-shadow(0 0 0px transparent)";
 
@@ -170,7 +207,6 @@ export default function CryptoCardsHoverEffect() {
 
           // Animate price neon glow in parallel
           if (priceEl) {
-            priceEl.classList.add("flicker");
             tl.to(
               priceEl,
               {
@@ -180,6 +216,18 @@ export default function CryptoCardsHoverEffect() {
               },
               0
             );
+
+            // Start micro flicker using random intervals
+            const flicker = () => {
+              const brightness = 1 + (Math.random() - 0.5) * 0.4; // 0.8 - 1.2
+              gsap.to(priceEl, {
+                filter: `${hoverPriceFilter(glowColor)} brightness(${brightness})`,
+                duration: gsap.utils.random(0.05, 0.18),
+                ease: "none",
+                onComplete: flicker,
+              });
+            };
+            flicker();
           }
         };
 
@@ -193,7 +241,7 @@ export default function CryptoCardsHoverEffect() {
           });
 
           if (priceEl) {
-            priceEl.classList.remove("flicker");
+            gsap.killTweensOf(priceEl);
             gsap.to(priceEl, {
               filter: defaultPriceFilter,
               duration: 0.3,
