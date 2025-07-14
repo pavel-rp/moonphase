@@ -12,10 +12,12 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@radix-ui/react-slot": "^1.2.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cryptocurrency-icons": "^0.18.1",
+    "gsap": "^3.13.0",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
     "react": "^19.0.0",
