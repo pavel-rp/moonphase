@@ -11,4 +11,31 @@ jest.mock('next/image', () => ({
 // Mock CSS modules
 jest.mock('*.module.css', () => ({}))
 
+// Mock GSAP and related plugins to prevent ESM parse issues in Jest
+jest.mock('gsap', () => ({
+  __esModule: true,
+  default: {
+    registerPlugin: jest.fn(),
+    timeline: () => ({ fromTo: jest.fn() }),
+    fromTo: jest.fn(),
+  },
+  registerPlugin: jest.fn(),
+  timeline: () => ({ fromTo: jest.fn() }),
+  fromTo: jest.fn(),
+}))
+
+jest.mock('gsap/DrawSVGPlugin', () => ({ __esModule: true }))
+jest.mock('gsap/MotionPathPlugin', () => ({ __esModule: true }))
+jest.mock('@gsap/react', () => ({ __esModule: true, useGSAP: () => {} }))
+
+// Mock the animated sparkline client component used in CryptoSparkline
+jest.mock('@/components/ui/gsap/animated-sparkline.client', () => ({
+  __esModule: true,
+  AnimatedSparkline: ({ data, className }) => (
+    <div data-testid="animated-sparkline" data-color={className}>
+      {(data || []).join(',')}
+    </div>
+  ),
+}))
+
 // Setup file for Jest tests
