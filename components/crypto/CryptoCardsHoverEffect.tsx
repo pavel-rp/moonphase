@@ -33,6 +33,7 @@ export default function CryptoCardsHoverEffect() {
         const glowColor = isPositive
           ? "rgba(0, 255, 0, 0.45)"
           : "rgba(255, 0, 0, 0.45)";
+        const defaultBorderColor = "rgba(255,255,255,0.3)";
 
         // Ensure perspective so the rotation has depth
         gsap.set(el, { transformPerspective: 800 });
@@ -44,16 +45,19 @@ export default function CryptoCardsHoverEffect() {
           tl.to(el, {
             rotateX: -8,
             boxShadow: `0 0 12px ${glowColor}, 0 0 24px rgba(255,255,255,0.25), 0 0 48px rgba(255,255,255,0.15)`,
+            borderColor: glowColor,
             duration: 0.18,
             ease: "power2.out",
           })
             .to(el, {
               rotateX: 6,
+              borderColor: glowColor,
               duration: 0.18,
               ease: "power2.inOut",
             })
             .to(el, {
               rotateX: 0,
+              borderColor: glowColor,
               duration: 0.2,
               ease: "power2.out",
             });
@@ -63,6 +67,7 @@ export default function CryptoCardsHoverEffect() {
           gsap.to(el, {
             rotateX: 0,
             boxShadow: "0 0 0px rgba(0,0,0,0)",
+            borderColor: defaultBorderColor,
             duration: 0.3,
             ease: "power2.out",
           });
