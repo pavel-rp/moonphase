@@ -27,7 +27,10 @@ export function CryptoCard({
   const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
   const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
   return (
-    <Card className="glassmorphic">
+    <Card
+      className="glassmorphic crypto-card"
+      data-change-positive={changePercent24Hr >= 0}
+    >
       <CardHeader className="flex items-start justify-between">
         <div className="flex flex-col">
           <CardTitle>{name}</CardTitle>
