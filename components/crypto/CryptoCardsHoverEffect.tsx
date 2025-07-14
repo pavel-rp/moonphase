@@ -212,6 +212,10 @@ export default function CryptoCardsHoverEffect() {
           `url(#dynamic-noise) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) drop-shadow(0 0 22px ${color})`;
 
         const priceEl = el.querySelector<HTMLElement>(".neon-price");
+        const holoEl = el.querySelector<HTMLElement>(".holo");
+        if (holoEl) {
+          gsap.set(holoEl, { scale: 0.8 });
+        }
         let flickerRAF: number | null = null;
         if (priceEl) {
           priceEl.style.setProperty("--glow", glowColor);
@@ -244,7 +248,7 @@ export default function CryptoCardsHoverEffect() {
               ease: "power2.out",
             });
 
-          // Animate price neon glow in parallel
+          // Animate price neon glow & hologram in parallel
           if (priceEl) {
             tl.to(
               priceEl,
@@ -269,6 +273,14 @@ export default function CryptoCardsHoverEffect() {
             };
             loop();
           }
+
+          if (holoEl) {
+            tl.to(
+              holoEl,
+              { opacity: 0.85, scale: 1, duration: 0.3, ease: "power2.out" },
+              0
+            );
+          }
         };
 
         const onLeave = () => {
@@ -291,6 +303,10 @@ export default function CryptoCardsHoverEffect() {
                 priceEl!.style.filter = defaultPriceFilter;
               }
             });
+          }
+
+          if (holoEl) {
+            gsap.to(holoEl, { opacity: 0, scale: 0.8, duration: 0.3, ease: "power2.out" });
           }
         };
 

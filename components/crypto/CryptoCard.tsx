@@ -41,6 +41,10 @@ export function CryptoCard({
         </div>
         <CryptoIcon symbol={symbol} size={30} name={name} />
       </CardHeader>
+      {/* Holographic logo overlay */}
+      <div className="holo" aria-hidden="true">
+        <CryptoIcon symbol={symbol} size={64} name={name} />
+      </div>
       <CardContent className="flex flex-col items-start gap-4">
         <div
           className={`flex w-full items-center justify-between ${shadowClass} ${colorClass}`}

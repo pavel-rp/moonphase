@@ -186,6 +186,32 @@
     opacity: 1;
   }
 
+  /* Holographic logo overlay */
+  .holo {
+    @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 ease-out;
+    width: 33%;
+    aspect-ratio: 1/1;
+    background:
+      radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 65%),
+      conic-gradient(from 0deg, #ff00cc 0%, #3333ff 25%, #00ffcc 50%, #ffcc00 75%, #ff00cc 100%);
+    background-size: 200% 200%;
+    animation: holo-rotate 8s linear infinite;
+    mix-blend-mode: screen;
+    filter: url(#dynamic-noise) blur(0.8px) brightness(1.2) contrast(1.1);
+  }
+
+  .holo svg {
+    @apply w-3/5 h-3/5 opacity-80;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));
+    mix-blend-mode: screen;
+  }
+
+  @keyframes holo-rotate {
+    0% { background-position: 0% 0%; }
+    50% { background-position: 100% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+
   /* Neon flicker animation */
   @keyframes neon-flicker {
     0%,19%,21%,23%,25%,55%,57%,100% {
