@@ -21,44 +21,95 @@ export default function CryptoCardsHoverEffect() {
 
     // Dynamically import GSAP to avoid it impacting the server bundle.
     import("gsap").then((mod) => {
-      // Inject SVG noise filter once if not present
+      // Inject complex SVG filters once per page
       const ensureSVGFilters = () => {
         if (document.getElementById("svg-effects")) return;
 
         const svgNS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(svgNS, "svg");
         svg.setAttribute("id", "svg-effects");
-        svg.setAttribute("style", "position:absolute;width:0;height:0;pointer-events:none;z-index:-1");
+        svg.setAttribute(
+          "style",
+          "position:absolute;width:0;height:0;pointer-events:none;z-index:-1"
+        );
 
-        // Grainy noise filter
-        const filter = document.createElementNS(svgNS, "filter");
-        filter.setAttribute("id", "grain-noise");
-        filter.setAttribute("x", "-20%");
-        filter.setAttribute("y", "-20%");
-        filter.setAttribute("width", "140%");
-        filter.setAttribute("height", "140%");
+        // Dynamic noise filter with animated turbulence
+        const dynNoise = document.createElementNS(svgNS, "filter");
+        dynNoise.setAttribute("id", "dynamic-noise");
+        dynNoise.setAttribute("x", "-20%");
+        dynNoise.setAttribute("y", "-20%");
+        dynNoise.setAttribute("width", "140%");
+        dynNoise.setAttribute("height", "140%");
 
-        const turbulence = document.createElementNS(svgNS, "feTurbulence");
-        turbulence.setAttribute("type", "fractalNoise");
-        turbulence.setAttribute("baseFrequency", "0.9");
-        turbulence.setAttribute("numOctaves", "4");
-        turbulence.setAttribute("result", "noise");
+        const feTurb = document.createElementNS(svgNS, "feTurbulence");
+        feTurb.setAttribute("type", "fractalNoise");
+        feTurb.setAttribute("baseFrequency", "0.8");
+        feTurb.setAttribute("numOctaves", "3");
+        feTurb.setAttribute("seed", "2");
+        feTurb.setAttribute("result", "noise");
 
-        const colorMatrix = document.createElementNS(svgNS, "feColorMatrix");
-        colorMatrix.setAttribute("type", "saturate");
-        colorMatrix.setAttribute("values", "0");
-        colorMatrix.setAttribute("in", "noise");
+        // Animate baseFrequency for subtle movement
+        const animateBF = document.createElementNS(svgNS, "animate");
+        animateBF.setAttribute("attributeName", "baseFrequency");
+        animateBF.setAttribute("dur", "8s");
+        animateBF.setAttribute("values", "0.7;0.9;0.7");
+        animateBF.setAttribute("repeatCount", "indefinite");
+        feTurb.appendChild(animateBF);
 
-        const blend = document.createElementNS(svgNS, "feBlend");
-        blend.setAttribute("in", "SourceGraphic");
-        blend.setAttribute("in2", "noise");
-        blend.setAttribute("mode", "overlay");
+        const feColor = document.createElementNS(svgNS, "feColorMatrix");
+        feColor.setAttribute("type", "saturate");
+        feColor.setAttribute("values", "0");
+        feColor.setAttribute("in", "noise");
 
-        filter.appendChild(turbulence);
-        filter.appendChild(colorMatrix);
-        filter.appendChild(blend);
+        const feBlendOverlay = document.createElementNS(svgNS, "feBlend");
+        feBlendOverlay.setAttribute("in", "SourceGraphic");
+        feBlendOverlay.setAttribute("in2", "noise");
+        feBlendOverlay.setAttribute("mode", "overlay");
 
-        svg.appendChild(filter);
+        dynNoise.appendChild(feTurb);
+        dynNoise.appendChild(feColor);
+        dynNoise.appendChild(feBlendOverlay);
+
+        // Inner glow filter for glass edges
+        const innerGlow = document.createElementNS(svgNS, "filter");
+        innerGlow.setAttribute("id", "inner-glow");
+        innerGlow.setAttribute("x", "-50%");
+        innerGlow.setAttribute("y", "-50%");
+        innerGlow.setAttribute("width", "200%");
+        innerGlow.setAttribute("height", "200%");
+
+        const igBlur = document.createElementNS(svgNS, "feGaussianBlur");
+        igBlur.setAttribute("stdDeviation", "8");
+        igBlur.setAttribute("result", "blur");
+
+        const igComposite = document.createElementNS(svgNS, "feComposite");
+        igComposite.setAttribute("in", "SourceGraphic");
+        igComposite.setAttribute("in2", "blur");
+        igComposite.setAttribute("operator", "out");
+        igComposite.setAttribute("result", "inverse");
+
+        const igFlood = document.createElementNS(svgNS, "feFlood");
+        igFlood.setAttribute("flood-color", "white");
+        igFlood.setAttribute("flood-opacity", "0.2");
+
+        const igComposite2 = document.createElementNS(svgNS, "feComposite");
+        igComposite2.setAttribute("in2", "inverse");
+        igComposite2.setAttribute("operator", "in");
+        igComposite2.setAttribute("result", "innerGlow");
+
+        const igBlend = document.createElementNS(svgNS, "feBlend");
+        igBlend.setAttribute("in", "SourceGraphic");
+        igBlend.setAttribute("in2", "innerGlow");
+        igBlend.setAttribute("mode", "normal");
+
+        innerGlow.appendChild(igBlur);
+        innerGlow.appendChild(igComposite);
+        innerGlow.appendChild(igFlood);
+        innerGlow.appendChild(igComposite2);
+        innerGlow.appendChild(igBlend);
+
+        svg.appendChild(dynNoise);
+        svg.appendChild(innerGlow);
         document.body.appendChild(svg);
       };
 
@@ -80,13 +131,14 @@ export default function CryptoCardsHoverEffect() {
 
         gsap.set(el, { transformPerspective: 800 });
 
-        const defaultPriceFilter = "url(#grain-noise) drop-shadow(0 0 0px transparent)";
+        const defaultPriceFilter = "url(#dynamic-noise) drop-shadow(0 0 0px transparent)";
 
         const hoverPriceFilter = (color: string) =>
-          `url(#grain-noise) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) drop-shadow(0 0 22px ${color})`;
+          `url(#dynamic-noise) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) drop-shadow(0 0 22px ${color})`;
 
         const priceEl = el.querySelector<HTMLElement>(".neon-price");
         if (priceEl) {
+          priceEl.style.setProperty("--glow", glowColor);
           gsap.set(priceEl, { filter: defaultPriceFilter });
         }
 
@@ -118,11 +170,16 @@ export default function CryptoCardsHoverEffect() {
 
           // Animate price neon glow in parallel
           if (priceEl) {
-            tl.to(priceEl, {
-              filter: hoverPriceFilter(glowColor),
-              duration: 0.25,
-              ease: "power2.out",
-            }, 0);
+            priceEl.classList.add("flicker");
+            tl.to(
+              priceEl,
+              {
+                filter: hoverPriceFilter(glowColor),
+                duration: 0.25,
+                ease: "power2.out",
+              },
+              0
+            );
           }
         };
 
@@ -136,6 +193,7 @@ export default function CryptoCardsHoverEffect() {
           });
 
           if (priceEl) {
+            priceEl.classList.remove("flicker");
             gsap.to(priceEl, {
               filter: defaultPriceFilter,
               duration: 0.3,
