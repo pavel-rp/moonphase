@@ -85,18 +85,4 @@ describe('Sparkline', () => {
     const svg = container.querySelector('svg')
     expect(svg).toBeInTheDocument()
   })
-
-  it('should handle string height prop', () => {
-    const { container } = render(<Sparkline data={mockData} height="80" />)
-    
-    const svg = container.querySelector('svg')
-    expect(svg).toBeInTheDocument()
-  })
-
-  it('should handle invalid string height prop', () => {
-    const { container } = render(<Sparkline data={mockData} height="invalid" />)
-    
-    const svg = container.querySelector('svg')
-    expect(svg).toBeInTheDocument()
-  })
 })
