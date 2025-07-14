@@ -30,26 +30,39 @@ export default function CryptoCardsHoverEffect() {
         // Determine the glow color based on the 24h change sign
         const isPositive = el.dataset.changePositive === "true";
         const glowColor = isPositive
-          ? "rgba(0, 255, 0, 0.6)"
-          : "rgba(255, 0, 0, 0.6)";
+          ? "rgba(0, 255, 0, 0.35)"
+          : "rgba(255, 0, 0, 0.35)";
 
         // Ensure perspective so the rotation has depth
         gsap.set(el, { transformPerspective: 800 });
 
         const onEnter = () => {
-          gsap.to(el, {
-            rotateX: -6,
-            boxShadow: `0px 0px 20px ${glowColor}`,
-            duration: 0.3,
+          // Create a timeline for the bounce then settle animation.
+          const tl = gsap.timeline();
+
+          tl.to(el, {
+            rotateX: -8,
+            boxShadow: `0 0 8px ${glowColor}, 0 0 20px rgba(255,255,255,0.15)`,
+            duration: 0.18,
             ease: "power2.out",
-          });
+          })
+            .to(el, {
+              rotateX: 6,
+              duration: 0.18,
+              ease: "power2.inOut",
+            })
+            .to(el, {
+              rotateX: 0,
+              duration: 0.2,
+              ease: "power2.out",
+            });
         };
 
         const onLeave = () => {
           gsap.to(el, {
             rotateX: 0,
-            boxShadow: "0px 0px 0px rgba(0,0,0,0)",
-            duration: 0.25,
+            boxShadow: "0 0 0px rgba(0,0,0,0)",
+            duration: 0.3,
             ease: "power2.out",
           });
         };
