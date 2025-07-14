@@ -12,9 +12,7 @@ import {
 } from "@/lib/utils/numbers";
 import { CryptoIcon } from "./CryptoIcon";
 import { Asset } from "@/lib/data/assets";
-import { Sparkline } from "../ui/sparkline";
 import { CryptoSparkline } from "./CryptoSparkline";
-import { cn } from "@/lib/utils/utils";
 
 export function CryptoCard({
   name,
@@ -41,9 +39,7 @@ export function CryptoCard({
         <div
           className={`flex w-full items-center justify-between ${shadowClass} ${colorClass}`}
         >
-          <span
-            className={`text-2xl font-bold ${shadowClass} ${colorClass}`}
-          >
+          <span className={`text-2xl font-bold ${shadowClass} ${colorClass}`}>
             ${formatNumber(priceUsd)}
           </span>
           <span className="text-sm">{formatPercent(changePercent24Hr)}</span>

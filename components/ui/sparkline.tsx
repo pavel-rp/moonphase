@@ -1,14 +1,16 @@
 import clsx from "clsx";
-import { useId } from "react";
+import { Ref, useId } from "react";
 
-type SparklineProps = {
+export type SparklineProps = {
   data: number[];
-  height?: number | string;
+  height?: number;
   strokeWidth?: number;
   opacity?: number;
   areaOpacity?: number;
   baselineOpacity?: number;
   className?: string;
+  lineRef?: Ref<SVGPolylineElement>;
+  containerRef?: Ref<HTMLDivElement>;
 };
 
 export function Sparkline({
@@ -18,9 +20,10 @@ export function Sparkline({
   opacity = 0.9,
   areaOpacity = 0.1,
   className,
+  lineRef: ref,
+  containerRef,
 }: SparklineProps) {
   const id = useId();
-
 
   // Use unique IDs for gradient and filter
   const gradientId = `sparkline-fade-${id}`;
@@ -37,15 +40,6 @@ export function Sparkline({
   const range = max - min || 1;
   const pointCount = data.length;
   const step = 1 / (pointCount - 1);
-
-  // Calculate 2px padding in viewBox units
-  let pxHeight = 60;
-  if (typeof height === "number") {
-    pxHeight = height;
-  } else if (typeof height === "string") {
-    const parsed = parseFloat(height);
-    if (!isNaN(parsed)) pxHeight = parsed;
-  }
   const pad = 0.01; // 1% of the box, visually about 1-2px at 50-100px height
 
   // When mapping points, add padding
@@ -75,7 +69,7 @@ export function Sparkline({
   }
 
   return (
-    <div className={clsx("w-full", className)}>
+    <div ref={containerRef} className={clsx("w-full", className)}>
       <svg
         className={clsx("w-full", className)}
         viewBox={vb}
@@ -84,12 +78,19 @@ export function Sparkline({
         style={{
           display: "block",
           width: "100%",
-          height: typeof height === "number" ? `${height}px` : height,
+          height: `${height}px`,
         }}
       >
         <defs>
           {/* Area fade */}
-          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1" className={className}>
+          <linearGradient
+            id={gradientId}
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+            className={className}
+          >
             <stop
               offset="0%"
               stopColor="currentColor"
@@ -114,6 +115,7 @@ export function Sparkline({
           stroke="none"
         />
         <polyline
+          ref={ref}
           points={points}
           fill="none"
           stroke="currentColor"
