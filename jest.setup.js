@@ -12,17 +12,18 @@ jest.mock('next/image', () => ({
 jest.mock('*.module.css', () => ({}))
 
 // Mock GSAP and related plugins to prevent ESM parse issues in Jest
-jest.mock('gsap', () => ({
-  __esModule: true,
-  default: {
+jest.mock('gsap', () => {
+  const sharedMethods = {
     registerPlugin: jest.fn(),
     timeline: () => ({ fromTo: jest.fn() }),
     fromTo: jest.fn(),
-  },
-  registerPlugin: jest.fn(),
-  timeline: () => ({ fromTo: jest.fn() }),
-  fromTo: jest.fn(),
-}))
+  };
+  return {
+    __esModule: true,
+    default: sharedMethods,
+    ...sharedMethods,
+  };
+});
 
 jest.mock('gsap/DrawSVGPlugin', () => ({ __esModule: true }))
 jest.mock('gsap/MotionPathPlugin', () => ({ __esModule: true }))
