@@ -41,32 +41,55 @@ export default function CryptoCardsHoverEffect() {
         dynNoise.setAttribute("width", "140%");
         dynNoise.setAttribute("height", "140%");
 
-        const feTurb = document.createElementNS(svgNS, "feTurbulence");
-        feTurb.setAttribute("type", "fractalNoise");
-        feTurb.setAttribute("baseFrequency", "0.8");
-        feTurb.setAttribute("numOctaves", "3");
-        feTurb.setAttribute("seed", "2");
-        feTurb.setAttribute("result", "noise");
+        const feTurb1 = document.createElementNS(svgNS, "feTurbulence");
+        feTurb1.setAttribute("type", "fractalNoise");
+        feTurb1.setAttribute("baseFrequency", "0.6");
+        feTurb1.setAttribute("numOctaves", "2");
+        feTurb1.setAttribute("seed", "2");
+        feTurb1.setAttribute("result", "noise1");
 
-        // Animate baseFrequency for subtle movement
-        const animateBF = document.createElementNS(svgNS, "animate");
-        animateBF.setAttribute("attributeName", "baseFrequency");
-        animateBF.setAttribute("dur", "8s");
-        animateBF.setAttribute("values", "0.7;0.9;0.7");
-        animateBF.setAttribute("repeatCount", "indefinite");
-        feTurb.appendChild(animateBF);
+        const feTurb2 = document.createElementNS(svgNS, "feTurbulence");
+        feTurb2.setAttribute("type", "turbulence");
+        feTurb2.setAttribute("baseFrequency", "0.9");
+        feTurb2.setAttribute("numOctaves", "4");
+        feTurb2.setAttribute("seed", "8");
+        feTurb2.setAttribute("result", "noise2");
+
+        // Animate both
+        const animateBF1 = document.createElementNS(svgNS, "animate");
+        animateBF1.setAttribute("attributeName", "baseFrequency");
+        animateBF1.setAttribute("dur", "10s");
+        animateBF1.setAttribute("values", "0.4;0.8;0.4");
+        animateBF1.setAttribute("repeatCount", "indefinite");
+        feTurb1.appendChild(animateBF1);
+
+        const animateBF2 = document.createElementNS(svgNS, "animate");
+        animateBF2.setAttribute("attributeName", "baseFrequency");
+        animateBF2.setAttribute("dur", "6s");
+        animateBF2.setAttribute("values", "0.7;1;0.7");
+        animateBF2.setAttribute("repeatCount", "indefinite");
+        feTurb2.appendChild(animateBF2);
 
         const feColor = document.createElementNS(svgNS, "feColorMatrix");
         feColor.setAttribute("type", "saturate");
         feColor.setAttribute("values", "0");
-        feColor.setAttribute("in", "noise");
+        feColor.setAttribute("in", "noise1");
+
+        // Blend noise1 and noise2
+        const feBlendNoise = document.createElementNS(svgNS, "feBlend");
+        feBlendNoise.setAttribute("in", "noise1");
+        feBlendNoise.setAttribute("in2", "noise2");
+        feBlendNoise.setAttribute("mode", "multiply");
+        feBlendNoise.setAttribute("result", "noise");
 
         const feBlendOverlay = document.createElementNS(svgNS, "feBlend");
         feBlendOverlay.setAttribute("in", "SourceGraphic");
         feBlendOverlay.setAttribute("in2", "noise");
         feBlendOverlay.setAttribute("mode", "overlay");
 
-        dynNoise.appendChild(feTurb);
+        dynNoise.appendChild(feTurb1);
+        dynNoise.appendChild(feTurb2);
+        dynNoise.appendChild(feBlendNoise);
         dynNoise.appendChild(feColor);
         dynNoise.appendChild(feBlendOverlay);
 
@@ -135,9 +158,24 @@ export default function CryptoCardsHoverEffect() {
         caGreenColor.setAttribute("type", "matrix");
         caGreenColor.setAttribute("values", "0 0 0 0 0   0 1 0 0 0   0 0 0 0 0   0 0 0 1 0");
 
-        const caMerge = document.createElementNS(svgNS, "feMerge");
-        [caRedColor, caGreenColor].forEach((node) => caMerge.appendChild(node));
+        // Blue channel shift
+        const caBlue = document.createElementNS(svgNS, "feOffset");
+        caBlue.setAttribute("dx", "0");
+        caBlue.setAttribute("dy", "1");
+        caBlue.setAttribute("in", "SourceGraphic");
+        caBlue.setAttribute("result", "blueShift");
 
+        const caBlueColor = document.createElementNS(svgNS, "feColorMatrix");
+        caBlueColor.setAttribute("in", "blueShift");
+        caBlueColor.setAttribute("type", "matrix");
+        caBlueColor.setAttribute("values", "0 0 0 0 0   0 0 0 0 0   0 0 1 0 0   0 0 0 1 0");
+
+        const caMerge = document.createElementNS(svgNS, "feMerge");
+        [caRedColor, caGreenColor, caBlueColor].forEach((node) => caMerge.appendChild(node));
+
+        // Append blue shift elements
+        chromAb.appendChild(caBlue);
+        chromAb.appendChild(caBlueColor);
         chromAb.appendChild(caRed);
         chromAb.appendChild(caRedColor);
         chromAb.appendChild(caGreen);
@@ -174,6 +212,7 @@ export default function CryptoCardsHoverEffect() {
           `url(#dynamic-noise) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) drop-shadow(0 0 22px ${color})`;
 
         const priceEl = el.querySelector<HTMLElement>(".neon-price");
+        let flickerRAF: number | null = null;
         if (priceEl) {
           priceEl.style.setProperty("--glow", glowColor);
           gsap.set(priceEl, { filter: defaultPriceFilter });
@@ -217,17 +256,18 @@ export default function CryptoCardsHoverEffect() {
               0
             );
 
-            // Start micro flicker using random intervals
-            const flicker = () => {
-              const brightness = 1 + (Math.random() - 0.5) * 0.4; // 0.8 - 1.2
-              gsap.to(priceEl, {
-                filter: `${hoverPriceFilter(glowColor)} brightness(${brightness})`,
-                duration: gsap.utils.random(0.05, 0.18),
-                ease: "none",
-                onComplete: flicker,
-              });
+            // Perlin-like flicker using layered sine waves on each RAF
+            const start = performance.now();
+            const noise = (t:number)=>{
+              return (Math.sin(t*0.001*3)+Math.sin(t*0.0017*5)+Math.sin(t*0.0023*11))/3;
+            }
+            const loop=()=>{
+              const t=performance.now()-start;
+              const brightness=1+0.3*noise(t);
+              priceEl!.style.filter=`${hoverPriceFilter(glowColor)} brightness(${brightness})`;
+              flickerRAF=requestAnimationFrame(loop);
             };
-            flicker();
+            loop();
           }
         };
 
@@ -241,11 +281,15 @@ export default function CryptoCardsHoverEffect() {
           });
 
           if (priceEl) {
+            if(flickerRAF!==null) cancelAnimationFrame(flickerRAF);
             gsap.killTweensOf(priceEl);
             gsap.to(priceEl, {
               filter: defaultPriceFilter,
               duration: 0.3,
               ease: "power2.out",
+              onComplete: () => {
+                priceEl!.style.filter = defaultPriceFilter;
+              }
             });
           }
         };
