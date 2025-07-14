@@ -21,6 +21,49 @@ export default function CryptoCardsHoverEffect() {
 
     // Dynamically import GSAP to avoid it impacting the server bundle.
     import("gsap").then((mod) => {
+      // Inject SVG noise filter once if not present
+      const ensureSVGFilters = () => {
+        if (document.getElementById("svg-effects")) return;
+
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("id", "svg-effects");
+        svg.setAttribute("style", "position:absolute;width:0;height:0;pointer-events:none;z-index:-1");
+
+        // Grainy noise filter
+        const filter = document.createElementNS(svgNS, "filter");
+        filter.setAttribute("id", "grain-noise");
+        filter.setAttribute("x", "-20%");
+        filter.setAttribute("y", "-20%");
+        filter.setAttribute("width", "140%");
+        filter.setAttribute("height", "140%");
+
+        const turbulence = document.createElementNS(svgNS, "feTurbulence");
+        turbulence.setAttribute("type", "fractalNoise");
+        turbulence.setAttribute("baseFrequency", "0.9");
+        turbulence.setAttribute("numOctaves", "4");
+        turbulence.setAttribute("result", "noise");
+
+        const colorMatrix = document.createElementNS(svgNS, "feColorMatrix");
+        colorMatrix.setAttribute("type", "saturate");
+        colorMatrix.setAttribute("values", "0");
+        colorMatrix.setAttribute("in", "noise");
+
+        const blend = document.createElementNS(svgNS, "feBlend");
+        blend.setAttribute("in", "SourceGraphic");
+        blend.setAttribute("in2", "noise");
+        blend.setAttribute("mode", "overlay");
+
+        filter.appendChild(turbulence);
+        filter.appendChild(colorMatrix);
+        filter.appendChild(blend);
+
+        svg.appendChild(filter);
+        document.body.appendChild(svg);
+      };
+
+      ensureSVGFilters();
+
       // GSAP can be the default export or a named export depending on bundler settings
       const gsap = (mod as any).gsap ?? (mod as any).default ?? mod;
 
@@ -37,10 +80,10 @@ export default function CryptoCardsHoverEffect() {
 
         gsap.set(el, { transformPerspective: 800 });
 
-        const defaultPriceFilter = "drop-shadow(0 0 0px transparent)";
+        const defaultPriceFilter = "url(#grain-noise) drop-shadow(0 0 0px transparent)";
 
         const hoverPriceFilter = (color: string) =>
-          `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 8px ${color}) drop-shadow(0 0 14px ${color})`;
+          `url(#grain-noise) drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color}) drop-shadow(0 0 22px ${color})`;
 
         const priceEl = el.querySelector<HTMLElement>(".neon-price");
         if (priceEl) {
@@ -73,13 +116,13 @@ export default function CryptoCardsHoverEffect() {
               ease: "power2.out",
             });
 
-            // Animate price neon glow in parallel (start at same time as first tween)
+          // Animate price neon glow in parallel
           if (priceEl) {
-            tl.to(
-              priceEl,
-              { filter: hoverPriceFilter(glowColor), duration: 0.25, ease: "power2.out" },
-              0
-            );
+            tl.to(priceEl, {
+              filter: hoverPriceFilter(glowColor),
+              duration: 0.25,
+              ease: "power2.out",
+            }, 0);
           }
         };
 

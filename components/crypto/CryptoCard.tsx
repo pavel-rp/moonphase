@@ -47,6 +47,7 @@ export function CryptoCard({
         >
           <span
             className={`neon-price text-2xl font-bold ${shadowClass} ${colorClass}`}
+            data-text={`$${formatNumber(priceUsd)}`}
           >
             ${formatNumber(priceUsd)}
           </span>
