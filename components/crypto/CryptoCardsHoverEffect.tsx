@@ -214,10 +214,7 @@ export default function CryptoCardsHoverEffect() {
 
         let flickerRAF: number | null = null;
 
-        if (priceEl) {
-          priceEl.style.setProperty("--glow", glowColor);
-          // rely on CSS for default filter; no mutation now.
-        }
+        // No mutation on priceEl before interaction to prevent hydration mismatch.
         // No initial DOM mutation on holoEl; CSS default handles scale/opacity
 
         const onEnter = () => {
