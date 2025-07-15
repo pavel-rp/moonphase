@@ -28,6 +28,7 @@ export function CryptoCard({
   // Base frosted-glass sheen
   const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
 
+  const glowColor = changePercent24Hr >= 0 ? "rgba(0,255,0,0.45)" : "rgba(255,0,0,0.45)";
   // Neon bulb glow for the price label
   return (
     <Card
@@ -51,6 +52,7 @@ export function CryptoCard({
         >
           <span
             className={`neon-price text-2xl font-bold ${shadowClass} ${colorClass}`}
+            style={{ '--glow': glowColor } as React.CSSProperties }
             data-text={`$${formatNumber(priceUsd)}`}
           >
             ${formatNumber(priceUsd)}

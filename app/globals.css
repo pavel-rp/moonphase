@@ -191,6 +191,7 @@
     @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 ease-out;
     width: 33%;
     aspect-ratio: 1/1;
+    transform: scale(0.8);
     background:
       radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 65%),
       conic-gradient(from 0deg, #ff00cc 0%, #3333ff 25%, #00ffcc 50%, #ffcc00 75%, #ff00cc 100%);
@@ -224,6 +225,11 @@
 
   .flicker {
     animation: neon-flicker 4s linear infinite;
+  }
+
+  .crypto-card {
+    perspective: 800px;
+    filter: url(#inner-glow) url(#chrom-ab);
   }
 }
 

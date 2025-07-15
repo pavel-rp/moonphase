@@ -204,8 +204,6 @@ export default function CryptoCardsHoverEffect() {
           : "rgba(255, 0, 0, 0.45)";
         const defaultBorderColor = "rgba(255,255,255,0.3)";
 
-        gsap.set(el, { transformPerspective: 800, filter: "url(#inner-glow) url(#chrom-ab)" });
-
         const defaultPriceFilter = "url(#dynamic-noise) drop-shadow(0 0 0px transparent)";
 
         const hoverPriceFilter = (color: string) =>
@@ -213,14 +211,14 @@ export default function CryptoCardsHoverEffect() {
 
         const priceEl = el.querySelector<HTMLElement>(".neon-price");
         const holoEl = el.querySelector<HTMLElement>(".holo");
-        if (holoEl) {
-          gsap.set(holoEl, { scale: 0.8 });
-        }
+
         let flickerRAF: number | null = null;
+
         if (priceEl) {
           priceEl.style.setProperty("--glow", glowColor);
-          gsap.set(priceEl, { filter: defaultPriceFilter });
+          // rely on CSS for default filter; no mutation now.
         }
+        // No initial DOM mutation on holoEl; CSS default handles scale/opacity
 
         const onEnter = () => {
           // Create a timeline for the bounce then settle animation.
@@ -300,7 +298,7 @@ export default function CryptoCardsHoverEffect() {
               duration: 0.3,
               ease: "power2.out",
               onComplete: () => {
-                priceEl!.style.filter = defaultPriceFilter;
+                priceEl!.style.filter = "";
               }
             });
           }
