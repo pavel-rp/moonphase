@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { CryptoCard } from '../CryptoCard'
+import { CryptoCard } from '../card/CryptoCard'
 import { Asset } from '@/lib/data/assets'
 
 // Mock the CryptoIcon and CryptoSparkline components

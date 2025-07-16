@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import AssetsGrid from '../AssetsGrid'
+import AssetsGrid from '../grid/AssetsGrid'
 import { Asset } from '@/lib/data/assets'
 
 // Mock the child components

@@ -12,6 +12,7 @@ export interface Asset {
   changePercent24Hr: number;
   vwap24Hr: number;
   explorer: string;
+  prices: number[];
 }
 
 export async function fetchAssets(): Promise<Array<Asset>> {
@@ -23,7 +24,7 @@ export async function fetchAssets(): Promise<Array<Asset>> {
 
   const { data: assets } = await res.json();
   
-  return assets.map((asset: any) => ({
+  return assets.map((asset: Asset) => ({
     ...asset,
     supply: Number(asset.supply),
     maxSupply: asset.maxSupply ? Number(asset.maxSupply) : null,

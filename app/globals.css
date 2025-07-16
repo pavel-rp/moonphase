@@ -139,7 +139,7 @@
 
 @layer utilities {
   .glassmorphic {
-    @apply backdrop-blur-sm border-outset shadow-xl/26
+    @apply backdrop-blur-sm border-outset shadow-xl/26 transition-shadow duration-200 
           bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
   }
   .glassmorphic::before {

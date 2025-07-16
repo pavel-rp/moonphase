@@ -10,6 +10,7 @@ const LoadingSparkline = ({
   className,
   opacity = 0.2,
 }: LoadingSparklineProps) => {
+  console.log("LoadingSparkline");
   const placeholderData = [
     1, 1.0034080652504769, 0.9537985028645104, 0.9559312777475756,
     1.0325555968184625, 1.0463626144930824, 0.9872560150661824,

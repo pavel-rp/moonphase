@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import AssetsGrid from "@/components/crypto/AssetsGrid";
+import AssetsGrid from "@/components/crypto/grid/AssetsGrid";
 export const dynamic = "force-dynamic";
 
 export default function Home() {

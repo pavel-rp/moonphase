@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import LoadingCard from '../LoadingCard'
+import LoadingCard from '../card/LoadingCard'
 
 // Mock LoadingSparkline
 jest.mock('../LoadingSparkline', () => ({
