@@ -4,7 +4,7 @@ import AssetsGrid from '../grid/AssetsGrid'
 import { Asset } from '@/lib/data/assets'
 
 // Mock the child components
-jest.mock('../CryptoCard', () => ({
+jest.mock('../card/CryptoCard', () => ({
   CryptoCard: (props: Asset) => (
     <div data-testid="crypto-card" data-symbol={props.symbol}>
       {props.name} - {props.symbol}
@@ -12,12 +12,12 @@ jest.mock('../CryptoCard', () => ({
   ),
 }))
 
-jest.mock('../LoadingCard', () => ({
+jest.mock('../card/LoadingCard', () => ({
   __esModule: true,
   default: () => <div data-testid="loading-card">Loading...</div>,
 }))
 
-jest.mock('../../ui/grid', () => ({
+jest.mock('@/components/ui/grid', () => ({
   Grid: ({ children, className }: { children: React.ReactNode; className: string }) => (
     <div data-testid="grid" className={className}>
       {children}
@@ -80,22 +80,10 @@ describe('AssetsGrid', () => {
     jest.clearAllMocks()
   })
 
-  it('should render loading state when loading prop is true', async () => {
-    const AssetsGridComponent = await AssetsGrid({ loading: true })
-    render(AssetsGridComponent)
-
-    // Should render 15 loading cards
-    const loadingCards = screen.getAllByTestId('loading-card')
-    expect(loadingCards).toHaveLength(15)
-
-    // Should not call fetchAssets when loading
-    expect(mockFetchAssets).not.toHaveBeenCalled()
-  })
-
-  it('should render assets when loading is false', async () => {
+  it('should render assets', async () => {
     mockFetchAssets.mockResolvedValue(mockAssets)
 
-    const AssetsGridComponent = await AssetsGrid({ loading: false })
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     // Should render crypto cards for each asset
@@ -111,7 +99,7 @@ describe('AssetsGrid', () => {
   it('should render assets when loading prop is not provided (defaults to false)', async () => {
     mockFetchAssets.mockResolvedValue(mockAssets)
 
-    const AssetsGridComponent = await AssetsGrid({})
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     // Should render crypto cards
@@ -122,7 +110,7 @@ describe('AssetsGrid', () => {
   it('should render Grid with correct className', async () => {
     mockFetchAssets.mockResolvedValue([])
 
-    const AssetsGridComponent = await AssetsGrid({})
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     const grid = screen.getByTestId('grid')
@@ -131,23 +119,10 @@ describe('AssetsGrid', () => {
     expect(grid).toHaveClass('mx-auto')
   })
 
-  it('should make BTC featured (span 2) in loading state', async () => {
-    const AssetsGridComponent = await AssetsGrid({ loading: true })
-    render(AssetsGridComponent)
-
-    const gridItems = screen.getAllByTestId('grid-item')
-    
-    // First item (index 0) should be featured
-    expect(gridItems[0]).toHaveAttribute('data-span', '2')
-    
-    // Other items should have default span
-    expect(gridItems[1]).toHaveAttribute('data-span', '1')
-  })
-
   it('should make BTC featured (span 2) when BTC is in assets', async () => {
     mockFetchAssets.mockResolvedValue(mockAssets)
 
-    const AssetsGridComponent = await AssetsGrid({})
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     const gridItems = screen.getAllByTestId('grid-item')
@@ -168,7 +143,7 @@ describe('AssetsGrid', () => {
   it('should handle empty assets array', async () => {
     mockFetchAssets.mockResolvedValue([])
 
-    const AssetsGridComponent = await AssetsGrid({})
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     // Should render grid but no cards
@@ -179,7 +154,7 @@ describe('AssetsGrid', () => {
   it('should use correct keys for grid items', async () => {
     mockFetchAssets.mockResolvedValue(mockAssets)
 
-    const AssetsGridComponent = await AssetsGrid({})
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     // In non-loading state, should use asset.id as key
@@ -192,7 +167,7 @@ describe('AssetsGrid', () => {
     const nonBtcAssets = mockAssets.filter(asset => asset.symbol !== 'BTC')
     mockFetchAssets.mockResolvedValue(nonBtcAssets)
 
-    const AssetsGridComponent = await AssetsGrid({})
+    const AssetsGridComponent = await AssetsGrid()
     render(AssetsGridComponent)
 
     const gridItems = screen.getAllByTestId('grid-item')

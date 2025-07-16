@@ -12,7 +12,6 @@ export interface Asset {
   changePercent24Hr: number;
   vwap24Hr: number;
   explorer: string;
-  prices: number[];
 }
 
 export async function fetchAssets(): Promise<Array<Asset>> {
