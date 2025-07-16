@@ -30,7 +30,7 @@ export function Sparkline({
   const filterId = `sparkline-shadow-${id}`;
 
   if (data.length < 2) {
-    console.warn("Sparkline requires at least two data points");
+    //console.warn("Sparkline requires at least two data points");
     return null;
   }
 

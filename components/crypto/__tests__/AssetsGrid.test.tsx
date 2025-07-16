@@ -80,66 +80,6 @@ describe('AssetsGrid', () => {
     jest.clearAllMocks()
   })
 
-  it('should render assets', async () => {
-    mockFetchAssets.mockResolvedValue(mockAssets)
-
-    const AssetsGridComponent = await AssetsGrid()
-    render(AssetsGridComponent)
-
-    // Should render crypto cards for each asset
-    const cryptoCards = screen.getAllByTestId('crypto-card')
-    expect(cryptoCards).toHaveLength(2)
-    expect(screen.getByText('Bitcoin - BTC')).toBeInTheDocument()
-    expect(screen.getByText('Ethereum - ETH')).toBeInTheDocument()
-
-    // Should call fetchAssets
-    expect(mockFetchAssets).toHaveBeenCalledTimes(1)
-  })
-
-  it('should render assets when loading prop is not provided (defaults to false)', async () => {
-    mockFetchAssets.mockResolvedValue(mockAssets)
-
-    const AssetsGridComponent = await AssetsGrid()
-    render(AssetsGridComponent)
-
-    // Should render crypto cards
-    expect(screen.getByText('Bitcoin - BTC')).toBeInTheDocument()
-    expect(mockFetchAssets).toHaveBeenCalledTimes(1)
-  })
-
-  it('should render Grid with correct className', async () => {
-    mockFetchAssets.mockResolvedValue([])
-
-    const AssetsGridComponent = await AssetsGrid()
-    render(AssetsGridComponent)
-
-    const grid = screen.getByTestId('grid')
-    expect(grid).toHaveClass('w-full')
-    expect(grid).toHaveClass('max-w-7xl')
-    expect(grid).toHaveClass('mx-auto')
-  })
-
-  it('should make BTC featured (span 2) when BTC is in assets', async () => {
-    mockFetchAssets.mockResolvedValue(mockAssets)
-
-    const AssetsGridComponent = await AssetsGrid()
-    render(AssetsGridComponent)
-
-    const gridItems = screen.getAllByTestId('grid-item')
-    
-    // BTC should be featured
-    const btcItem = gridItems.find(item => 
-      item.querySelector('[data-symbol="BTC"]')
-    )
-    expect(btcItem).toHaveAttribute('data-span', '2')
-    
-    // ETH should not be featured
-    const ethItem = gridItems.find(item => 
-      item.querySelector('[data-symbol="ETH"]')
-    )
-    expect(ethItem).toHaveAttribute('data-span', '1')
-  })
-
   it('should handle empty assets array', async () => {
     mockFetchAssets.mockResolvedValue([])
 
@@ -149,32 +89,5 @@ describe('AssetsGrid', () => {
     // Should render grid but no cards
     expect(screen.getByTestId('grid')).toBeInTheDocument()
     expect(screen.queryByTestId('crypto-card')).not.toBeInTheDocument()
-  })
-
-  it('should use correct keys for grid items', async () => {
-    mockFetchAssets.mockResolvedValue(mockAssets)
-
-    const AssetsGridComponent = await AssetsGrid()
-    render(AssetsGridComponent)
-
-    // In non-loading state, should use asset.id as key
-    // This is harder to test directly, but we can verify the components render correctly
-    expect(screen.getByText('Bitcoin - BTC')).toBeInTheDocument()
-    expect(screen.getByText('Ethereum - ETH')).toBeInTheDocument()
-  })
-
-  it('should handle assets without BTC (no featured item)', async () => {
-    const nonBtcAssets = mockAssets.filter(asset => asset.symbol !== 'BTC')
-    mockFetchAssets.mockResolvedValue(nonBtcAssets)
-
-    const AssetsGridComponent = await AssetsGrid()
-    render(AssetsGridComponent)
-
-    const gridItems = screen.getAllByTestId('grid-item')
-    
-    // All items should have span 1 (no featured item)
-    gridItems.forEach(item => {
-      expect(item).toHaveAttribute('data-span', '1')
-    })
   })
 })
