@@ -20,7 +20,7 @@ export function Sparkline({
   opacity = 0.9,
   areaOpacity = 0.1,
   className,
-  lineRef: ref,
+  lineRef,
   containerRef,
 }: SparklineProps) {
   const id = useId();
@@ -30,7 +30,7 @@ export function Sparkline({
   const filterId = `sparkline-shadow-${id}`;
 
   if (data.length < 2) {
-    console.warn("Sparkline requires at least two data points");
+    //console.warn("Sparkline requires at least two data points");
     return null;
   }
 
@@ -115,7 +115,7 @@ export function Sparkline({
           stroke="none"
         />
         <polyline
-          ref={ref}
+          ref={lineRef}
           points={points}
           fill="none"
           stroke="currentColor"

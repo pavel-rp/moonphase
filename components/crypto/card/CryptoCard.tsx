@@ -4,15 +4,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "../ui/card";
+} from "../../ui/card";
 import {
   formatNumber,
   formatPercent,
-  prettifyNumber,
 } from "@/lib/utils/numbers";
-import { CryptoIcon } from "./CryptoIcon";
+import { CryptoIcon } from "../CryptoIcon";
 import { Asset } from "@/lib/data/assets";
-import { CryptoSparkline } from "./CryptoSparkline";
+import { CryptoSparkline } from "../CryptoSparkline";
+
+export type CryptoCardProps = Asset & {
+  ref?: React.RefObject<HTMLDivElement>;
+};
 
 export function CryptoCard({
   name,
@@ -23,11 +26,16 @@ export function CryptoCard({
   volumeUsd24Hr,
   supply,
   maxSupply,
-}: Asset) {
+  ref
+}: CryptoCardProps) {
   const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
   const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
   return (
-    <Card className="glassmorphic">
+    <Card
+      ref={ref}
+      className="glassmorphic crypto-card"
+      data-change-positive={changePercent24Hr >= 0}
+    >
       <CardHeader className="flex items-start justify-between">
         <div className="flex flex-col">
           <CardTitle>{name}</CardTitle>
