@@ -36,8 +36,8 @@ describe('formatNumber', () => {
   })
 
   it('should handle null and undefined', () => {
-    expect(formatNumber(null as unknown as number)).toBe('0')
-    expect(formatNumber(undefined as unknown as number)).toBe('0')
+    expect(formatNumber(null)).toBe('0')
+    expect(formatNumber(undefined)).toBe('0')
   })
 
   it('should handle zero', () => {
