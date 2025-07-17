@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { CryptoSparkline } from '../CryptoSparkline'
+import { CryptoSparkline } from '../crypto-sparkline'
 import { generateRandomWalk } from '@/lib/utils/random-walk'
 
 // Mock the random walk function
@@ -17,7 +17,7 @@ jest.mock('../../ui/sparkline', () => ({
 }))
 
 // Mock LoadingSparkline
-jest.mock('../LoadingSparkline', () => ({
+jest.mock('../loading-sparkline', () => ({
   __esModule: true,
   default: ({ opacity, className }: { opacity: number; className: string }) => (
     <div data-testid="loading-sparkline" data-opacity={opacity} className={className}>

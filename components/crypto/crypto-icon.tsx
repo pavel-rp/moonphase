@@ -10,6 +10,7 @@ export interface CryptoIconProps {
   style?: CryptoIconStyle;
   className?: string;
 }
+
 export function CryptoIcon({
   symbol,
   size = 30,
@@ -17,7 +18,7 @@ export function CryptoIcon({
   name = symbol,
   className,
 }: CryptoIconProps) {
-  const iconName = symbol.toLowerCase(); 
+  const iconName = symbol.toLowerCase();
   const iconUrl = isValidCryptoIcon(iconName)
     ? getCryptoIconPath(iconName, style)
     : getCryptoIconPath("generic", style);

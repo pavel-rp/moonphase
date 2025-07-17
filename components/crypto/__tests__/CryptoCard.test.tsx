@@ -1,16 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { CryptoCard } from '../card/CryptoCard'
+import { CryptoCard } from '../card/crypto-card'
 import { Asset } from '@/lib/data/assets'
 
 // Mock the CryptoIcon and CryptoSparkline components
-jest.mock('@/components/crypto/CryptoIcon', () => ({
+jest.mock('@/components/crypto/crypto-icon', () => ({
   CryptoIcon: ({ symbol, name }: { symbol: string; name: string }) => (
     <div data-testid="crypto-icon">{symbol} - {name}</div>
   ),
 }))
 
-jest.mock('@/components/crypto/CryptoSparkline', () => ({
+jest.mock('@/components/crypto/crypto-sparkline', () => ({
   CryptoSparkline: ({ symbol }: { symbol: string }) => (
     <div data-testid="crypto-sparkline">{symbol}</div>
   ),

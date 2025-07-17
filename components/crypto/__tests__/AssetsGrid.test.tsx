@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import AssetsGrid from '../grid/AssetsGrid'
+import AssetsGrid from '../grid/assets-grid'
 import { Asset } from '@/lib/data/assets'
 
 // Mock the child components
-jest.mock('../card/CryptoCard', () => ({
+jest.mock('../card/crypto-card', () => ({
   CryptoCard: (props: Asset) => (
     <div data-testid="crypto-card" data-symbol={props.symbol}>
       {props.name} - {props.symbol}
@@ -12,7 +12,7 @@ jest.mock('../card/CryptoCard', () => ({
   ),
 }))
 
-jest.mock('../card/LoadingCard', () => ({
+jest.mock('../card/loading-card', () => ({
   __esModule: true,
   default: () => <div data-testid="loading-card">Loading...</div>,
 }))

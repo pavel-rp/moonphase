@@ -1,4 +1,4 @@
-import AssetsGrid from "@/components/crypto/grid/AssetsGrid";
+import AssetsGrid from "@/components/crypto/grid/assets-grid";
 export const dynamic = "force-dynamic";
 
 export default function Home() {
