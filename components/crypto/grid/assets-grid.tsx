@@ -1,6 +1,6 @@
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Asset, fetchAssets } from "@/lib/data/assets";
-import { CryptoCard } from "../card/CryptoCard";
+import { CryptoCard } from "../card/crypto-card";
 import { Suspense } from "react";
 import ShimmerGrid from "./loading-grid";
 

@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import LoadingCard from '../card/LoadingCard'
+import LoadingCard from '../card/loading-card'
 
 // Mock LoadingSparkline
-jest.mock('../LoadingSparkline', () => ({
+jest.mock('../loading-sparkline', () => ({
   __esModule: true,
   default: ({ opacity }: { opacity: number }) => (
     <div data-testid="loading-sparkline" data-opacity={opacity}>

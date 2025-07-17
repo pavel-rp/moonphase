@@ -9,9 +9,9 @@ import {
   formatNumber,
   formatPercent,
 } from "@/lib/utils/numbers";
-import { CryptoIcon } from "../CryptoIcon";
+import { CryptoIcon } from "../crypto-icon";
 import { Asset } from "@/lib/data/assets";
-import { CryptoSparkline } from "../CryptoSparkline";
+import { CryptoSparkline } from "../crypto-sparkline";
 
 export type CryptoCardProps = Asset & {
   ref?: React.RefObject<HTMLDivElement>;
