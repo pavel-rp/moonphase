@@ -8,12 +8,18 @@ import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 
 gsap.registerPlugin(DrawSVGPlugin);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withLineDrawAnimation<T extends React.JSXElementConstructor<any>>(
   WrappedComponent: T
 ) {
   type Props = React.ComponentProps<T>;
 
-  return function AnimatedComponent({ className, children, ...props }: Props) {
+  return function AnimatedComponent({ 
+    className, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    children: _children, 
+    ...props 
+  }: Props) {
     const lineRef = useRef<SVGPolylineElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [classNames, setClassNames] = useState(cn("opacity-0", className));
@@ -48,6 +54,7 @@ export function withLineDrawAnimation<T extends React.JSXElementConstructor<any>
     // spread ALL props, including className, data, etc., and pass refs as needed
     return (
       <WrappedComponent
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {...(props as any)}
         className={classNames}
         lineRef={lineRef}

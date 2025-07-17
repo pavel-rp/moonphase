@@ -36,8 +36,8 @@ describe('formatNumber', () => {
   })
 
   it('should handle null and undefined', () => {
-    expect(formatNumber(null as any)).toBe('0')
-    expect(formatNumber(undefined as any)).toBe('0')
+    expect(formatNumber(null)).toBe('0')
+    expect(formatNumber(undefined)).toBe('0')
   })
 
   it('should handle zero', () => {
@@ -57,8 +57,8 @@ describe('formatPercent', () => {
   })
 
   it('should handle null and undefined', () => {
-    expect(formatPercent(null as any)).toBe('0.00%')
-    expect(formatPercent(undefined as any)).toBe('0.00%')
+    expect(formatPercent(null as unknown as number)).toBe('0.00%')
+    expect(formatPercent(undefined as unknown as number)).toBe('0.00%')
   })
 
   it('should handle zero', () => {
