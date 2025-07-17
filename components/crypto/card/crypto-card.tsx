@@ -5,13 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "../../ui/card";
-import {
-  formatNumber,
-  formatPercent,
-} from "@/lib/utils/numbers";
-import { CryptoIcon } from "../CryptoIcon";
+import { formatNumber, formatPercent } from "@/lib/utils/numbers";
+import { CryptoIcon } from "../crypto-icon";
 import { Asset } from "@/lib/data/assets";
-import { CryptoSparkline } from "../CryptoSparkline";
+import { CryptoSparkline } from "../crypto-sparkline";
 
 export type CryptoCardProps = Asset & {
   ref?: React.RefObject<HTMLDivElement>;
@@ -23,7 +20,6 @@ export function CryptoCard({
   priceUsd,
   changePercent24Hr,
   ref,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   ..._unusedProps
 }: CryptoCardProps) {
   const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
@@ -51,13 +47,6 @@ export function CryptoCard({
           <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
         </div>
         <CryptoSparkline symbol={symbol} />
-        {/* <div className="text-sm">
-          <p>Market Cap: ${prettifyNumber(marketCapUsd)}</p>
-          <p>24h Volume: ${prettifyNumber(volumeUsd24Hr)}</p>
-          <p>
-            Supply: {prettifyNumber(supply)} {symbol}
-          </p>
-        </div> */}
       </CardContent>
     </Card>
   );

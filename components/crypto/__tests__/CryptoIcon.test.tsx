@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { CryptoIcon } from '../CryptoIcon'
+import { CryptoIcon } from '../crypto-icon'
 
 // Mock the crypto-icons utility
 jest.mock('@/lib/utils/crypto-icons', () => ({

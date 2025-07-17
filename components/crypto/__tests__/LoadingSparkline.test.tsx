@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import LoadingSparkline from '../LoadingSparkline'
+import LoadingSparkline from '../loading-sparkline'
 
 // Mock the Sparkline component
 jest.mock('../../ui/sparkline', () => ({

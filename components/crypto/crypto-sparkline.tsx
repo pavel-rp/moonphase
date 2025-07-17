@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import LoadingSparkline from "./LoadingSparkline";
+import LoadingSparkline from "./loading-sparkline";
 import { AnimatedSparkline } from "../ui/gsap/animated-sparkline.client";
 import { fetchPrices } from "@/lib/data/prices";
 
