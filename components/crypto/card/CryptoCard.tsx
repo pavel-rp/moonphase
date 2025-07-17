@@ -22,11 +22,9 @@ export function CryptoCard({
   symbol,
   priceUsd,
   changePercent24Hr,
-  marketCapUsd,
-  volumeUsd24Hr,
-  supply,
-  maxSupply,
-  ref
+  ref,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ..._unusedProps
 }: CryptoCardProps) {
   const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
   const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";

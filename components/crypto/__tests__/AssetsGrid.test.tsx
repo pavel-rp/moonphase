@@ -44,36 +44,7 @@ jest.mock('@/lib/data/assets', () => ({
 import { fetchAssets } from '@/lib/data/assets'
 const mockFetchAssets = fetchAssets as jest.MockedFunction<typeof fetchAssets>
 
-const mockAssets: Asset[] = [
-  {
-    id: 'bitcoin',
-    rank: 1,
-    symbol: 'BTC',
-    name: 'Bitcoin',
-    supply: 19000000,
-    maxSupply: 21000000,
-    marketCapUsd: 800000000000,
-    volumeUsd24Hr: 30000000000,
-    priceUsd: 45000,
-    changePercent24Hr: 5.25,
-    vwap24Hr: 44500,
-    explorer: 'https://blockchain.info/',
-  },
-  {
-    id: 'ethereum',
-    rank: 2,
-    symbol: 'ETH',
-    name: 'Ethereum',
-    supply: 120000000,
-    maxSupply: null,
-    marketCapUsd: 400000000000,
-    volumeUsd24Hr: 15000000000,
-    priceUsd: 3200,
-    changePercent24Hr: 2.5,
-    vwap24Hr: 3150,
-    explorer: 'https://etherscan.io/',
-  },
-]
+
 
 describe('AssetsGrid', () => {
   beforeEach(() => {

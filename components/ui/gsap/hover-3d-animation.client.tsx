@@ -17,6 +17,7 @@ interface Hover3DAnimationProps {
   onLeaveDuration?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function withHover3DAnimation<T extends React.JSXElementConstructor<any>>(
   WrappedComponent: T
 ) {
@@ -24,7 +25,8 @@ export function withHover3DAnimation<T extends React.JSXElementConstructor<any>>
 
   return function AnimatedComponent({
     className,
-    children,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    children: _children,
     glowColor,
     defaultBorderColor = "rgba(255,255,255,0.3)",
     perspective = 800,
@@ -110,6 +112,7 @@ export function withHover3DAnimation<T extends React.JSXElementConstructor<any>>
 
     return (
       <WrappedComponent
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {...(props as any)}
         ref={elementRef}
         className={classNames}
