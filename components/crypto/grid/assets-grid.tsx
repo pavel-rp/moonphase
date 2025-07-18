@@ -1,6 +1,6 @@
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Asset, fetchAssets } from "@/lib/data/assets";
-import { CryptoCard } from "../card/crypto-card";
+import { CryptoCardWithEnhancement } from "../card/crypto-card-enhancement.client";
 import { Suspense } from "react";
 import ShimmerGrid from "./loading-grid";
 
@@ -20,7 +20,7 @@ async function AssetsGridContent() {
     <Grid className="w-full max-w-7xl mx-auto">
       {assets.map((asset) => (
         <GridItem span={isFeatured(asset) ? 2 : 1} key={asset.id}>
-          <CryptoCard {...asset} />
+          <CryptoCardWithEnhancement {...asset} />
         </GridItem>
       ))}
     </Grid>
