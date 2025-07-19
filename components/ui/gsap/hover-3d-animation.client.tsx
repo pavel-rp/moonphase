@@ -4,13 +4,16 @@ import { cn } from "@/lib/utils/utils";
 import { useGSAP } from "@gsap/react";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { MotionPathPlugin } from "gsap/MotionPathPlugin";
+
+gsap.registerPlugin(MotionPathPlugin); // Register plugin
 
 interface Hover3DAnimationProps {
   glowColor?: string;
   defaultBorderColor?: string;
   perspective?: number;
   bounceSequence?: Array<{
-    rotateX: number;
+    rotateX: number; // Degrees, not percentage
     duration: number;
     ease: string;
   }>;
@@ -18,30 +21,39 @@ interface Hover3DAnimationProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function withHover3DAnimation<T extends React.JSXElementConstructor<any>>(
-  WrappedComponent: T
-) {
+export function withHover3DAnimation<
+  T extends React.JSXElementConstructor<any>
+>(WrappedComponent: T, props: Hover3DAnimationProps) {
   type Props = React.ComponentProps<T> & Hover3DAnimationProps;
 
   return function AnimatedComponent({
     className,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    children: _children,
-    glowColor,
-    defaultBorderColor = "rgba(255,255,255,0.3)",
-    perspective = 800,
-    bounceSequence = [
-      { rotateX: 14, duration: 0.18, ease: "power2.inOut" },
-      { rotateX: -10, duration: 0.16, ease: "power2.inOut" },
-      { rotateX: 6, duration: 0.1, ease: "power2.inOut" },
-      { rotateX: -3, duration: 0.2, ease: "power2.out" },
-      { rotateX: 0, duration: 0.2, ease: "power2.out" },
+    children,
+    glowColor = props.glowColor,
+    defaultBorderColor = props.defaultBorderColor || "rgba(255,255,255,0.3)",
+    perspective = props.perspective || 800,
+    bounceSequence = props.bounceSequence || [
+      { rotateX: 180, duration: 0.4, ease: "power2.inOut" },
+      { rotateX: -90, duration: 0.3, ease: "power2.inOut" },
+      { rotateX: 45, duration: 0.2, ease: "power2.inOut" },
+      { rotateX: 0, duration: 0.3, ease: "power2.out" },
     ],
-    onLeaveDuration = 0.3,
-    ...props
+    onLeaveDuration = props.onLeaveDuration || 0.3,
+    ...restProps
   }: Props) {
+    console.log(
+      glowColor,
+      defaultBorderColor,
+      perspective,
+      bounceSequence,
+      onLeaveDuration
+    );
+
     const elementRef = useRef<HTMLElement>(null);
-    const [classNames, setClassNames] = useState(cn("hover-3d-animation", className));
+    const [classNames, setClassNames] = useState(
+      cn("hover-3d-animation", className)
+    );
+
     const perspectiveSet = useRef(false);
 
     useEffect(() => {
@@ -53,61 +65,65 @@ export function withHover3DAnimation<T extends React.JSXElementConstructor<any>>
         const el = elementRef.current;
         if (!el) return;
 
-        // Set perspective on first interaction
-        if (!perspectiveSet.current) {
-          gsap.set(el, { transformPerspective: perspective });
-          perspectiveSet.current = true;
-        }
 
-        const onEnter = () => {
-          // Kill any existing animations
-          gsap.killTweensOf(el);
+        // Get the center of the card for rotation origin
+        const cardCenterX = el.offsetWidth / 2;
+        const cardCenterY = el.offsetHeight / 2;
 
-          // Create timeline for bounce animation
-          const tl = gsap.timeline();
+        // Set perspective and 3D styles immediately
+        gsap.set(el, {
+          transformPerspective: perspective,
+        });
 
-          bounceSequence.forEach((step: { rotateX: number; duration: number; ease: string }) => {
-            tl.to(el, {
-              rotateX: step.rotateX,
-              boxShadow: glowColor 
-                ? `0 0 12px ${glowColor}, 0 0 24px rgba(255,255,255,0.25), 0 0 48px rgba(255,255,255,0.15)`
-                : undefined,
-              borderColor: glowColor,
-              duration: step.duration,
-              ease: step.ease,
-            });
+        const onMove = (e: MouseEvent) => {
+          const rotationX = ((e.offsetY - cardCenterY) / cardCenterY) * 20; // Adjust the multiplier for sensitivity
+          const rotationY = ((cardCenterX - e.offsetX) / cardCenterX) * 20; // Adjust the multiplier for sensitivity
+
+          gsap.to(el, {
+            rotationX: rotationX,
+            rotationY: rotationY,
+            transformPerspective: 1000,
+            transformOrigin: "center center",
+            duration: 0.3, // Adjust animation duration
+            ease: "power1.out", // Adjust easing function
           });
         };
 
         const onLeave = () => {
+          el.removeEventListener("mousemove", onMove);
+
           // Kill any existing animations
           gsap.killTweensOf(el);
 
           gsap.to(el, {
             rotateX: 0,
-            boxShadow: "none",
-            borderColor: defaultBorderColor,
             duration: onLeaveDuration,
             ease: "power2.out",
-            onComplete: () => {
-              // Ensure styles are completely reset
-              el.style.boxShadow = "";
-              el.style.borderColor = "";
-            },
           });
+
+          setClassNames(classNames.replace("shadow-glow", ""));
         };
 
-        el.addEventListener("mouseenter", onEnter);
         el.addEventListener("mouseleave", onLeave);
+        el.addEventListener("mousemove", onMove);
 
         // Cleanup function
         return () => {
-          el.removeEventListener("mouseenter", onEnter);
+          el.removeEventListener("mousemove", onMove);
           el.removeEventListener("mouseleave", onLeave);
           gsap.killTweensOf(el);
         };
       },
-      { scope: elementRef, dependencies: [glowColor, defaultBorderColor, perspective, bounceSequence, onLeaveDuration] }
+      {
+        scope: elementRef,
+        dependencies: [
+          glowColor,
+          defaultBorderColor,
+          perspective,
+          bounceSequence,
+          onLeaveDuration,
+        ],
+      }
     );
 
     return (
@@ -116,7 +132,9 @@ export function withHover3DAnimation<T extends React.JSXElementConstructor<any>>
         {...(props as any)}
         ref={elementRef}
         className={classNames}
-      />
+      >
+        {children}
+      </WrappedComponent>
     );
   };
-} 
+}

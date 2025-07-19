@@ -16,8 +16,6 @@ export function withLineDrawAnimation<T extends React.JSXElementConstructor<any>
 
   return function AnimatedComponent({ 
     className, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    children: _children, 
     ...props 
   }: Props) {
     const lineRef = useRef<SVGPolylineElement>(null);

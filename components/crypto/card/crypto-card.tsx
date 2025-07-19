@@ -1,53 +1,60 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../../ui/card";
-import { formatNumber, formatPercent } from "@/lib/utils/numbers";
-import { CryptoIcon } from "../crypto-icon";
+"use client";
+
+import { Card } from "../../ui/card";
 import { Asset } from "@/lib/data/assets";
-import { CryptoSparkline } from "../crypto-sparkline";
+import { cn } from "@/lib/utils/utils";
 
-export type CryptoCardProps = Asset & {
-  ref?: React.RefObject<HTMLDivElement>;
-};
+type CryptoCardProps = {
+  ref?: React.Ref<HTMLDivElement>;
+  children: React.ReactNode;
+  className?: string;
+  // HOC-specific props that can be injected
+  glowColor?: string;
+  defaultBorderColor?: string;
+  perspective?: number;
+  bounceSequence?: Array<{
+    rotateX: number;
+    duration: number;
+    ease: string;
+  }>;
+  onLeaveDuration?: number;
+} & Asset;
 
-export function CryptoCard({
-  name,
-  symbol,
-  priceUsd,
+function CryptoCardBase({
   changePercent24Hr,
+  children,
   ref,
-  ..._unusedProps
+  className,
 }: CryptoCardProps) {
-  const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
-  const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
+  const glowColor = changePercent24Hr >= 0 ? "green" : "red";
+
+  const classNames = cn(
+    className,
+    "glassmorphic hover:shadow-glow",
+    "hover:shadow-glow",
+    "select-none",
+    "cursor-pointer"
+  );
+
+  console.log(classNames);
+
   return (
     <Card
       ref={ref}
-      className="glassmorphic crypto-card"
+      className={classNames}
       data-change-positive={changePercent24Hr >= 0}
+      style={
+        {
+          ["--tw-glow-color" as any]:
+            changePercent24Hr >= 0
+              ? "var(--color-green-300)"
+              : "var(--color-red-300)",
+        } as React.CSSProperties
+      }
     >
-      <CardHeader className="flex items-start justify-between">
-        <div className="flex flex-col">
-          <CardTitle>{name}</CardTitle>
-          <CardDescription>{symbol}</CardDescription>
-        </div>
-        <CryptoIcon symbol={symbol} size={30} name={name} />
-      </CardHeader>
-      <CardContent className="flex flex-col items-start gap-4">
-        <div
-          className={`flex w-full items-center justify-between ${shadowClass} ${colorClass}`}
-        >
-          <span className={`text-2xl font-bold ${shadowClass} ${colorClass}`}>
-            ${formatNumber(priceUsd)}
-          </span>
-          <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
-        </div>
-        <CryptoSparkline symbol={symbol} />
-      </CardContent>
+      {children}
     </Card>
   );
 }
+
+export const CryptoCard = CryptoCardBase;
