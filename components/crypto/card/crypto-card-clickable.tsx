@@ -5,14 +5,16 @@ import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
 import { Asset } from "@/lib/data/assets";
 import { getPriceMovementColorVar } from "@/lib/utils/ui-helpers";
 
-interface CryptoCardClickableProps extends Asset {
+interface CryptoCardClickableProps {
+  symbol: string;
+  changePercent24Hr: number;
   children: React.ReactNode;
 }
 
-export default function CryptoCardClickable({ 
-  symbol, 
-  changePercent24Hr, 
-  children
+export default function CryptoCardClickable({
+  symbol,
+  changePercent24Hr,
+  children,
 }: CryptoCardClickableProps) {
   const router = useRouter();
 
