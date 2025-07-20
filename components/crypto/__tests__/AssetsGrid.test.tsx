@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import AssetsGrid, { AssetsGridContent } from "../grid/assets-grid";
-import { Asset } from "@/lib/data/assets";
 
 // Mock the child components
 jest.mock("../card/crypto-card-clickable", () => {
