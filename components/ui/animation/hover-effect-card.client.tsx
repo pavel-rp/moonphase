@@ -63,7 +63,7 @@ export function HoverEffectCard({
     ["--tw-glow-color" as any]: glowColor,
   } as React.CSSProperties;
 
-  console.log("glowColorVarStyle", glowColorVarStyle);
+  // Removed debug logging for production code.
 
   return (
     <motion.div
