@@ -12,7 +12,7 @@ jest.mock("../../ui/animation/hover-effect-card.client", () => ({
   ),
 }));
 
-jest.mock("../../ui/loading-card", () => ({
+jest.mock("../../ui/shimmer-card", () => ({
   __esModule: true,
   default: () => <div data-testid="loading-card">Loading...</div>,
 }));

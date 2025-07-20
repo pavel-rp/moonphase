@@ -20,7 +20,7 @@ export default async function CryptoCardContent({
   const textColorClass = getPriceMovementTextColorClass(changePercent24Hr, 700);
 
   return (
-    <>
+    <div className="transform-3d transform-gpu translate-z-4 flex flex-col gap-4">
       <CardHeader className="flex items-start justify-between">
         <div className="flex flex-col">
           <CardTitle>{name}</CardTitle>
@@ -41,6 +41,6 @@ export default async function CryptoCardContent({
         </div>
         <CryptoSparkline symbol={symbol} />
       </CardContent>
-    </>
+    </div>
   );
 }

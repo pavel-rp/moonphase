@@ -1,7 +1,7 @@
 import { Grid, GridItem } from "@/components/ui/grid";
 import { Asset, fetchAssets } from "@/lib/data/assets";
 import { Suspense } from "react";
-import ShimmerGrid from "./loading-grid";
+import ShimmerGrid from "../../ui/shimmer-grid";
 import CryptoCardContent from "../card/crypto-card-content";
 import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
 import { getPriceMovementColorVar } from "@/lib/utils/ui-helpers";

@@ -5,6 +5,12 @@
 @tailwind utilities;
 @custom-variant dark (&:is(.dark *));
 
+@source inline(
+  "var(--color-red-300)", 
+  "var(--color-green-300)", 
+  "var(--color-white-300)"
+);
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

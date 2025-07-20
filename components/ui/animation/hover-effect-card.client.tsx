@@ -84,13 +84,12 @@ export function HoverEffectCard({
           "select-none",
           "cursor-pointer",
           "transform-3d",
-          "transform-gpu"
+          "transform-gpu",
+          "min-h-[202px]"
         )}
         style={glowColorVarStyle}
       >
-        <div className="transform-3d transform-gpu translate-z-4">
-          {children}
-        </div>
+        {children}
       </Card>
       <div
         className="absolute border-2 border-(--tw-glow-color) opacity-80 inset-0 rounded-xl translate-z-0"

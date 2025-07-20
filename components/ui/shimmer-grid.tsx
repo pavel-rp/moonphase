@@ -1,13 +1,13 @@
 import { GridItem } from "@/components/ui/grid";
 import { Grid } from "@/components/ui/grid";
-import LoadingCard from "../../ui/loading-card";
+import ShimmerCard from "./shimmer-card";
 
 export default function ShimmerGrid({ size }: { size: number }) {
   return (
     <Grid className="w-full max-w-7xl mx-auto">
       {Array.from({ length: size }, (_, i) => i).map((i) => (
         <GridItem span={i === 0 ? 2 : 1} key={i}>
-          <LoadingCard />
+          <ShimmerCard />
         </GridItem>
       ))}
     </Grid>

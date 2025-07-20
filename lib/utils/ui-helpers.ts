@@ -1,17 +1,8 @@
-export type TwColorVariation =
-  | 50
-  | 100
-  | 200
-  | 300
-  | 400
-  | 500
-  | 600
-  | 700
-  | 800
-  | 900
-  | 950;
+// NOTE: if you add a new color, you need to add it to the globals.css @source inline()
+export type TwColorVariation = 300 | 700;
+export type TwColor = "red" | "green" | "white";
 
-const getPriceMovementColor = (priceChange: number): string => {
+const getPriceMovementColor = (priceChange: number): TwColor => {
   if (priceChange === 0) {
     return "white";
   }
