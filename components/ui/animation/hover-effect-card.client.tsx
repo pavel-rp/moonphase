@@ -59,9 +59,9 @@ export function HoverEffectCard({
     y.set(0);
   };
 
-  const glowColorVarStyle = {
-    ["--tw-glow-color" as any]: glowColor,
-  } as React.CSSProperties;
+  const glowColorVarStyle: React.CSSProperties & { "--tw-glow-color": string } = {
+    "--tw-glow-color": glowColor,
+  };
 
   // Removed debug logging for production code.
 
