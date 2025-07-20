@@ -76,7 +76,6 @@ export function HoverEffectCard({
       }}
     >
       <Card
-        ref={ref}
         className={cn(
           className,
           "glassmorphic",
