@@ -1,20 +1,34 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import AssetsGrid from "../grid/assets-grid";
+import AssetsGrid, { AssetsGridContent } from "../grid/assets-grid";
 import { Asset } from "@/lib/data/assets";
 
 // Mock the child components
-jest.mock("../../ui/animation/hover-effect-card.client", () => ({
-  HoverEffectCard: (props: HoverEffectCardProps) => (
-    <div data-testid="crypto-card">
-      {props.children}
-    </div>
-  ),
-}));
+jest.mock("../card/crypto-card-clickable", () => {
+  return function MockCryptoCardClickable({ children }: { children: React.ReactNode }) {
+    return (
+      <div data-testid="crypto-card-clickable">
+        {children}
+      </div>
+    );
+  };
+});
 
-jest.mock("../../ui/shimmer-card", () => ({
+jest.mock("../card/crypto-card-content", () => {
+  return function MockCryptoCardContent({ symbol, name }: { symbol: string; name: string }) {
+    return (
+      <div data-testid="crypto-card-content">
+        {name} ({symbol})
+      </div>
+    );
+  };
+});
+
+jest.mock("../../ui/shimmer-grid", () => ({
   __esModule: true,
-  default: () => <div data-testid="loading-card">Loading...</div>,
+  default: ({ size }: { size: number }) => (
+    <div data-testid="shimmer-grid" data-size={size}>Loading...</div>
+  ),
 }));
 
 jest.mock("@/components/ui/grid", () => ({
@@ -48,7 +62,6 @@ jest.mock("@/lib/data/assets", () => ({
 }));
 
 import { fetchAssets } from "@/lib/data/assets";
-import { HoverEffectCardProps } from "@/components/ui/animation/hover-effect-card.client";
 const mockFetchAssets = fetchAssets as jest.MockedFunction<typeof fetchAssets>;
 
 describe("AssetsGrid", () => {
@@ -59,11 +72,26 @@ describe("AssetsGrid", () => {
   it("should handle empty assets array", async () => {
     mockFetchAssets.mockResolvedValue([]);
 
-    const AssetsGridComponent = await AssetsGrid();
-    render(AssetsGridComponent);
+    const component = await AssetsGridContent();
+    render(component);
 
-    // Should render grid but no cards
+    // Should render grid but no cards  
     expect(screen.getByTestId("grid")).toBeInTheDocument();
-    expect(screen.queryByTestId("crypto-card")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("crypto-card-clickable")).not.toBeInTheDocument();
+  });
+
+  it("should render shimmer grid when loading", () => {
+    // This test checks the Suspense fallback behavior
+    render(<AssetsGrid />);
+    
+    expect(screen.getByTestId("shimmer-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("shimmer-grid")).toHaveAttribute("data-size", "15");
+  });
+
+  it("should render main structure", () => {
+    render(<AssetsGrid />);
+    
+    // Should render the main container
+    expect(screen.getByTestId("shimmer-grid")).toBeInTheDocument();
   });
 });

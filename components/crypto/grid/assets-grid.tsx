@@ -13,7 +13,7 @@ export default function AssetsGrid() {
   );
 }
 
-async function AssetsGridContent() {
+export async function AssetsGridContent() {
   try {
     const assets = await fetchAssets();
     const isFeatured = (asset: Asset) => asset.symbol === "BTC";
