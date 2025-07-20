@@ -1,3 +1,4 @@
+import { sleep } from "../utils/sleep";
 
 export interface Asset {
   id: string;
@@ -15,22 +16,34 @@ export interface Asset {
 }
 
 export async function fetchAssets(): Promise<Array<Asset>> {
-  const url = `https://rest.coincap.io/v3/assets?limit=15&offset=0&apiKey=${process.env.COINCAP_API_KEY}`;
-  const res = await fetch(url, { next: { revalidate: 60 } });
-  if (!res.ok) {
-    throw new Error(`API error ${res.status}`);
-  }
+  try {
+    const url = `https://rest.coincap.io/v3/assets?limit=15&offset=0&apiKey=${process.env.COINCAP_API_KEY}`;
+    console.log("Fetching assets from:", url);
+    
+    const res = await fetch(url, { next: { revalidate: 60 } });
+    console.log("Response status:", res.status);
+    
+    if (!res.ok) {
+      throw new Error(`API error ${res.status}`);
+    }
 
-  const { data: assets } = await res.json();
-  
-  return assets.map((asset: Asset) => ({
-    ...asset,
-    supply: Number(asset.supply),
-    maxSupply: asset.maxSupply ? Number(asset.maxSupply) : null,
-    marketCapUsd: Number(asset.marketCapUsd),
-    volumeUsd24Hr: Number(asset.volumeUsd24Hr),
-    priceUsd: Number(asset.priceUsd),
-    changePercent24Hr: Number(asset.changePercent24Hr),
-    vwap24Hr: Number(asset.vwap24Hr),
-  }));
+    const { data: assets } = await res.json();
+    console.log("Fetched assets:", assets?.length || 0);
+
+    await sleep(1000);
+    
+    return assets.map((asset: Asset) => ({
+      ...asset,
+      supply: Number(asset.supply),
+      maxSupply: asset.maxSupply ? Number(asset.maxSupply) : null,
+      marketCapUsd: Number(asset.marketCapUsd),
+      volumeUsd24Hr: Number(asset.volumeUsd24Hr),
+      priceUsd: Number(asset.priceUsd),
+      changePercent24Hr: Number(asset.changePercent24Hr),
+      vwap24Hr: Number(asset.vwap24Hr),
+    }));
+  } catch (error) {
+    console.error("Error fetching assets:", error);
+    throw error;
+  }
 }

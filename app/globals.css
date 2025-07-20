@@ -1,9 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "tailwindcss/theme.css" layer(theme);
 
 @tailwind utilities;
-
 @custom-variant dark (&:is(.dark *));
+
+@source inline(
+  "var(--color-red-300)", 
+  "var(--color-green-300)", 
+  "var(--color-white-300)"
+);
 
 @theme inline {
   --color-background: var(--background);
@@ -116,9 +122,9 @@
 
 @layer base {
   html {
-    --s: 94px; /* control the size*/
-    --c1: #adadad;
-    --c2: #b8b8b8;
+    --s: 100px; /* control the size*/
+    --c1: #424141;
+    --c2: #979797;
 
     background: radial-gradient(
         var(--c1) 14%,
@@ -137,24 +143,33 @@
   border: 2px outset rgba(255, 255, 255, 0.3);
 }
 
-@layer utilities {
-  .glassmorphic {
-    @apply backdrop-blur-sm border-outset shadow-xl/26 transition-shadow duration-200 
-          bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
-  }
-  .glassmorphic::before {
-    content: "";
-    @apply absolute inset-0 pointer-events-none
-           bg-[url("/noise.png")] bg-repeat
-           mix-blend-overlay opacity-1;
-  }
+@utility shadow-glow {
+  @apply shadow-xl/26;
+  --tw-glow-color: rgba(52, 253, 0, 0.5);
+  border-color: var(--tw-glow-color);
+  box-shadow: var(--tw-shadow), inset 0 0 20px 0 var(--tw-glow-color);
 }
 
-@keyframes rotate-ice {
-  from {
-    transform: rotate(0deg);
+@utility glassmorphic {
+  @apply border-outset shadow-xl/26 transition-all duration-200 translate-z-2 transform-3d
+          bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
+}
+
+@layer utilities {
+  .glassmorphic {
+    @apply glassmorphic;
   }
-  to {
-    transform: rotate(360deg);
+
+  .glassmorphic::before {
+    content: "";
+    @apply absolute bg-white/20 inset-0 border-0 backdrop-blur-sm rounded-xl translate-z-0;
+  }
+
+  .border-outset {
+    @apply border-outset;
+  }
+
+  .hover\:shadow-glow:hover {
+    @apply shadow-glow;
   }
 }
