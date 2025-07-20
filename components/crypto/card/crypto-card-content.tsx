@@ -8,6 +8,7 @@ import { Asset } from "@/lib/data/assets";
 import { CryptoIcon } from "../crypto-icon";
 import { CryptoSparkline } from "../crypto-sparkline";
 import { formatNumber, formatPercent } from "@/lib/utils/numbers";
+import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 
 export default async function CryptoCardContent({
   name,
@@ -15,8 +16,8 @@ export default async function CryptoCardContent({
   priceUsd,
   changePercent24Hr,
 }: Asset) {
-  const colorClass = changePercent24Hr >= 0 ? "text-green-700" : "text-red-700";
-  const shadowClass = "text-shadow-[0_0_10px_rgb(255_255_255_/_0.5)]";
+  const glowClass = "text-shadow-[0_0_20px_var(--tw-glow-color)]";
+  const textColorClass = getPriceMovementTextColorClass(changePercent24Hr, 700);
 
   return (
     <>
@@ -29,12 +30,14 @@ export default async function CryptoCardContent({
       </CardHeader>
       <CardContent className="flex flex-col items-start gap-4">
         <div
-          className={`flex w-full items-center justify-between ${shadowClass} ${colorClass}`}
+          className={`flex w-full items-center justify-between ${textColorClass}`}
         >
-          <span className={`text-2xl font-bold ${shadowClass} ${colorClass}`}>
+          <span className={`text-2xl font-bold ${glowClass}`}>
             ${formatNumber(priceUsd)}
           </span>
-          <span className="text-sm">{formatPercent(changePercent24Hr)}</span>
+          <span className={`text-sm ${glowClass}`}>
+            {formatPercent(changePercent24Hr)}
+          </span>
         </div>
         <CryptoSparkline symbol={symbol} />
       </CardContent>

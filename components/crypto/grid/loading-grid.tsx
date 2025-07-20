@@ -1,6 +1,6 @@
 import { GridItem } from "@/components/ui/grid";
 import { Grid } from "@/components/ui/grid";
-import LoadingCard from "../card/loading-card";
+import LoadingCard from "../../ui/loading-card";
 
 export default function ShimmerGrid({ size }: { size: number }) {
   return (

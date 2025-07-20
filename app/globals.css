@@ -1,8 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "tailwindcss/theme.css" layer(theme);
 
 @tailwind utilities;
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -116,9 +116,9 @@
 
 @layer base {
   html {
-    --s: 94px; /* control the size*/
-    --c1: #adadad;
-    --c2: #b8b8b8;
+    --s: 100px; /* control the size*/
+    --c1: #424141;
+    --c2: #979797;
 
     background: radial-gradient(
         var(--c1) 14%,
@@ -145,23 +145,20 @@
 }
 
 @utility glassmorphic {
-  @apply backdrop-blur-sm border-outset shadow-xl/26 transition-all duration-200 
+  @apply border-outset shadow-xl/26 transition-all duration-200 translate-z-2 transform-3d
           bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
 }
-
-
 
 @layer utilities {
   .glassmorphic {
     @apply glassmorphic;
-
-    &::before {
-      @apply absolute inset-0 pointer-events-none
-           bg-[url("/noise.png")] bg-repeat
-           mix-blend-overlay opacity-2;
-    }
   }
- 
+
+  .glassmorphic::before {
+    content: "";
+    @apply absolute bg-white/20 inset-0 border-0 backdrop-blur-sm rounded-xl translate-z-0;
+  }
+
   .border-outset {
     @apply border-outset;
   }

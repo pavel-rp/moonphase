@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import LoadingSparkline from "../loading-sparkline";
+import LoadingSparkline from "../crypto/loading-sparkline";
 
 export default function LoadingCard() {
   return (

@@ -1,3 +1,4 @@
+import { sleep } from "../utils/sleep";
 
 export interface Asset {
   id: string;
@@ -28,6 +29,8 @@ export async function fetchAssets(): Promise<Array<Asset>> {
 
     const { data: assets } = await res.json();
     console.log("Fetched assets:", assets?.length || 0);
+
+    await sleep(3000);
     
     return assets.map((asset: Asset) => ({
       ...asset,

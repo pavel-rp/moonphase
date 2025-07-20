@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import LoadingSparkline from "./loading-sparkline";
-import { AnimatedSparkline } from "../ui/gsap/animated-sparkline.client";
+import { AnimatedSparkline } from "../ui/animation/animated-sparkline.client";
 import { fetchPrices } from "@/lib/data/prices";
 
 async function CryptoSparklineLoader({ symbol }: { symbol: string }) {

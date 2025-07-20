@@ -30,7 +30,7 @@ jest.mock('gsap/MotionPathPlugin', () => ({ __esModule: true }))
 jest.mock('@gsap/react', () => ({ __esModule: true, useGSAP: () => {} }))
 
 // Mock the animated sparkline client component used in CryptoSparkline
-jest.mock('@/components/ui/gsap/animated-sparkline.client', () => ({
+jest.mock('@/components/ui/animation/animated-sparkline.client', () => ({
   __esModule: true,
   AnimatedSparkline: ({ data, className }) => (
     <div data-testid="animated-sparkline" data-color={className}>
