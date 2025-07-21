@@ -48,7 +48,7 @@ interface LayoutTransitionProps {
   initial?: boolean | TargetAndTransition | VariantLabels;
   animate?: TargetAndTransition | VariantLabels;
   exit?: TargetAndTransition | VariantLabels;
-  transition?: object;
+  transition?: Transition;
 }
 
 export function LayoutTransition({
