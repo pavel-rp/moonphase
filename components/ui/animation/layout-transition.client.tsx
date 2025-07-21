@@ -4,6 +4,7 @@ import {
   AnimatePresence,
   motion,
   TargetAndTransition,
+  Transition,
   VariantLabels,
 } from "motion/react";
 import { useSelectedLayoutSegment } from "next/navigation";
