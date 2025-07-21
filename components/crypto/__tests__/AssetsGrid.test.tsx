@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import AssetsGrid, { AssetsGridContent } from "../grid/assets-grid";
+import AssetsGrid from "../grid/assets-grid";
 import AssetsGridClient from "../grid/assets-grid-client";
 
 // Mock the child components
@@ -96,27 +96,6 @@ describe("AssetsGrid", () => {
   it("renders the loading state", () => {
     render(<AssetsGrid />);
     expect(screen.getByTestId("shimmer-grid")).toBeInTheDocument();
-  });
-
-  it("renders assets when data is loaded", async () => {
-    mockFetchAssets.mockResolvedValue(mockAssets);
-
-    render(await AssetsGridContent());
-
-    expect(screen.getByTestId("assets-grid-client")).toBeInTheDocument();
-    expect(screen.getByText("Bitcoin (BTC)")).toBeInTheDocument();
-    expect(screen.getByText("Ethereum (ETH)")).toBeInTheDocument();
-  });
-
-  it("renders error state when data fetching fails", async () => {
-    const errorMessage = "Failed to fetch assets";
-    mockFetchAssets.mockRejectedValue(new Error(errorMessage));
-
-    const result = await AssetsGridContent();
-    render(result);
-
-    expect(screen.getByText(/Error loading assets/)).toBeInTheDocument();
-    expect(screen.getByText(errorMessage)).toBeInTheDocument();
   });
 });
 

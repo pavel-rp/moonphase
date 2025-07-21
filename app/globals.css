@@ -1,15 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "tailwindcss/theme.css" layer(theme);
 
 @tailwind utilities;
 @custom-variant dark (&:is(.dark *));
 
-@source inline(
-  "var(--color-red-300)", 
-  "var(--color-green-300)", 
-  "var(--color-white-300)"
-);
+@source inline("var(--color-red-300)", "var(--color-green-300)", "var(--color-white-300)");
 
 @theme inline {
   --color-background: var(--background);
@@ -160,9 +155,9 @@
     @apply glassmorphic;
   }
 
-  .glassmorphic::before {
+  .glassmorphic::after {
     content: "";
-    @apply absolute bg-white/20 inset-0 border-0 backdrop-blur-sm rounded-xl translate-z-0;
+    @apply absolute bg-white/20 inset-0 border-0 backdrop-blur-sm rounded-xl -z-1;
   }
 
   .border-outset {

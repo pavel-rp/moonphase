@@ -1,5 +1,3 @@
-"use client";
-
 import {
   CardContent,
   CardDescription,
@@ -8,9 +6,9 @@ import {
 } from "@/components/ui/card";
 import { Asset } from "@/lib/data/assets";
 import { CryptoIcon } from "../crypto-icon";
-import { CryptoSparklineClient } from "../crypto-sparkline-client";
 import { formatNumber, formatPercent } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
+import { CryptoSparkline } from "../crypto-sparkline";
 
 export default function CryptoCardContent({
   name,
@@ -42,7 +40,7 @@ export default function CryptoCardContent({
           </span>
         </div>
         <div className="w-full">
-          <CryptoSparklineClient symbol={symbol} />
+          <CryptoSparkline symbol={symbol} />
         </div>
       </CardContent>
     </div>
