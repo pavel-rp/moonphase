@@ -12,7 +12,7 @@ import { CryptoSparkline } from "../crypto-sparkline";
 import { formatNumber, formatPercent } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import { motion } from "motion/react";
-import { getSharedLayoutId } from "@/components/ui/animation/page-transition.client";
+import { getSharedLayoutId, elementTransitionVariants } from "@/components/ui/animation/page-transition.client";
 
 export default function CryptoCardContentAnimated({
   name,
@@ -27,15 +27,24 @@ export default function CryptoCardContentAnimated({
     <div className="transform-3d transform-gpu translate-z-4 flex flex-col gap-4">
       <CardHeader className="flex items-start justify-between">
         <div className="flex flex-col">
-          <motion.div layoutId={getSharedLayoutId(symbol, "title")}>
+          <motion.div 
+            layoutId={getSharedLayoutId(symbol, "title")}
+            animate="card"
+            variants={elementTransitionVariants.title}
+          >
             <CardTitle>{name}</CardTitle>
           </motion.div>
-          <motion.div layoutId={getSharedLayoutId(symbol, "symbol")}>
+          <motion.div 
+            layoutId={getSharedLayoutId(symbol, "symbol")}
+            className="mt-1"
+          >
             <CardDescription>{symbol}</CardDescription>
           </motion.div>
         </div>
         <motion.div 
           layoutId={getSharedLayoutId(symbol, "icon")}
+          animate="small"
+          variants={elementTransitionVariants.icon}
           className="flex-shrink-0"
         >
           <CryptoIcon symbol={symbol} size={30} name={name} />
@@ -47,13 +56,17 @@ export default function CryptoCardContentAnimated({
         >
           <motion.span 
             layoutId={getSharedLayoutId(symbol, "price")}
-            className={`text-2xl font-bold ${glowClass}`}
+            animate="card"
+            variants={elementTransitionVariants.price}
+            className={`font-bold ${glowClass}`}
           >
             ${formatNumber(priceUsd)}
           </motion.span>
           <motion.span 
             layoutId={getSharedLayoutId(symbol, "change")}
-            className={`text-sm ${glowClass}`}
+            animate="card"
+            variants={elementTransitionVariants.change}
+            className={`${glowClass}`}
           >
             {formatPercent(changePercent24Hr)}
           </motion.span>

@@ -2,7 +2,7 @@ import { Grid, GridItem } from "@/components/ui/grid";
 import { Asset, fetchAssets } from "@/lib/data/assets";
 import { Suspense } from "react";
 import ShimmerGrid from "../../ui/shimmer-grid";
-import CryptoCardContent from "../card/crypto-card-content";
+import CryptoCardContentAnimated from "../card/crypto-card-content-animated";
 import CryptoCardClickable from "../card/crypto-card-clickable";
 
 export default function AssetsGrid() {
@@ -23,7 +23,7 @@ export async function AssetsGridContent() {
         {assets.map((asset) => (
           <GridItem span={isFeatured(asset) ? 2 : 1} key={asset.id}>
             <CryptoCardClickable {...asset}>
-              <CryptoCardContent {...asset} />
+              <CryptoCardContentAnimated {...asset} />
             </CryptoCardClickable>
           </GridItem>
         ))}

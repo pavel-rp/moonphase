@@ -28,8 +28,6 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Client-side progressive enhancement for crypto card hover interactions */}
-        {/* <CryptoCardsHoverEffect /> */}
         <PageTransition>
           {children}
         </PageTransition>
