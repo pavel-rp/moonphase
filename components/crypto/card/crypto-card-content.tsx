@@ -6,11 +6,11 @@ import {
 } from "@/components/ui/card";
 import { Asset } from "@/lib/data/assets";
 import { CryptoIcon } from "../crypto-icon";
-import { CryptoSparkline } from "../crypto-sparkline";
+import { CryptoSparklineClient } from "../crypto-sparkline-client";
 import { formatNumber, formatPercent } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 
-export default async function CryptoCardContent({
+export default function CryptoCardContent({
   name,
   symbol,
   priceUsd,
@@ -39,7 +39,9 @@ export default async function CryptoCardContent({
             {formatPercent(changePercent24Hr)}
           </span>
         </div>
-        <CryptoSparkline symbol={symbol} />
+        <div className="w-full">
+          <CryptoSparklineClient symbol={symbol} />
+        </div>
       </CardContent>
     </div>
   );
