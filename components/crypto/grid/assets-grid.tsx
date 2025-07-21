@@ -3,8 +3,7 @@ import { Asset, fetchAssets } from "@/lib/data/assets";
 import { Suspense } from "react";
 import ShimmerGrid from "../../ui/shimmer-grid";
 import CryptoCardContent from "../card/crypto-card-content";
-import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
-import { getPriceMovementColorVar } from "@/lib/utils/ui-helpers";
+import CryptoCardClickable from "../card/crypto-card-clickable";
 
 export default function AssetsGrid() {
   return (
@@ -23,12 +22,9 @@ async function AssetsGridContent() {
       <Grid className="w-full max-w-7xl mx-auto">
         {assets.map((asset) => (
           <GridItem span={isFeatured(asset) ? 2 : 1} key={asset.id}>
-            <HoverEffectCard
-              glowColor={getPriceMovementColorVar(asset.changePercent24Hr, 300)}
-              {...asset}
-            >
+            <CryptoCardClickable {...asset}>
               <CryptoCardContent {...asset} />
-            </HoverEffectCard>
+            </CryptoCardClickable>
           </GridItem>
         ))}
       </Grid>

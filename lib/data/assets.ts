@@ -29,8 +29,6 @@ export async function fetchAssets(): Promise<Array<Asset>> {
 
     const { data: assets } = await res.json();
     console.log("Fetched assets:", assets?.length || 0);
-
-    await sleep(1000);
     
     return assets.map((asset: Asset) => ({
       ...asset,
