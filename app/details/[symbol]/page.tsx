@@ -28,7 +28,7 @@ async function getAssetBySymbol(symbol: string): Promise<Asset | null> {
       (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()
     ) || null;
   } catch (error) {
-    console.error("Error fetching asset:", error);
+    console.error(`Error fetching asset for symbol "${symbol}":`, error);
     return null;
   }
 }
