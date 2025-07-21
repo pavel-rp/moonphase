@@ -1,9 +1,7 @@
-import { Grid, GridItem } from "@/components/ui/grid";
-import { Asset, fetchAssets } from "@/lib/data/assets";
+import { fetchAssets } from "@/lib/data/assets";
 import { Suspense } from "react";
 import ShimmerGrid from "../../ui/shimmer-grid";
-import CryptoCardContent from "../card/crypto-card-content";
-import CryptoCardClickable from "../card/crypto-card-clickable";
+import AssetsGridClient from "./assets-grid-client";
 
 export default function AssetsGrid() {
   return (
@@ -16,19 +14,8 @@ export default function AssetsGrid() {
 export async function AssetsGridContent() {
   try {
     const assets = await fetchAssets();
-    const isFeatured = (asset: Asset) => asset.symbol === "BTC";
 
-    return (
-      <Grid className="w-full max-w-7xl mx-auto">
-        {assets.map((asset) => (
-          <GridItem span={isFeatured(asset) ? 2 : 1} key={asset.id}>
-            <CryptoCardClickable {...asset}>
-              <CryptoCardContent {...asset} />
-            </CryptoCardClickable>
-          </GridItem>
-        ))}
-      </Grid>
-    );
+    return <AssetsGridClient assets={assets} />;
   } catch (error) {
     console.error("Error in AssetsGridContent:", error);
     return (
