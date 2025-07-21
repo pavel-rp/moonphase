@@ -3,8 +3,6 @@
 import { useRouter } from "next/navigation";
 import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
 import { getPriceMovementColorVar } from "@/lib/utils/ui-helpers";
-import { motion } from "motion/react";
-import { getSharedLayoutId, cardTransitionVariants } from "@/components/ui/animation/page-transition.client";
 
 interface CryptoCardClickableProps {
   symbol: string;
@@ -24,20 +22,11 @@ export default function CryptoCardClickable({
   };
 
   return (
-    <motion.div 
-      layoutId={getSharedLayoutId(symbol, "card")}
-      variants={cardTransitionVariants}
-      initial="initial"
-      whileHover="hover"
-      whileTap="tap"
-      style={{ cursor: "pointer" }}
+    <HoverEffectCard
+      glowColor={getPriceMovementColorVar(changePercent24Hr, 300)}
       onClick={handleCardClick}
     >
-      <HoverEffectCard
-        glowColor={getPriceMovementColorVar(changePercent24Hr, 300)}
-      >
-        {children}
-      </HoverEffectCard>
-    </motion.div>
+      {children}
+    </HoverEffectCard>
   );
 }
