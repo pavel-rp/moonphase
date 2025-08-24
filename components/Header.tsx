@@ -1,6 +1,4 @@
-"use client";
-
-import React, { ReactNode, useMemo } from "react";
+import React, { ReactNode } from "react";
 
 export type HeaderLink = { href: string; label: string };
 
@@ -16,12 +14,6 @@ const defaultLinks: HeaderLink[] = [
 ];
 
 export function Header({ links = defaultLinks, activePath, logo }: HeaderProps) {
-  const computedPath = useMemo(() => {
-    if (activePath) return activePath;
-    if (typeof window !== "undefined") return window.location.pathname;
-    return undefined;
-  }, [activePath]);
-
   const Logo = (
     <div className="pointer-events-auto rounded-full bg-zinc-900/50 ring-1 ring-white/10 backdrop-blur-md text-zinc-100 shadow-sm h-8 w-8 flex items-center justify-center text-sm font-semibold">
       {logo ?? <span>N</span>}
@@ -36,7 +28,7 @@ export function Header({ links = defaultLinks, activePath, logo }: HeaderProps) 
           <nav className="pointer-events-auto">
             <ul className="flex items-center gap-2">
               {links.map((link) => {
-                const isActive = computedPath === link.href || (link.href !== "/" && computedPath?.startsWith(link.href));
+                const isActive = !!activePath && (activePath === link.href || (link.href !== "/" && activePath.startsWith(link.href)));
                 return (
                   <li key={link.href}>
                     <a
