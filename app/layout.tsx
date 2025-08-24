@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { LayoutTransition } from "@/components/ui/animation/layout-transition.client";
 import Header from "@/components/Header";
 import { headers } from "next/headers";
 
@@ -53,9 +52,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header activePath={activePath} />
-        <LayoutTransition>
-          {children}
-        </LayoutTransition>
+        {children}
       </body>
     </html>
   );
