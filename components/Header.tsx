@@ -22,8 +22,12 @@ export function Header({ links = defaultLinks, activePath, logo }: HeaderProps) 
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 pointer-events-none">
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-zinc-900/15 to-transparent dark:from-zinc-900/30 backdrop-blur-sm"
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+        <div className="relative z-10 flex h-16 items-center justify-between">
           {Logo}
           <nav className="pointer-events-auto">
             <ul className="flex items-center gap-2">
