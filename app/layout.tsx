@@ -30,7 +30,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header logo={<Image src="/logo.svg" alt="CryptoDashboard" width={36} height={36} />} />
+        <Header logo={<Image src="/logo.svg" alt="MoonPhase" width={36} height={36} />} />
         {children}
         <ParallaxBg />
       </body>
