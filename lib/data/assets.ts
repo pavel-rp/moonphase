@@ -1,5 +1,3 @@
-import { sleep } from "../utils/sleep";
-
 export interface Asset {
   id: string;
   rank: number;
