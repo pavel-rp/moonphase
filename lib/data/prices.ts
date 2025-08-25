@@ -3,7 +3,7 @@ import { sleep } from "../utils/sleep";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function fetchPrices(_symbol: string) {
-  const randomDuration = Math.random() * 10000 + 1000;
+  const randomDuration = Math.random() * 2000 + 500;
   await sleep(randomDuration);
   return generateRandomWalk();
 }
