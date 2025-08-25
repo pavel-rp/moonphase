@@ -45,7 +45,7 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
   const glowClass = "text-shadow-[0_0_20px_var(--tw-glow-color)]";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start p-8">
+    <main className="flex min-h-screen flex-col items-center justify-start px-8 pb-8 pt-20">
       <div className="w-full max-w-4xl mx-auto space-y-6">
         {/* Back Navigation */}
         <Link 
