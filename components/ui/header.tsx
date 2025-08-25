@@ -15,8 +15,9 @@ const defaultLinks: HeaderLink[] = [
 
 export function Header({ links = defaultLinks, activePath, logo }: HeaderProps) {
   const Logo = (
-    <div className="pointer-events-auto rounded-full bg-zinc-900/50 ring-1 ring-white/10 backdrop-blur-md text-zinc-100 shadow-sm h-8 w-8 flex items-center justify-center text-sm font-semibold">
+    <div className="flex items-center gap-2 opacity-70">
       {logo ?? <span>N</span>}
+      <span className="text-xl font-bold">MOONPHASE</span>
     </div>
   );
 

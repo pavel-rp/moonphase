@@ -124,7 +124,7 @@ describe('fetchAssets', () => {
     await fetchPromise
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://rest.coincap.io/v3/assets?limit=15&offset=0&apiKey=test-api-key',
+      'https://rest.coincap.io/v3/assets?limit=19&offset=0&apiKey=test-api-key',
       { next: { revalidate: 60 } }
     )
   })

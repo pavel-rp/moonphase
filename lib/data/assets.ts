@@ -17,7 +17,7 @@ export interface Asset {
 
 export async function fetchAssets(): Promise<Array<Asset>> {
   try {
-    const url = `https://rest.coincap.io/v3/assets?limit=15&offset=0&apiKey=${process.env.COINCAP_API_KEY}`;
+    const url = `https://rest.coincap.io/v3/assets?limit=19&offset=0&apiKey=${process.env.COINCAP_API_KEY}`;
     console.log("Fetching assets from:", url);
     
     const res = await fetch(url, { next: { revalidate: 60 } });
