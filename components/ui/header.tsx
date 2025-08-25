@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React, { ReactNode } from "react";
 
 export type HeaderLink = { href: string; label: string };
@@ -34,17 +35,12 @@ export function Header({ links = defaultLinks, logo }: HeaderProps) {
               {links.map((link) => {
                 return (
                   <li key={link.href}>
-                    <a
-                      href={link.href}
-                      className="rounded-full px-4 py-1.5 text-sm font-medium backdrop-blur-md bg-white/5 ring-1 ring-white/10 text-zinc-100/90 hover:bg-white/8 hover:ring-white/20 transition outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
-                    >
-                      {link.label}
                     <Link
                       href={link.href}
                       className="rounded-full px-4 py-1.5 text-sm font-medium backdrop-blur-md bg-white/5 ring-1 ring-white/10 text-zinc-100/90 hover:bg-white/8 hover:ring-white/20 transition outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
                     >
                       {link.label}
-                    </Link>
+                    </Link>          
                   </li>
                 );
               })}
