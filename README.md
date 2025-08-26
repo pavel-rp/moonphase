@@ -15,7 +15,7 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **UI**: Tailwind CSS 4, Radix UI, Lucide
-- **Animation**: GSAP, custom Parallax background
+- **Animation**: GSAP, custom parallax background
 - **Testing**: Jest 30, @testing-library/react, jest-dom
 - **Linting**: ESLint (next/core-web-vitals + TypeScript rules)
 - **Package manager**: pnpm
