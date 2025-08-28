@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/ui/header";
 import Image from "next/image";
 import ParallaxBg from "@/components/ui/animation/parallax-bg";
+import { LayoutTransition } from "@/components/ui/animation/layout-transition.client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,9 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Header logo={<Image src="/logo.svg" alt="MoonPhase" width={36} height={36} />} />
-        {children}
+        <LayoutTransition>
+          {children}
+        </LayoutTransition>
         <ParallaxBg />
       </body>
     </html>
