@@ -55,9 +55,9 @@ interface LayoutTransitionProps {
 export function LayoutTransition({
   children,
   className,
-  initial = { y: 20 },
-  animate = { y: 0 },
-  exit = { y: -20 },
+  initial = { scale: 0.98, opacity: 0.9 },
+  animate = { scale: 1, opacity: 1 },
+  exit = { scale: 0.98, opacity: 0.9 },
   transition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
 }: LayoutTransitionProps) {
   const segment = useSelectedLayoutSegment();
