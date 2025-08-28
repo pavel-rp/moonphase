@@ -55,9 +55,9 @@ interface LayoutTransitionProps {
 export function LayoutTransition({
   children,
   className,
-  initial = { scale: 0.96, filter: "blur(8px)" },
-  animate = { scale: 1, filter: "blur(0px)" },
-  exit = { scale: 0.96, filter: "blur(8px)" },
+  initial = { scale: 0.96 },
+  animate = { scale: 1 },
+  exit = { scale: 0.96 },
   transition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
 }: LayoutTransitionProps) {
   const segment = useSelectedLayoutSegment();
@@ -71,6 +71,7 @@ export function LayoutTransition({
         exit={exit}
         transition={transition}
         className={className}
+        style={{ willChange: "transform" }}
         onAnimationComplete={() => {
           // scroll to top once the enter animation finishes
           if (typeof window !== "undefined") {
