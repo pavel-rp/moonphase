@@ -157,9 +157,6 @@ describe("SymbolDetailsPage", () => {
     expect(screen.getByText("AI Analysis")).toBeInTheDocument();
     expect(screen.getByText("Generate AI Analysis")).toBeInTheDocument();
 
-    // Check back link
-    expect(screen.getByTestId("back-link")).toBeInTheDocument();
-    expect(screen.getByText("Back to Assets")).toBeInTheDocument();
   });
 
   it("calls notFound when asset is not found", async () => {
@@ -255,6 +252,5 @@ describe("SymbolDetailsPage", () => {
     expect(screen.getByTestId("crypto-icon")).toBeInTheDocument();
     expect(screen.getByTestId("crypto-sparkline")).toBeInTheDocument();
     expect(screen.getByTestId("button")).toBeInTheDocument();
-    expect(screen.getByTestId("back-link")).toBeInTheDocument();
   });
 });

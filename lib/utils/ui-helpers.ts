@@ -1,10 +1,10 @@
 // NOTE: if you add a new color, you need to add it to the globals.css @source inline()
 export type TwColorVariation = 300 | 700;
-export type TwColor = "red" | "green" | "white";
+export type TwColor = "red" | "green" | "slate";
 
 const getPriceMovementColor = (priceChange: number): TwColor => {
   if (priceChange === 0) {
-    return "white";
+    return "slate";
   }
   if (priceChange > 0) {
     return "green";
