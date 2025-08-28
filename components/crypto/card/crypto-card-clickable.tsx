@@ -18,7 +18,7 @@ export default function CryptoCardClickable({
   const router = useRouter();
 
   const handleCardClick = () => {
-    router.push(`/details/${symbol.toLowerCase()}`);
+    router.push(`/details/${symbol.toLowerCase()}`, { scroll: false });
   };
 
   return (
