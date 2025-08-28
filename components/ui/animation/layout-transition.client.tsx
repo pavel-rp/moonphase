@@ -11,6 +11,16 @@ import { useSelectedLayoutSegment } from "next/navigation";
 import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useContext, useEffect, useRef } from "react";
 
+function scrollToTopInstant() {
+  // Using a double rAF to ensure any pending layout/paint is flushed before scrolling
+  if (typeof window === "undefined") return;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0 });
+    });
+  });
+}
+
 function usePreviousValue<T>(value: T): T | undefined {
   const prevValue = useRef<T | undefined>(undefined);
 
@@ -61,6 +71,15 @@ export function LayoutTransition({
   transition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
 }: LayoutTransitionProps) {
   const segment = useSelectedLayoutSegment();
+
+  // When segment changes, scroll to top after the new content has mounted
+  const prevSegmentRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevSegmentRef.current !== null && prevSegmentRef.current !== segment) {
+      scrollToTopInstant();
+    }
+    prevSegmentRef.current = segment ?? null;
+  }, [segment]);
 
   return (
     <AnimatePresence mode="wait" initial={false}>
