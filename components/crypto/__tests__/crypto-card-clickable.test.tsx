@@ -77,7 +77,7 @@ describe("CryptoCardClickable", () => {
     fireEvent.click(card);
 
     expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith("/details/btc");
+    expect(mockPush).toHaveBeenCalledWith("/details/btc", { scroll: false });
   });
 
   it("handles symbols with different cases correctly", () => {
@@ -91,7 +91,7 @@ describe("CryptoCardClickable", () => {
     const card = screen.getByTestId("hover-effect-card");
     fireEvent.click(card);
 
-    expect(mockPush).toHaveBeenCalledWith("/details/btc");
+    expect(mockPush).toHaveBeenCalledWith("/details/btc", { scroll: false });
   });
 
   it("passes correct glow color based on price change", () => {
@@ -157,7 +157,7 @@ describe("CryptoCardClickable", () => {
     const card = screen.getByTestId("hover-effect-card");
     fireEvent.click(card);
 
-    expect(mockPush).toHaveBeenCalledWith("/details/eth");
+    expect(mockPush).toHaveBeenCalledWith("/details/eth", { scroll: false });
     expect(screen.getByTestId("hover-effect-card")).toHaveAttribute(
       "data-glow-color",
       "var(--color-red-300)"
@@ -181,7 +181,7 @@ describe("CryptoCardClickable", () => {
       const card = screen.getByTestId("hover-effect-card");
       fireEvent.click(card);
 
-      expect(mockPush).toHaveBeenCalledWith(`/details/${asset.symbol.toLowerCase()}`);
+      expect(mockPush).toHaveBeenCalledWith(`/details/${asset.symbol.toLowerCase()}`, { scroll: false });
       
       unmount();
       mockPush.mockClear();
