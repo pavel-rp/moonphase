@@ -25,7 +25,7 @@ function ParallaxBgInner() {
   }
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence initial={false}>
       <motion.div
         key={segment}
         initial={{ opacity: 0 }}
