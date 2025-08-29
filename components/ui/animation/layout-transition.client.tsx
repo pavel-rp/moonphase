@@ -9,18 +9,16 @@ import {
 } from "motion/react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { useContext, useEffect, useRef } from "react";
+import { useContext, useRef, useEffect } from "react";
 
 function usePreviousValue<T>(value: T): T | undefined {
   const prevValue = useRef<T | undefined>(undefined);
-
   useEffect(() => {
     prevValue.current = value;
     return () => {
       prevValue.current = undefined;
     };
   });
-
   return prevValue.current;
 }
 
@@ -46,34 +44,53 @@ function FrozenRouter(props: { children: React.ReactNode }) {
 interface LayoutTransitionProps {
   children: React.ReactNode;
   className?: string;
-  initial?: boolean | TargetAndTransition | VariantLabels;
-  animate?: TargetAndTransition | VariantLabels;
-  exit?: TargetAndTransition | VariantLabels;
   transition?: Transition;
 }
 
 export function LayoutTransition({
   children,
   className,
-  initial = { opacity: 0, y: 20 },
-  animate = { opacity: 1, y: 0 },
-  exit = { opacity: 0, y: -20 },
-  transition = { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  transition = { duration: 0.15, ease: [0.22, 1, 0.36, 1] },
 }: LayoutTransitionProps) {
   const segment = useSelectedLayoutSegment();
 
+  const variants = {
+    enter: { x: "100%", opacity: 1 }, 
+    center: { x: "0%", opacity: 1 },
+    exit: { x: "-100%", opacity: 1 },
+  } as const;
+
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <motion.div
-        key={segment}
-        initial={initial}
-        animate={animate}
-        exit={exit}
-        transition={transition}
-        className={className}
-      >
-        <FrozenRouter>{children}</FrozenRouter>
-      </motion.div>
-    </AnimatePresence>
+    <div
+      className={className}
+      style={{
+        position: "relative",
+        minHeight: "100dvh",
+        overflowX: "clip",
+      }}
+    >
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={segment}
+          variants={variants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={transition}
+          style={{
+            position: "absolute",
+            inset: 0,
+            willChange: "transform",
+          }}
+          onAnimationComplete={() => {
+            if (typeof window !== "undefined") {
+              window.scrollTo({ top: 0, behavior: "instant" });
+            }
+          }}
+        >
+          <FrozenRouter>{children}</FrozenRouter>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
 }

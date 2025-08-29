@@ -45,17 +45,8 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
   const glowClass = "text-shadow-[0_0_20px_var(--tw-glow-color)]";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start px-8 pb-8 pt-20">
+    <main className="flex min-h-screen flex-col items-center justify-start px-12 pb-8 pt-24">
       <div className="w-full max-w-4xl mx-auto space-y-6">
-        {/* Back Navigation */}
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back to Assets
-        </Link>
-
         {/* Header Section */}
         <Card className="glassmorphic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
