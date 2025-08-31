@@ -17,7 +17,7 @@ export class CoinCapAdapter implements CoinCapPort {
         }
         const json = await res.json();
         const parsed = ListAssetsResponseSchema.parse(json);
-        return parsed.data.map((a) => ({ ...a, explorer: a.explorer ?? '' }));
+        return parsed.data.map((a) => a);
       } catch (e) {
         throw e;
       }
