@@ -22,7 +22,7 @@ export class CoinCapAdapter implements CoinCapPort {
         }
         const json = await res.json();
         const parsed = ListAssetsResponseSchema.parse(json);
-        return parsed.data;
+        return parsed.data.map((a) => ({ ...a, explorer: a.explorer ?? '' }));
       } catch (e) {
         if ((e as ExternalError).kind) throw e;
         const err: ExternalError = { kind: 'Unavailable', details: e };
