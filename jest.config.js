@@ -13,12 +13,13 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/components/(.*)$': '<rootDir>/components/$1',
-    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    '^@/src/lib/(.*)$': '<rootDir>/src/lib/$1',
     '^@/adapters/(.*)$': '<rootDir>/src/adapters/$1',
     '^@/ports/(.*)$': '<rootDir>/src/ports/$1',
     '^@/usecases/(.*)$': '<rootDir>/src/usecases/$1',
     '^@/domain/(.*)$': '<rootDir>/src/domain/$1',
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   testEnvironment: 'jsdom',
   testMatch: [
