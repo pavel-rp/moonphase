@@ -1,7 +1,5 @@
 import { CoinCapPort } from '@/ports/CoinCapPort';
 import { Asset } from '@/domain/asset';
-import { makeTag } from '@/lib/cache/tags';
-
 export async function getAssets(
   deps: { coinCap: CoinCapPort },
   params: { limit?: number; offset?: number } = {},
