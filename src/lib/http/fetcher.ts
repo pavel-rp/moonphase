@@ -20,7 +20,7 @@ export async function fetchWithRetry(
   while (true) {
     try {
       const resp = await withTimeout(fetch(input, init), timeoutMs);
-      if (!resp.ok && resp.status >= 500 && attempt < retries) {
+      if (resp && 'ok' in resp && !resp.ok && resp.status >= 500 && attempt < retries) {
         throw new Error(`HTTP ${resp.status}`);
       }
       return resp;

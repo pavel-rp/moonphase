@@ -12,21 +12,14 @@ export class CoinCapAdapter implements CoinCapPort {
     return dedupe(key, async () => {
       try {
         const res = await get(`/assets?limit=${limit}&offset=${offset}`, { next: { revalidate: 60 } });
-        if (res.status === 429) {
-          const err: ExternalError = { kind: 'RateLimited', retryAfterSec: Number(res.headers.get('Retry-After') ?? 0) };
-          throw err;
-        }
-        if (!res.ok) {
-          const err: ExternalError = { kind: 'Unavailable', details: { status: res.status } };
-          throw err;
+        if (!res || !res.ok) {
+          throw new Error(`API error ${res?.status ?? 500}`);
         }
         const json = await res.json();
         const parsed = ListAssetsResponseSchema.parse(json);
         return parsed.data.map((a) => ({ ...a, explorer: a.explorer ?? '' }));
       } catch (e) {
-        if ((e as ExternalError).kind) throw e;
-        const err: ExternalError = { kind: 'Unavailable', details: e };
-        throw err;
+        throw e;
       }
     });
   }

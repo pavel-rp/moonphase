@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const AssetSchema = z.object({
   id: z.string(),
-  rank: z.string().transform(Number),
+  rank: z.string(),
   symbol: z.string(),
   name: z.string(),
   supply: z.string().transform(Number),

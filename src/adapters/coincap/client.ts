@@ -8,5 +8,5 @@ export async function get(path: string, { next }: { next?: NextFetchRequestConfi
   const { COINCAP_API_KEY } = getEnv() as { COINCAP_API_KEY?: string };
   const url = `${BASE_URL}${path}${path.includes('?') ? '&' : '?'}apiKey=${COINCAP_API_KEY ?? ''}`;
   logRequest({ url, method: 'GET' });
-  return fetchWithRetry(url, { method: 'GET', next }, { timeoutMs: 10_000 });
+  return fetchWithRetry(url, { next }, { timeoutMs: 10_000 });
 }
