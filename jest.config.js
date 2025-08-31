@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+// eslint-disable-next-line import/no-commonjs
+
 const nextJest = require('next/jest')
 
 const createJestConfig = nextJest({

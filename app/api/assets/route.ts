@@ -11,7 +11,6 @@ export async function GET(req: Request): Promise<Response> {
     const assets = await getAssets({ coinCap: new CoinCapAdapter() }, { limit, offset });
     return NextResponse.json(assets, { status: 200 });
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error(e);
     return NextResponse.json({ error: 'Upstream unavailable' }, { status: 502 });
   }
