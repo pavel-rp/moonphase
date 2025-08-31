@@ -1,6 +1,3 @@
-import { CoinCapAdapter } from '@/adapters/coincap/CoinCapAdapter';
-import { getAssets } from '@/usecases/getAssets';
-
 export interface Asset {
   id: string;
   rank: number;
@@ -14,9 +11,4 @@ export interface Asset {
   changePercent24Hr: number;
   vwap24Hr: number;
   explorer: string;
-}
-
-export async function fetchAssets(): Promise<Array<Asset>> {
-  const assets = await getAssets({ coinCap: new CoinCapAdapter() });
-  return assets;
 }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 // Extend as new env vars are required
 const EnvSchema = z.object({
   // example: "NEXT_PUBLIC_API_URL": z.string().url().optional(),
+  COINCAP_API_KEY: z.string().optional(),
 });
 
 type Env = z.infer<typeof EnvSchema>;
