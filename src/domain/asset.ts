@@ -1,6 +1,6 @@
 export interface Asset {
   id: string;
-  rank: string;
+  rank: number;
   symbol: string;
   name: string;
   supply: number;

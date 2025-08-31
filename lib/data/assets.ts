@@ -1,22 +1,8 @@
 import { CoinCapAdapter } from '@/adapters/coincap/CoinCapAdapter';
 import { getAssets } from '@/usecases/getAssets';
+import { Asset } from '@/domain/asset';
+export type { Asset };
 
-export interface Asset {
-  id: string;
-  rank: number;
-  symbol: string;
-  name: string;
-  supply: number;
-  maxSupply: number | null;
-  marketCapUsd: number;
-  volumeUsd24Hr: number;
-  priceUsd: number;
-  changePercent24Hr: number;
-  vwap24Hr: number;
-  explorer: string;
-}
-
-export async function fetchAssets(): Promise<Array<Asset>> {
-  const assets = await getAssets({ coinCap: new CoinCapAdapter() });
-  return assets;
+export async function fetchAssets(): Promise<Asset[]> {
+  return getAssets({ coinCap: new CoinCapAdapter() });
 }
