@@ -2,8 +2,6 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   const timeout = new Promise<never>((_, reject) => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
       reject(new Error(`Timeout after ${ms}ms`));
     }, ms);
   });
