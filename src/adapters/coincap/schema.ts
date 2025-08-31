@@ -12,7 +12,7 @@ const AssetSchema = z.object({
   priceUsd: z.string().transform(Number),
   changePercent24Hr: z.string().transform(Number),
   vwap24Hr: z.string().transform(Number),
-  explorer: z.string().url().optional().default(''),
+  explorer: z.string().optional().nullable().transform((v) => v ?? ''),
 });
 
 export const ListAssetsResponseSchema = z.object({
