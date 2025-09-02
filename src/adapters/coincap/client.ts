@@ -2,7 +2,8 @@ import { fetchWithRetry } from '@/lib/http/fetcher';
 import { logRequest } from '@/lib/observability';
 import { getEnv } from '@/lib/env';
 
-const BASE_URL = 'https://rest.coincap.io/v3';
+const { COINCAP_BASE_URL } = getEnv();
+const BASE_URL = COINCAP_BASE_URL ?? 'https://rest.coincap.io/v3';
 
 export async function get(path: string, { next }: { next?: NextFetchRequestConfig } = {}) {
   const { COINCAP_API_KEY } = getEnv();
