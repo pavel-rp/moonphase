@@ -22,7 +22,7 @@ describe('fetchAssets', () => {
       data: [
         {
           id: 'bitcoin',
-          rank: '1',
+          rank: 1,
           symbol: 'BTC',
           name: 'Bitcoin',
           supply: '19000000.0000000000000000',
@@ -52,7 +52,7 @@ describe('fetchAssets', () => {
     expect(result).toHaveLength(1)
     expect(result[0]).toEqual({
       id: 'bitcoin',
-      rank: '1',
+      rank: 1,
       symbol: 'BTC',
       name: 'Bitcoin',
       supply: 19000000,
@@ -124,8 +124,8 @@ describe('fetchAssets', () => {
     await fetchPromise
 
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://rest.coincap.io/v3/assets?limit=19&offset=0&apiKey=test-api-key',
-      { next: { revalidate: 60 } }
+      'https://rest.coincap.io/v3/assets?limit=19&offset=0',
+      { next: { revalidate: 60 }, headers: { Authorization: 'Bearer test-api-key' } }
     )
   })
 
@@ -175,10 +175,10 @@ describe('fetchAssets', () => {
     
     const result = await fetchPromise
 
-    expect(typeof result[0].rank).toBe('string')
+    expect(typeof result[0].rank).toBe('number')
     expect(typeof result[0].supply).toBe('number')
     expect(typeof result[0].priceUsd).toBe('number')
-    expect(result[0].rank).toBe('999')
+    expect(result[0].rank).toBe(999)
     expect(result[0].supply).toBe(1000.5)
     expect(result[0].changePercent24Hr).toBe(-1.5)
   })
