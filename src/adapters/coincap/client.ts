@@ -1,17 +1,24 @@
 import { fetchWithRetry } from '@/lib/http/fetcher';
 import { logRequest } from '@/lib/observability';
-import { getEnv } from '@/lib/env';
 
-const { COINCAP_BASE_URL } = getEnv();
-const BASE_URL = COINCAP_BASE_URL ?? 'https://rest.coincap.io/v3';
+const DEFAULT_BASE_URL = 'https://rest.coincap.io/v3';
+
+function getBaseUrl(): string {
+  return process.env.COINCAP_BASE_URL ?? DEFAULT_BASE_URL;
+}
 
 export async function get(path: string, { next }: { next?: NextFetchRequestConfig } = {}) {
-  const { COINCAP_API_KEY } = getEnv();
-  const url = `${BASE_URL}${path}`;
+  const baseUrl = getBaseUrl();
+  const urlObject = new URL(`${baseUrl}${path}`);
+  const apiKey = process.env.COINCAP_API_KEY;
+  if (apiKey) {
+    urlObject.searchParams.set('apiKey', apiKey);
+  }
+  const url = urlObject.toString();
   logRequest({ url, method: 'GET' });
   return fetchWithRetry(
     url,
-    { next, headers: { Authorization: `Bearer ${COINCAP_API_KEY ?? ''}` } },
+    { next },
     { timeoutMs: 10_000 }
   );
 }
