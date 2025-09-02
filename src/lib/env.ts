@@ -8,15 +8,11 @@ const EnvSchema = z.object({
 
 type Env = z.infer<typeof EnvSchema>;
 
-let cached: Env | null = null;
-
 export function getEnv(): Env {
-  if (cached) return cached;
   const parsed = EnvSchema.safeParse(process.env);
   if (!parsed.success) {
     console.error('❌ Invalid environment variables', parsed.error.flatten().fieldErrors);
     throw new Error('Invalid environment configuration');
   }
-  cached = parsed.data;
-  return cached;
+  return parsed.data;
 }
