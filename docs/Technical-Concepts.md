@@ -18,6 +18,10 @@ The sparkline animation uses GSAP and the DrawSVG plugin through a client-side H
 ### Tailwind CSS
 Utility-first CSS for rapid UI design. Docs: [tailwindcss.com/docs](https://tailwindcss.com/docs)
 
+### shadcn/ui and Radix Slot
+UI components follow the shadcn/ui composition approach and use Radix Slot for `asChild` patterns (see `components/ui/button.tsx`).
+Docs: [ui.shadcn.com](https://ui.shadcn.com) and [Radix Slot](https://www.radix-ui.com/primitives/docs/utilities/slot)
+
 ### Jest + Testing Library
 Unit tests render components and assert behavior via DOM queries. Docs: [jestjs.io/docs](https://jestjs.io/docs/getting-started), [testing-library.com/docs/react-testing-library](https://testing-library.com/docs/react-testing-library/intro/)
 
