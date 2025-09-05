@@ -1,7 +1,7 @@
 ## Contributing and Standards
 
 ### Branching and workflow
-- Use feature branches from `main`.
+- Use feature branches from `develop`.
 - Open a pull request early; CI runs lint, tests, and build.
 - Keep PRs focused and small where possible.
 

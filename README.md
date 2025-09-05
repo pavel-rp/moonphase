@@ -90,7 +90,7 @@ pnpm lint
 
 ## CI
 
-GitHub Actions workflow `.github/workflows/ci.yml` runs on pushes to `main` and on pull requests:
+GitHub Actions workflow `.github/workflows/ci.yml` runs on pushes to `develop` and on pull requests:
 - Setup Node.js 20.x and pnpm
 - Cache pnpm store keyed by `pnpm-lock.yaml`
 - Install dependencies: `pnpm install --frozen-lockfile --ignore-scripts`

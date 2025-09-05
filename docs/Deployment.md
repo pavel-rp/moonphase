@@ -31,7 +31,7 @@ Set variables via your platform's secret manager or a `.env` file:
 ### Maintenance tasks
 - Dependency updates: use Renovate/Dependabot.
 - Security: rotate `COINCAP_API_KEY`; restrict access.
-- Testing: CI runs lint, tests, and build on PRs and pushes to `main`.
+- Testing: CI runs lint, tests, and build on PRs and pushes to `develop`.
 
 ### Migrations
 No database or migrations are present.
