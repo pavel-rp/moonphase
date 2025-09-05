@@ -7,14 +7,14 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 - Interactive assets grid with featured BTC tile and graceful loading states
 - Token details page at `/details/[symbol]` with price change, market cap, and sparkline
 - Animated UI with GSAP and custom Parallax background
-- Accessible component library primitives (Radix UI) and iconography (Lucide, cryptocurrency icons)
+- Accessible component composition via Radix Slot and iconography (Lucide, cryptocurrency icons)
 - Strong typing, strict TS config, and Next.js App Router
 
 ## Tech stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
-- **UI**: Tailwind CSS 4, Radix UI, Lucide
+- **UI**: Tailwind CSS 4, Radix Slot, Lucide
 - **Animation**: GSAP, custom parallax background
 - **Testing**: Jest 30, @testing-library/react, jest-dom
 - **Linting**: ESLint (next/core-web-vitals + TypeScript rules)
