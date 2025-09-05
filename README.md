@@ -20,6 +20,17 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 - **Linting**: ESLint (next/core-web-vitals + TypeScript rules)
 - **Package manager**: pnpm
 
+## Documentation
+- [Getting Started](docs/Getting-Started.md)
+- [Architecture & Design](docs/Architecture.md)
+- [Technical Concepts](docs/Technical-Concepts.md)
+- [API Usage](docs/Usage-API.md)
+- [Testing](docs/Testing.md)
+- [Deployment](docs/Deployment.md)
+- [Contributing](docs/Contributing.md)
+
+For full documentation, see the Documentation section below.
+
 ## Getting started
 
 1) Install dependencies
@@ -37,12 +48,14 @@ Open http://localhost:3000.
 
 ## Environment variables
 
-- `COINCAP_API_KEY` (required): API key for CoinCap used by `lib/data/assets.ts` to fetch assets. Example usage constructs:
-  - `https://rest.coincap.io/v3/assets?limit=19&offset=0&apiKey=${process.env.COINCAP_API_KEY}`
+- `COINCAP_API_KEY` (required): API key used by `src/adapters/coincap/client.ts` to set the `Authorization: Bearer <token>` header for CoinCap requests.
+- `COINCAP_BASE_URL` (optional): Override the CoinCap REST base URL; defaults to `https://rest.coincap.io/v3`.
 
 Create a `.env.local` and add:
 ```bash
 COINCAP_API_KEY=your_key_here
+# optional override
+COINCAP_BASE_URL=https://rest.coincap.io/v3
 ```
 
 ## Scripts
