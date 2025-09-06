@@ -37,12 +37,17 @@ Open http://localhost:3000.
 
 ## Environment variables
 
-- `COINCAP_API_KEY` (required): API key for CoinCap used by `lib/data/assets.ts` to fetch assets. Example usage constructs:
-  - `https://rest.coincap.io/v3/assets?limit=19&offset=0&apiKey=${process.env.COINCAP_API_KEY}`
+- `COINCAP_API_KEY` (optional): API key for CoinCap used by `lib/data/assets.ts` to fetch assets.
+- `COINCAP_BASE_URL` (optional): Override CoinCap base URL. Defaults to `https://rest.coincap.io/v3`.
+- `BINANCE_API_KEY` (optional): API key for Binance (not required for public endpoints).
+- `BINANCE_BASE_URL` (optional): Override Binance base URL. Defaults to `https://api.binance.com/api/v3`.
 
-Create a `.env.local` and add:
+Create a `.env.local` and add any you need, e.g.:
 ```bash
-COINCAP_API_KEY=your_key_here
+# CoinCap
+COINCAP_API_KEY=your_coincap_key
+# BINANCE (optional)
+BINANCE_API_KEY=your_binance_key
 ```
 
 ## Scripts

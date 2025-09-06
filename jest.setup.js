@@ -1,4 +1,20 @@
 import '@testing-library/jest-dom'
+// Polyfills for MSW/node and fetch APIs in Jest
+import 'whatwg-fetch'
+import { TextEncoder, TextDecoder } from 'util'
+// @ts-ignore
+if (!global.TextEncoder) global.TextEncoder = TextEncoder
+// @ts-ignore
+if (!global.TextDecoder) global.TextDecoder = TextDecoder
+// Web Streams polyfills for MSW/node in jsdom env
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const webStreams = require('stream/web')
+// @ts-ignore
+if (!global.TransformStream) global.TransformStream = webStreams.TransformStream
+// @ts-ignore
+if (!global.ReadableStream) global.ReadableStream = webStreams.ReadableStream
+// @ts-ignore
+if (!global.WritableStream) global.WritableStream = webStreams.WritableStream
 
 // Mock Next.js Image component
 jest.mock('next/image', () => ({

@@ -5,6 +5,8 @@ const EnvSchema = z.object({
   // example: "NEXT_PUBLIC_API_URL": z.string().url().optional(),
   COINCAP_API_KEY: z.string().optional(),
   COINCAP_BASE_URL: z.string().url().optional(),
+  BINANCE_API_KEY: z.string().optional(),
+  BINANCE_BASE_URL: z.string().url().optional(),
 });
 
 type Env = z.infer<typeof EnvSchema>;
