@@ -8,7 +8,8 @@ export async function getAssets(
   const { limit = 19, offset = 0 } = params;
   const isTestEnv = process.env.NODE_ENV === 'test';
   const hasWhitelist = Boolean(deps.whitelist);
-  const requestLimit = hasWhitelist && !isTestEnv ? Math.max(limit, limit * 5) : limit;
+  const OVERFETCH_MULTIPLIER = 5; // fetch more to compensate for whitelist filtering
+  const requestLimit = hasWhitelist && !isTestEnv ? Math.max(limit, limit * OVERFETCH_MULTIPLIER) : limit;
 
   const data = await deps.coinCap.listAssets({ limit: requestLimit, offset });
   if (!deps.whitelist) return data;

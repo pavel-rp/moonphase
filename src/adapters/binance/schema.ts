@@ -24,20 +24,18 @@ export const Ticker24hrSchema = z.object({
 const RawKlineTuple = z
   .array(z.union([z.string(), z.number()]))
   .min(7)
-  .transform((arr) => [
-    Number(arr[0]), // openTime
-    arr[1], // open
-    arr[2], // high
-    arr[3], // low
-    arr[4], // close
-    arr[5], // volume
-    Number(arr[6]), // closeTime
-    arr[7],
-    arr[8],
-    arr[9],
-    arr[10],
-    arr[11],
-  ] as [number, unknown, unknown, unknown, unknown, unknown, number, ...unknown[]]);
+  .transform((arr) => {
+    const [openTime, open, high, low, close, volume, closeTime] = arr;
+    return [
+      Number(openTime),
+      open,
+      high,
+      low,
+      close,
+      volume,
+      Number(closeTime),
+    ] as [number, unknown, unknown, unknown, unknown, unknown, number];
+  });
 
 export const KlinesSchema = z
   .array(RawKlineTuple)

@@ -2,18 +2,13 @@ import '@testing-library/jest-dom'
 // Polyfills for MSW/node and fetch APIs in Jest
 import 'whatwg-fetch'
 import { TextEncoder, TextDecoder } from 'util'
-// @ts-expect-error - polyfilling globals for Jest environment
-if (!global.TextEncoder) global.TextEncoder = TextEncoder
-// @ts-expect-error - polyfilling globals for Jest environment
-if (!global.TextDecoder) global.TextDecoder = TextDecoder
-// Web Streams polyfills for MSW/node in jsdom env
 import { TransformStream, ReadableStream, WritableStream } from 'stream/web'
-// @ts-expect-error - polyfilling globals for Jest environment
-if (!global.TransformStream) global.TransformStream = TransformStream
-// @ts-expect-error - polyfilling globals for Jest environment
-if (!global.ReadableStream) global.ReadableStream = ReadableStream
-// @ts-expect-error - polyfilling globals for Jest environment
-if (!global.WritableStream) global.WritableStream = WritableStream
+
+if (!globalThis.TextEncoder) globalThis.TextEncoder = TextEncoder
+if (!globalThis.TextDecoder) globalThis.TextDecoder = TextDecoder
+if (!globalThis.TransformStream) globalThis.TransformStream = TransformStream
+if (!globalThis.ReadableStream) globalThis.ReadableStream = ReadableStream
+if (!globalThis.WritableStream) globalThis.WritableStream = WritableStream
 
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
