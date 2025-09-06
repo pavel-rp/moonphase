@@ -1,9 +1,34 @@
-import { generateRandomWalk } from "../utils/random-walk";
-import { sleep } from "../utils/sleep";
+import { BinanceAdapter } from '@/adapters/binance/BinanceAdapter';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function fetchPrices(_symbol: string) {
-  const randomDuration = Math.random() * 2000 + 500;
-  await sleep(randomDuration);
-  return generateRandomWalk();
+const binance = new BinanceAdapter();
+
+// Explicit mapping table for known symbols; defaults to USDT pair otherwise
+const BINANCE_PAIR_MAP: Record<string, string> = {
+  BTC: 'BTCUSDT',
+  ETH: 'ETHUSDT',
+  SOL: 'SOLUSDT',
+  BNB: 'BNBUSDT',
+  XRP: 'XRPUSDT',
+  DOGE: 'DOGEUSDT',
+  ADA: 'ADAUSDT',
+  AVAX: 'AVAXUSDT',
+  LINK: 'LINKUSDT',
+  TON: 'TONUSDT',
+  TEST: 'TESTUSDT',
+};
+
+function toBinanceSymbol(symbol: string): string {
+  const upper = symbol.toUpperCase();
+  return BINANCE_PAIR_MAP[upper] ?? `${upper}USDT`;
+}
+
+export async function fetchPrices(symbol: string) {
+  const pair = toBinanceSymbol(symbol);
+  const candles = await binance.getDailyCandles(pair, 60);
+  return candles.map((c) => c.close);
+}
+
+export async function fetchVWAP(symbol: string) {
+  const pair = toBinanceSymbol(symbol);
+  return binance.get24HrStats(pair);
 }
