@@ -68,6 +68,6 @@ The API route `app/api/assets/route.ts` exposes `GET /api/assets?limit&offset`, 
 - Keep caching simple initially (ISR + in-flight de-dupe); revisit with server caches as needed.
 
 ### References
-- Hexagonal Architecture: [alistair.cockburn.us/hexagonal-architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+- Hexagonal Architecture: [Alistair Cockburn's Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
 - Next.js App Router: [nextjs.org/docs/app](https://nextjs.org/docs/app)
 - Zod: [zod.dev](https://zod.dev)

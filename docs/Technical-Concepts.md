@@ -1,7 +1,7 @@
 ## Technical Concepts & Background
 
 ### Hexagonal (Ports & Adapters) Architecture
-An architectural style that decouples domain logic from external concerns via ports (interfaces) and adapters (implementations). In this project, `CoinCapPort` is the port; `CoinCapAdapter` is the adapter. See: [alistair.cockburn.us/hexagonal-architecture](https://alistair.cockburn.us/hexagonal-architecture/)
+An architectural style that decouples domain logic from external concerns via ports (interfaces) and adapters (implementations). In this project, `CoinCapPort` is the port; `CoinCapAdapter` is the adapter. See: [Alistair Cockburn's Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/)
 
 ### Next.js App Router and Server Components
 The App Router encourages nested layouts, streaming, and server components for efficient data fetching. Docs: [nextjs.org/docs/app](https://nextjs.org/docs/app)
