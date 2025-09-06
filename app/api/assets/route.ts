@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { CoinCapAdapter } from '@/adapters/coincap/CoinCapAdapter';
+import { JsonWhitelistAdapter } from '@/adapters/whitelist/JsonWhitelistAdapter';
+import whitelistData from '@/adapters/whitelist/whitelist.json';
 import { getAssets } from '@/usecases/getAssets';
 
 export async function GET(req: Request): Promise<Response> {
@@ -8,7 +10,10 @@ export async function GET(req: Request): Promise<Response> {
   const offset = Number(searchParams.get('offset') ?? '0');
 
   try {
-    const assets = await getAssets({ coinCap: new CoinCapAdapter() }, { limit, offset });
+    const assets = await getAssets(
+      { coinCap: new CoinCapAdapter(), whitelist: new JsonWhitelistAdapter(whitelistData) },
+      { limit, offset },
+    );
     return NextResponse.json(assets, { status: 200 });
   } catch (e) {
     console.error(e);
