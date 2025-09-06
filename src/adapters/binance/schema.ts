@@ -34,7 +34,15 @@ const RawKlineTuple = z
       close,
       volume,
       Number(closeTime),
-    ] as [number, unknown, unknown, unknown, unknown, unknown, number];
+    ] as [
+      number,
+      string | number,
+      string | number,
+      string | number,
+      string | number,
+      string | number,
+      number,
+    ];
   });
 
 export const KlinesSchema = z
