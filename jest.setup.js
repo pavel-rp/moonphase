@@ -2,25 +2,26 @@ import '@testing-library/jest-dom'
 // Polyfills for MSW/node and fetch APIs in Jest
 import 'whatwg-fetch'
 import { TextEncoder, TextDecoder } from 'util'
-// @ts-ignore
+// @ts-expect-error - polyfilling globals for Jest environment
 if (!global.TextEncoder) global.TextEncoder = TextEncoder
-// @ts-ignore
+// @ts-expect-error - polyfilling globals for Jest environment
 if (!global.TextDecoder) global.TextDecoder = TextDecoder
 // Web Streams polyfills for MSW/node in jsdom env
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const webStreams = require('stream/web')
-// @ts-ignore
-if (!global.TransformStream) global.TransformStream = webStreams.TransformStream
-// @ts-ignore
-if (!global.ReadableStream) global.ReadableStream = webStreams.ReadableStream
-// @ts-ignore
-if (!global.WritableStream) global.WritableStream = webStreams.WritableStream
+import { TransformStream, ReadableStream, WritableStream } from 'stream/web'
+// @ts-expect-error - polyfilling globals for Jest environment
+if (!global.TransformStream) global.TransformStream = TransformStream
+// @ts-expect-error - polyfilling globals for Jest environment
+if (!global.ReadableStream) global.ReadableStream = ReadableStream
+// @ts-expect-error - polyfilling globals for Jest environment
+if (!global.WritableStream) global.WritableStream = WritableStream
 
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props) => {
-    return <img {...props} />
+    const { alt = '', ...rest } = props
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    return <img alt={alt} {...rest} />
   },
 }))
 
