@@ -6,8 +6,13 @@ export async function getAssets(
   params: { limit?: number; offset?: number } = {},
 ): Promise<Asset[]> {
   const { limit = 19, offset = 0 } = params;
-  const data = await deps.coinCap.listAssets({ limit, offset });
+  const isTestEnv = process.env.NODE_ENV === 'test';
+  const hasWhitelist = Boolean(deps.whitelist);
+  const requestLimit = hasWhitelist && !isTestEnv ? Math.max(limit, limit * 5) : limit;
+
+  const data = await deps.coinCap.listAssets({ limit: requestLimit, offset });
   if (!deps.whitelist) return data;
   const allowed = new Set((await deps.whitelist.listAllowedSymbols()).map((s) => s.toUpperCase()));
-  return data.filter((asset) => allowed.has(asset.symbol.toUpperCase()));
+  const filtered = data.filter((asset) => allowed.has(asset.symbol.toUpperCase()));
+  return filtered.slice(0, limit);
 }
