@@ -1,10 +1,37 @@
-When to apply: Before merging and whenever adding deps/config. What to do: keep secrets safe and CI green.
+---
+description: Security and CI/CD standards
+globs: "**/*"
+alwaysApply: true
+---
 
-- Secrets hygiene: No plaintext secrets in code, tests, or logs. Use env vars (`getEnv()`), and .env files excluded from VCS.
-- Dependency safety: Prefer audited deps. Run `pnpm audit` optionally outside preflight; upgrade only as needed.
-- Least privilege: Only request the env vars you use. Avoid broad scopes on API keys.
-- CI etiquette: Small, focused PRs. Include description and links to related issues. Keep change sets minimal.
-- Commit messages: Follow conventional style if applicable; otherwise, concise and descriptive.
-- Preflight required: PRs must pass `pnpm preflight` (typecheck, lint, tests) before merge.
-- Docs: Keep `README.md` and `docs/*` updated for config, envs, and CI steps.
+# Security & CI Standards
 
+Apply before merging and whenever adding dependencies or configuration. Goal: keep secrets safe and CI green.
+
+## Secrets Hygiene
+- No plaintext secrets in code, tests, or logs.
+- Use env vars (`getEnv()`) and keep `.env` files excluded from VCS.
+
+## Dependency Safety
+- Prefer audited dependencies.
+- Run `pnpm audit` (optionally outside preflight).  
+- Upgrade only as needed.
+
+## Least Privilege
+- Only request the env vars you actually use.
+- Avoid broad scopes on API keys.
+
+## CI Etiquette
+- Keep PRs small and focused.
+- Include descriptions and links to related issues.
+- Keep change sets minimal.
+
+## Commit Messages
+- Follow conventional style if applicable.
+- Otherwise, concise and descriptive.
+
+## Preflight
+- PRs must pass `pnpm preflight` (typecheck, lint, tests) before merge.
+
+## Documentation
+- Keep `README.md` and `docs/*` updated for config, envs, and CI steps.

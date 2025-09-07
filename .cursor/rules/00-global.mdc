@@ -1,13 +1,24 @@
-When to apply: Always. What to do: Make minimal, safe edits and keep the repo green with preflight.
+---
+description: Enforce minimal-safe edits workflow and project conventions
+globs: "**/*"
+alwaysApply: true
+---
 
-- Minimal diff: change only what is required to satisfy the task. Avoid refactors unless needed.
-- Always run preflight after edits: `pnpm preflight`. If it fails, fix code until green before finishing.
-- Reuse, don’t duplicate: prefer existing utilities/APIs (see `src/lib/*`, `lib/*`, `components/*`).
-- Backward compatibility: preserve public contracts and behavior unless explicitly allowed to break.
-- Tests required: add/update unit tests for any new or changed behavior.
-- Respect architecture: keep boundaries between App routes (`app/**`), domain/usecases (`src/**`), and UI (`components/**`).
-- Naming & structure: follow existing conventions for files, imports, and module paths (`@/*` alias).
-- Security: validate inputs, avoid unsafe patterns, never include secrets or tokens.
+# Minimal Safe Edits: Keep the Repo Green
+
+Make the smallest safe change that satisfies the task and ensures the repository stays green.
+
+ **Core Principles**
+- Minimal diff: change only what’s required to satisfy the task. Avoid unnecessary refactors.
+- Preflight always: run `pnpm preflight` after edits; fix any failures before finishing.
+- Reuse, don’t duplicate: favor existing utilities & patterns (`src/lib/*`, `lib/*`, `components/*`).
+- Preserve backward compatibility: don’t break public behavior unless explicitly allowed.
+- Tests required: write or update unit tests for changed or new behavior.
+- Respect architecture:
+  - App routes in `app/**`
+  - Domain logic in `src/**`
+  - UI in `components/**`
+- Naming & structure: stick to existing file and `@/*` import conventions.
+- Security: validate inputs, avoid unsafe patterns, never embed secrets.
 - Multi-file changes: propose a brief plan first; implement iteratively in small, verifiable edits.
-- Documentation: when behavior, APIs, or UX change, update `docs/*` and `README.md` accordingly (keep docs up-to-date).
-
+- Documentation: update `docs/*` and `README.md` if behavior, APIs, or UX change.
