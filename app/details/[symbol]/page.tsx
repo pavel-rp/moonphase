@@ -47,7 +47,7 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start px-12 pb-8 pt-24">
-      <div className="w-full max-w-4xl mx-auto space-y-6">
+      <div className="w-full max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <Card className="glassmorphic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -66,7 +66,7 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
         </Card>
 
         {/* Price & Market Data Bento Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Price Section */}
           <Card className="glassmorphic">
             <CardHeader>
