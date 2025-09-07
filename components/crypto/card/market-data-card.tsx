@@ -56,7 +56,7 @@ export default async function MarketDataCard({ symbol }: MarketDataCardProps) {
             return (
               <div
                 key={index}
-                className="flex items-center justify-between gap-3 rounded-lg bg-background/20 p-2 md:p-3"
+                className="flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
                   <div className="rounded-xl bg-muted/50 p-2">
