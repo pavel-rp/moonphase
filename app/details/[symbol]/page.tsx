@@ -65,31 +65,34 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
           </CardHeader>
         </Card>
 
-        {/* Price Section */}
-        <Card className="glassmorphic">
-          <CardHeader>
-            <CardTitle>Price Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className={`flex items-center justify-between ${textColorClass}`}>
-              <span className={`text-4xl font-bold ${glowClass}`}>
-                ${formatNumber(asset.priceUsd)}
-              </span>
-              <span className={`text-xl ${glowClass}`}>
-                {formatPercent(asset.changePercent24Hr)}
-              </span>
-            </div>
-            <div className="w-full">
-              <CryptoSparkline symbol={asset.symbol} />
-            </div>
-          </CardContent>
-        </Card>
+        {/* Price & Market Data Bento Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Price Section */}
+          <Card className="glassmorphic">
+            <CardHeader>
+              <CardTitle>Price Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className={`flex items-center justify-between ${textColorClass}`}>
+                <span className={`text-4xl font-bold ${glowClass}`}>
+                  ${formatNumber(asset.priceUsd)}
+                </span>
+                <span className={`text-xl ${glowClass}`}>
+                  {formatPercent(asset.changePercent24Hr)}
+                </span>
+              </div>
+              <div className="w-full">
+                <CryptoSparkline symbol={asset.symbol} />
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Market Data Section */}
-        {/** Using mock MarketData via ports/adapters; server component by default */}
-        <Suspense fallback={<ShimmerCard />}>
-          <MarketDataCard symbol={asset.symbol} />
-        </Suspense>
+          {/* Market Data Section */}
+          {/** Using mock MarketData via ports/adapters; server component by default */}
+          <Suspense fallback={<ShimmerCard />}>
+            <MarketDataCard symbol={asset.symbol} />
+          </Suspense>
+        </div>
 
         {/* AI Analysis Section */}
         <Card className="glassmorphic">
