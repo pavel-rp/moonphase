@@ -50,12 +50,14 @@ Open http://localhost:3000.
 
 - `COINCAP_API_KEY` (required): API key used by `src/adapters/coincap/client.ts` to set the `Authorization: Bearer <token>` header for CoinCap requests.
 - `COINCAP_BASE_URL` (optional): Override the CoinCap REST base URL; defaults to `https://rest.coincap.io/v3`.
+- `BINANCE_API_KEY` (optional): API key for Binance (not required for public endpoints).
+- `BINANCE_BASE_URL` (optional): Override Binance base URL. Defaults to `https://api.binance.com/api/v3`.
 
-Create a `.env.local` and add:
-```bash
-COINCAP_API_KEY=your_key_here
-# optional override
-COINCAP_BASE_URL=https://rest.coincap.io/v3
+Create a `.env.local` and add any you need, e.g.:
+# CoinCap
+COINCAP_API_KEY=your_coincap_key
+# BINANCE (optional)
+BINANCE_API_KEY=your_binance_key
 ```
 
 ## Scripts
