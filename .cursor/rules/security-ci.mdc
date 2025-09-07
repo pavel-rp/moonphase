@@ -1,0 +1,10 @@
+When to apply: Before merging and whenever adding deps/config. What to do: keep secrets safe and CI green.
+
+- Secrets hygiene: No plaintext secrets in code, tests, or logs. Use env vars (`getEnv()`), and .env files excluded from VCS.
+- Dependency safety: Prefer audited deps. Run `pnpm audit` optionally outside preflight; upgrade only as needed.
+- Least privilege: Only request the env vars you use. Avoid broad scopes on API keys.
+- CI etiquette: Small, focused PRs. Include description and links to related issues. Keep change sets minimal.
+- Commit messages: Follow conventional style if applicable; otherwise, concise and descriptive.
+- Preflight required: PRs must pass `pnpm preflight` (typecheck, lint, tests) before merge.
+- Docs: Keep `README.md` and `docs/*` updated for config, envs, and CI steps.
+

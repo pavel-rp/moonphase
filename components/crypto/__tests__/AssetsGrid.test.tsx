@@ -53,10 +53,6 @@ jest.mock("@/lib/data/assets", () => ({
   fetchAssets: jest.fn(),
 }));
 
-import { fetchAssets } from "@/lib/data/assets";
-
-const mockFetchAssets = fetchAssets as jest.MockedFunction<typeof fetchAssets>;
-
 const mockAssets = [
   {
     id: "bitcoin",

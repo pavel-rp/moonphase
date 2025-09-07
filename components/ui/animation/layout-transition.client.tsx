@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  AnimatePresence,
-  motion,
-  TargetAndTransition,
-  Transition,
-  VariantLabels,
-} from "motion/react";
+import { AnimatePresence, motion, Transition } from "motion/react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useContext, useRef, useEffect } from "react";

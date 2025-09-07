@@ -15,7 +15,7 @@ jest.mock('next/image', () => ({
   __esModule: true,
   default: (props) => {
     const { alt = '', ...rest } = props
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    /* eslint-disable @next/next/no-img-element */
     return <img alt={alt} {...rest} />
   },
 }))

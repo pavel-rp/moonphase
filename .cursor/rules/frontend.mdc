@@ -1,0 +1,14 @@
+When to apply: Frontend code in `app/**`, `components/**`, `public/**`. What to do: Follow Next.js + React patterns, accessibility, and minimal diffs.
+
+- Framework: Next.js App Router (React 19). Prefer Server Components by default; use Client Components only when needed (`'use client'`).
+- Routing & data: Use route handlers and `app/**` conventions. Avoid custom fetch wrappers in components; push data fetching to Server Components or actions.
+- Hooks: Follow React rules of hooks. Memoize expensive computations (`useMemo`, `useCallback`) sparingly and only for measurable perf wins.
+- Styling: Tailwind v4 (configless). Prefer utility classes; avoid ad-hoc inline styles unless dynamic. Leverage shadcn UI patterns from `components/ui/*`.
+- Components: Keep components small and focused. Co-locate tests under `__tests__`. Reuse existing primitives (`components/ui/*`, `components/crypto/*`).
+- Imports & aliases: Use `@/*` paths (see `tsconfig.json`). Group imports: react/next, third-party, internal, styles/assets.
+- State management: Prefer React state/server actions. Avoid introducing new global state libs without approval.
+- Accessibility: Ensure focus states, keyboard nav, aria labels, and color contrast. Use semantic HTML and `@testing-library` queries that reflect user behavior.
+- Performance: Avoid unnecessary client JS. Lazy-load heavy components. Use `next/image` (mocked in tests) and optimize assets in `public/`.
+- Errors & logging: Do not `console.log` in shipped UI. Surface errors with user-friendly messages; log via backend (`src/lib/observability.ts`) if needed.
+- Documentation: Update `docs/*` and `README.md` when changing UX, routes, or component APIs.
+

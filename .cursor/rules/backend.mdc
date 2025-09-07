@@ -1,0 +1,13 @@
+When to apply: Backend/domain code in `src/**` and API routes in `app/api/**`. What to do: Keep layers clean, validate inputs, and log consistently.
+
+- Layers: Keep controllers/route handlers (in `app/api/**`) thin. Push logic into use cases (`src/usecases/**`) and domain (`src/domain/**`).
+- Ports/adapters: Interact with externals via ports (`src/ports/**`) and adapters (`src/adapters/**`). Keep side-effects at the edges.
+- Validation: Validate env via `src/lib/env.ts` and request DTOs with `zod` where applicable. Fail fast on invalid input.
+- Errors: Use typed errors from `src/lib/errors.ts`. Map to proper HTTP status codes in route handlers. Avoid throwing raw strings.
+- HTTP & retries: Prefer `src/lib/http/fetcher.ts` utilities for timeouts/retries. Be explicit about limits and backoff.
+- Observability: Use `src/lib/observability.ts` for request logs and error logs. Include contextual metadata (ids, symbols, limits).
+- Rate limiting: Use `src/lib/rateLimit.ts` where external quotas apply. Keep parameters configurable.
+- Migrations & persistence: If/when a DB is introduced (Prisma/Drizzle), add migration policies and tests before shipping.
+- Security: Never log secrets. Read configuration from env via `getEnv()`. Sanitize/validate any user-provided data.
+- Documentation: Update `docs/*` for API shape or behavior changes; document new use cases and ports.
+

@@ -68,7 +68,7 @@ describe('BinanceAdapter', () => {
 
   test('throws on invalid JSON shape', async () => {
     server.use(
-      http.get(`${API_BASE}/ticker/24hr`, () => HttpResponse.json({ weightedAvgPrice: null } as any)),
+      http.get(`${API_BASE}/ticker/24hr`, () => HttpResponse.json({ weightedAvgPrice: null })),
     );
     await expect(adapter.get24HrStats(symbol)).rejects.toBeInstanceOf(Error);
   });

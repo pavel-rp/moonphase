@@ -11,7 +11,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "lint": "eslint .",
-    "fix": "eslint . --fix && prettier -w ."
+    "fix": "eslint . --fix && prettier -w .",
+    "preflight": "pnpm run -s typecheck && eslint . --max-warnings=0 && pnpm run -s test",
+    "precommit": "node ./scripts/precommit.mjs",
+    "setup:hooks": "node ./scripts/install-git-hook.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

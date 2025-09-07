@@ -12,8 +12,6 @@ import { CryptoSparkline } from "@/components/crypto/crypto-sparkline";
 import { formatNumber, formatPercent, prettifyNumber } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
