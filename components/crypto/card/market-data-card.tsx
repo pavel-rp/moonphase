@@ -50,7 +50,7 @@ export default async function MarketDataCard({ symbol }: MarketDataCardProps) {
         <CardTitle>Market Data</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-8 md:gap-y-4">
           {dataItems.map((item, index) => {
             const IconComponent = item.icon;
             return (
