@@ -115,7 +115,7 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
         <CardTitle>Trading Activity</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {/* 24h Volume */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
