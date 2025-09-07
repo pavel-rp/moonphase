@@ -59,9 +59,7 @@ export default async function MarketDataCard({ symbol }: MarketDataCardProps) {
                 className="flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-muted/50 p-2">
-                    <IconComponent className="h-4 w-4" />
-                  </div>
+                  <IconComponent className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{item.label}</span>
                 </div>
                 <span className="text-base md:text-lg lg:text-xl font-semibold tabular-nums text-right">
