@@ -102,6 +102,14 @@ jest.mock("lucide-react", () => ({
   ),
 }));
 
+// Mock MarketDataCard to keep this test focused on page integration
+jest.mock("@/components/crypto/card/market-data-card", () => ({
+  __esModule: true,
+  default: ({ symbol }: { symbol: string }) => (
+    <div data-testid="card"><div data-testid="market-data-card">Market Data Card for {symbol}</div></div>
+  ),
+}));
+
 import { notFound } from "next/navigation";
 import { fetchAssets } from "@/lib/data/assets";
 
@@ -145,13 +153,9 @@ describe("SymbolDetailsPage", () => {
     expect(screen.getByText("2.50%")).toBeInTheDocument();
     expect(screen.getByTestId("crypto-sparkline")).toBeInTheDocument();
 
-    // Check market data section
-    expect(screen.getByText("Market Data")).toBeInTheDocument();
-    expect(screen.getByText("Market Cap")).toBeInTheDocument();
-    expect(screen.getByText("24h Volume")).toBeInTheDocument();
-    expect(screen.getByText("VWAP (24h)")).toBeInTheDocument();
-    expect(screen.getByText("Circulating Supply")).toBeInTheDocument();
-    expect(screen.getByText("Max Supply")).toBeInTheDocument();
+    // Check market data section (mocked card)
+    expect(screen.getByTestId("market-data-card")).toBeInTheDocument();
+    // The internal labels are now inside MarketDataCard; page only renders the card
 
     // Check AI Analysis section
     expect(screen.getByText("AI Analysis")).toBeInTheDocument();
@@ -183,30 +187,9 @@ describe("SymbolDetailsPage", () => {
     expect(notFound).not.toHaveBeenCalled();
   });
 
-  it("handles asset with null max supply", async () => {
-    const assetWithNullMaxSupply = { ...mockAsset, maxSupply: null };
-    mockFetchAssets.mockResolvedValue([assetWithNullMaxSupply]);
-    
-    const params = Promise.resolve({ symbol: "btc" });
-    const component = await SymbolDetailsPage({ params });
-    render(component);
+  // Max supply rendering is handled by MarketDataCard now; page does not assert it
 
-    expect(screen.getByText("N/A")).toBeInTheDocument();
-  });
-
-  it("renders explorer link correctly", async () => {
-    mockFetchAssets.mockResolvedValue([mockAsset]);
-    
-    const params = Promise.resolve({ symbol: "btc" });
-    const component = await SymbolDetailsPage({ params });
-    render(component);
-
-    const explorerLink = screen.getByText("View on Explorer");
-    expect(explorerLink).toBeInTheDocument();
-    expect(explorerLink.closest("a")).toHaveAttribute("href", mockAsset.explorer);
-    expect(explorerLink.closest("a")).toHaveAttribute("target", "_blank");
-    expect(explorerLink.closest("a")).toHaveAttribute("rel", "noopener noreferrer");
-  });
+  // Explorer link is no longer part of the page-level Market Data section
 
   it("handles different asset ranks", async () => {
     const ethereumAsset: Asset = {

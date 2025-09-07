@@ -1,4 +1,5 @@
 import { Asset, fetchAssets } from "@/lib/data/assets";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   Card,
@@ -9,9 +10,11 @@ import {
 } from "@/components/ui/card";
 import { CryptoIcon } from "@/components/crypto/crypto-icon";
 import { CryptoSparkline } from "@/components/crypto/crypto-sparkline";
-import { formatNumber, formatPercent, prettifyNumber } from "@/lib/utils/numbers";
+import { formatNumber, formatPercent } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import { Button } from "@/components/ui/button";
+import ShimmerCard from "@/components/ui/shimmer-card";
+import MarketDataCard from "@/components/crypto/card/market-data-card";
 
 export const dynamic = "force-dynamic";
 
@@ -83,60 +86,10 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
         </Card>
 
         {/* Market Data Section */}
-        <Card className="glassmorphic">
-          <CardHeader>
-            <CardTitle>Market Data</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm text-muted-foreground">Market Cap</div>
-                <div className="text-xl font-semibold">
-                  ${prettifyNumber(asset.marketCapUsd)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">24h Volume</div>
-                <div className="text-xl font-semibold">
-                  ${prettifyNumber(asset.volumeUsd24Hr)}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">VWAP (24h)</div>
-                <div className="text-xl font-semibold">
-                  ${formatNumber(asset.vwap24Hr)}
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <div className="text-sm text-muted-foreground">Circulating Supply</div>
-                <div className="text-xl font-semibold">
-                  {prettifyNumber(asset.supply)} {asset.symbol}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Max Supply</div>
-                <div className="text-xl font-semibold">
-                  {asset.maxSupply ? `${prettifyNumber(asset.maxSupply)} ${asset.symbol}` : "N/A"}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm text-muted-foreground">Explorer</div>
-                <div className="text-xl font-semibold">
-                  <a 
-                    href={asset.explorer} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-400 transition-colors"
-                  >
-                    View on Explorer
-                  </a>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/** Using mock MarketData via ports/adapters; server component by default */}
+        <Suspense fallback={<ShimmerCard />}>
+          <MarketDataCard symbol={asset.symbol} />
+        </Suspense>
 
         {/* AI Analysis Section */}
         <Card className="glassmorphic">
