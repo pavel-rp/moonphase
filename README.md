@@ -7,18 +7,29 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 - Interactive assets grid with featured BTC tile and graceful loading states
 - Token details page at `/details/[symbol]` with price change, market cap, and sparkline
 - Animated UI with GSAP and custom Parallax background
-- Accessible component library primitives (Radix UI) and iconography (Lucide, cryptocurrency icons)
+- Accessible component composition via Radix Slot and iconography (Lucide, cryptocurrency icons)
 - Strong typing, strict TS config, and Next.js App Router
 
 ## Tech stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
-- **UI**: Tailwind CSS 4, Radix UI, Lucide
+- **UI**: Tailwind CSS 4, Radix Slot, Lucide
 - **Animation**: GSAP, custom parallax background
 - **Testing**: Jest 30, @testing-library/react, jest-dom
 - **Linting**: ESLint (next/core-web-vitals + TypeScript rules)
 - **Package manager**: pnpm
+
+## Documentation
+- [Getting Started](docs/Getting-Started.md)
+- [Architecture & Design](docs/Architecture.md)
+- [Technical Concepts](docs/Technical-Concepts.md)
+- [API Usage](docs/Usage-API.md)
+- [Testing](docs/Testing.md)
+- [Deployment](docs/Deployment.md)
+- [Contributing](docs/Contributing.md)
+
+For full documentation, see the Documentation section below.
 
 ## Getting started
 
@@ -37,13 +48,12 @@ Open http://localhost:3000.
 
 ## Environment variables
 
-- `COINCAP_API_KEY` (optional): API key for CoinCap used by `lib/data/assets.ts` to fetch assets.
-- `COINCAP_BASE_URL` (optional): Override CoinCap base URL. Defaults to `https://rest.coincap.io/v3`.
+- `COINCAP_API_KEY` (required): API key used by `src/adapters/coincap/client.ts` to set the `Authorization: Bearer <token>` header for CoinCap requests.
+- `COINCAP_BASE_URL` (optional): Override the CoinCap REST base URL; defaults to `https://rest.coincap.io/v3`.
 - `BINANCE_API_KEY` (optional): API key for Binance (not required for public endpoints).
 - `BINANCE_BASE_URL` (optional): Override Binance base URL. Defaults to `https://api.binance.com/api/v3`.
 
 Create a `.env.local` and add any you need, e.g.:
-```bash
 # CoinCap
 COINCAP_API_KEY=your_coincap_key
 # BINANCE (optional)
@@ -82,7 +92,7 @@ pnpm lint
 
 ## CI
 
-GitHub Actions workflow `.github/workflows/ci.yml` runs on pushes to `main` and on pull requests:
+GitHub Actions workflow `.github/workflows/ci.yml` runs on pushes to `develop` and on pull requests:
 - Setup Node.js 20.x and pnpm
 - Cache pnpm store keyed by `pnpm-lock.yaml`
 - Install dependencies: `pnpm install --frozen-lockfile --ignore-scripts`
