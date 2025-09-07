@@ -1,0 +1,13 @@
+When to apply: Always. What to do: Make minimal, safe edits and keep the repo green with preflight.
+
+- Minimal diff: change only what is required to satisfy the task. Avoid refactors unless needed.
+- Always run preflight after edits: `pnpm preflight`. If it fails, fix code until green before finishing.
+- Reuse, don’t duplicate: prefer existing utilities/APIs (see `src/lib/*`, `lib/*`, `components/*`).
+- Backward compatibility: preserve public contracts and behavior unless explicitly allowed to break.
+- Tests required: add/update unit tests for any new or changed behavior.
+- Respect architecture: keep boundaries between App routes (`app/**`), domain/usecases (`src/**`), and UI (`components/**`).
+- Naming & structure: follow existing conventions for files, imports, and module paths (`@/*` alias).
+- Security: validate inputs, avoid unsafe patterns, never include secrets or tokens.
+- Multi-file changes: propose a brief plan first; implement iteratively in small, verifiable edits.
+- Documentation: when behavior, APIs, or UX change, update `docs/*` and `README.md` accordingly (keep docs up-to-date).
+

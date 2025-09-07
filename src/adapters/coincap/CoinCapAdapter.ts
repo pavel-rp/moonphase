@@ -2,7 +2,6 @@ import { CoinCapPort } from '@/ports/CoinCapPort';
 import { Asset } from '@/domain/asset';
 import { get } from './client';
 import { ListAssetsResponseSchema } from './schema';
-import { ExternalError } from '@/lib/errors';
 import { dedupe, inflightKey } from '@/lib/http/inflight';
 
 export class CoinCapAdapter implements CoinCapPort {
