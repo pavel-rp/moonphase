@@ -231,7 +231,7 @@ describe("SymbolDetailsPage", () => {
     render(component);
 
     // Check that all major sections are rendered
-    expect(screen.getAllByTestId("card")).toHaveLength(4); // Header, Price, Market Data, AI Analysis
+    expect(screen.getAllByTestId("card")).toHaveLength(5); // Header, Price, Market Data, Trading Activity, AI Analysis
     expect(screen.getByTestId("crypto-icon")).toBeInTheDocument();
     expect(screen.getByTestId("crypto-sparkline")).toBeInTheDocument();
     expect(screen.getByTestId("button")).toBeInTheDocument();

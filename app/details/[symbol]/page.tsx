@@ -15,6 +15,7 @@ import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import { Button } from "@/components/ui/button";
 import ShimmerCard from "@/components/ui/shimmer-card";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
+import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
 
 export const dynamic = "force-dynamic";
 
@@ -91,6 +92,12 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
           {/** Using mock MarketData via ports/adapters; server component by default */}
           <Suspense fallback={<ShimmerCard />}>
             <MarketDataCard symbol={asset.symbol} />
+          </Suspense>
+
+          {/* Trading Activity Section */}
+          {/** Using mock TradingActivity via ports/adapters; server component by default */}
+          <Suspense fallback={<ShimmerCard />}>
+            <TradingActivityCard symbol={asset.symbol} />
           </Suspense>
         </div>
 
