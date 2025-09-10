@@ -28,7 +28,7 @@ Apply to all frontend code in `app/**`, `components/**`, and `public/**`.
 
 * Use **Tailwind v4 (configless)**.
 * Prefer utility composition; avoid ad-hoc inline styles unless dynamic.
-* **Design tokens only**: do not hardcode colors, spacing, radii, or shadows. Use the semantic token system (background/foreground, primary/secondary/accent/muted, destructive, chart-1…5).
+* **Design tokens only**: do not hardcode colors, spacing, radii, or shadows. Use the semantic token system (background/foreground, primary/secondary/accent/muted, destructive, chart-1 through chart-5).
 * If a new look is needed, **add a token or shared utility** first; don’t sprinkle one-offs.
 * Leverage **shadcn** patterns from `components/ui/*`.
 
