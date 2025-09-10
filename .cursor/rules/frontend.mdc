@@ -97,7 +97,7 @@ These extend the standards with our **design-system + trend** guidance for the d
 
 * **Gains = green, losses = red, neutral = muted**; always include the `+`/`–` sign with values.
 * Use compact number formatting; align digits where needed (tabular/mono where appropriate).
-* Charts **must** use the **chart-1…chart-5** palette; minimal gridlines, thin strokes, subtle area fills; small, legible labels. No misleading axes or color one-offs.
+* Charts **must** use the **chart-1 to chart-5** palette; minimal gridlines, thin strokes, subtle area fills; small, legible labels. No misleading axes or color one-offs.
 
 ## Tiles, Grids & Hover
 
