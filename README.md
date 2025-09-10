@@ -1,4 +1,4 @@
-# MoonPhase — AI‑powered crypto dashboard
+# MoonPhase - AI-powered crypto dashboard
 
 A Next.js 15 app that displays live crypto assets with animated sparkline charts, price deltas, and a details view per token. Built with TypeScript, React 19, and Tailwind CSS 4, with comprehensive unit tests via Jest and Testing Library.
 
@@ -118,4 +118,4 @@ GitHub Actions workflow `.github/workflows/ci.yml` runs on pushes to `develop` a
 
 ## License
 
-MIT — see LICENSE if present in the repository.
+MIT - see LICENSE if present in the repository.
