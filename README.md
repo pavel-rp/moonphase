@@ -28,6 +28,8 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 - [Testing](docs/Testing.md)
 - [Deployment](docs/Deployment.md)
 - [Contributing](docs/Contributing.md)
+- [Design System (2025 Update)](docs/Design-System.md)
+- [Frontend Standards (Cursor Guidelines)](docs/Frontend-Standards.md)
 
 For full documentation, see the Documentation section below.
 
