@@ -1,6 +1,6 @@
 ---
 description: Standards for frontend code (Next.js, React, UI components, design system, AI visuals)
-globs: ["app/**", "components/**", "public/\*\*"]
+globs: ["app/**", "components/**", "public/**"]
 ---
 
 # Frontend Standards
