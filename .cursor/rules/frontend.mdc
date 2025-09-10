@@ -1,5 +1,5 @@
 ---
-description: Standards for frontend code (Next.js, React, UI components, accessibility)
+description: Standards for frontend code (Next.js, React, UI components, design system, AI visuals)
 globs: ["app/**", "components/**", "public/**"]
 ---
 
@@ -8,49 +8,118 @@ globs: ["app/**", "components/**", "public/**"]
 Apply to all frontend code in `app/**`, `components/**`, and `public/**`.
 
 ## Framework
-- Use Next.js App Router (React 19).  
-- Prefer Server Components by default; use Client Components only when necessary (`'use client'`).
+
+* Use **Next.js App Router** (React 19).
+* Prefer **Server Components** by default; add `'use client'` only when necessary.
 
 ## Routing & Data
-- Follow `app/**` conventions for route handlers.  
-- Avoid custom fetch wrappers inside components.  
-- Push data fetching to Server Components or actions.
+
+* Follow `app/**` conventions for route handlers.
+* Avoid custom fetch wrappers inside components.
+* Push data fetching to **Server Components** or actions.
+* Use `next/image` for images; optimize assets in `public/`.
 
 ## Hooks
-- Follow React’s rules of hooks.  
-- Memoize expensive computations (`useMemo`, `useCallback`) sparingly, only when measurable performance benefits exist.
+
+* Follow React’s rules of hooks.
+* Memoize expensive computations (`useMemo`, `useCallback`) only with measurable gains.
 
 ## Styling
-- Use Tailwind v4 with configless mode.  
-- Prefer utility classes; avoid ad-hoc inline styles unless dynamic.  
-- Leverage shadcn UI patterns from `components/ui/*`.
+
+* Use **Tailwind v4 (configless)**.
+* Prefer utility composition; avoid ad-hoc inline styles unless dynamic.
+* **Design tokens only**: do not hardcode colors, spacing, radii, or shadows. Use the semantic token system (background/foreground, primary/secondary/accent/muted, destructive, chart-1 through chart-5).
+* If a new look is needed, **add a token or shared utility** first; don’t sprinkle one-offs.
+* Leverage **shadcn** patterns from `components/ui/*`.
 
 ## Components
-- Keep components small and focused.  
-- Co-locate tests under `__tests__`.  
-- Reuse primitives (`components/ui/*`, `components/crypto/*`).
+
+* Keep components small and focused; reuse primitives from `components/ui/*` and domain blocks in `components/crypto/*`.
+* **Must** use `Button` (never raw `<button>`), and `Card` with `CardHeader|Content|Footer|Action` for panels.
+* Icons: use **Lucide** and the repo’s **crypto icon set**. Do not add new icon packs.
 
 ## Imports & Aliases
-- Use `@/*` paths (`tsconfig.json`).  
-- Group imports consistently: react/next, third-party, internal, styles/assets.
+
+* Use `@/*` paths (`tsconfig.json`).
+* Group imports: react/next → third-party → internal → styles/assets.
 
 ## State Management
-- Prefer React state and server actions.  
-- Do not introduce new global state libraries without explicit approval.
+
+* Prefer local React state and server actions.
+* Do not introduce new global state libraries without explicit approval.
 
 ## Accessibility
-- Enforce focus states, keyboard navigation, aria labels, and color contrast.  
-- Use semantic HTML and `@testing-library` queries that reflect user behavior.
+
+* Enforce focus states, keyboard navigation, ARIA labels, and semantic HTML.
+* Use `@testing-library` queries that reflect user behavior.
+
+> Note: deep a11y/dark-mode exploration is out of MVP scope, but **baseline** focus/readability is still required.
 
 ## Performance
-- Avoid unnecessary client JS.  
-- Lazy-load heavy components.  
-- Use `next/image` (mocked in tests) and optimize assets in `public/`.
+
+* Avoid unnecessary client JS; lazy-load heavy pieces (charts, animation wrappers).
+* Prefer GPU-friendly transforms; avoid layout thrash.
+* No `console.log` in shipped UI. Surface user-facing errors in-context (card/panel).
 
 ## Errors & Logging
-- Do not `console.log` in shipped UI.  
-- Show user-friendly error messages.  
-- Log via backend (`src/lib/observability.ts`) if needed.
+
+* Show clear, user-friendly error messages.
+* Use backend logging (`src/lib/observability.ts`) if needed.
 
 ## Documentation
-- Update `docs/*` and `README.md` when UX, routes, or component APIs change.
+
+* Update `docs/*` and `README.md` when UX, routes, tokens, or component APIs change.
+* Co-locate tests under `__tests__`.
+
+---
+
+# MoonPhase Visual & Interaction Rules (2025)
+
+These extend the standards with our **design-system + trend** guidance for the demo.
+
+## Design Language & Reuse
+
+* **Cards are the default surface.** Build panels using `Card` structure; don’t freehand containers.
+* Use existing **custom utilities** instead of re-implementing effects:
+
+  * **Glass surfaces**: `glassmorphic` for frosted panels (cards, header strips, spotlight areas).
+  * **Interactive glow**: `shadow-glow` for clickable tiles/panels; color is data-driven via the provided CSS variable pattern.
+  * **Shimmer states**: shared shimmer/skeletons (e.g., `ShimmerGrid`) for loading.
+  * **Parallax backdrop**: `ParallaxBg` for depth; do not roll custom parallax.
+
+## Motion & Ambient
+
+* Micro-interactions are **short (≈150–300 ms)**, smooth, and use transforms/opacity (no layout shifts).
+* Motion must **reinforce meaning** (state change, emphasis). Avoid infinite or flashy loops.
+* Chart/line entrances use the existing **line-draw** wrapper; keep animations readable and unobtrusive.
+
+## Data Semantics & Charts
+
+* **Gains = green, losses = red, neutral = muted**; always include the `+`/`–` sign with values.
+* Use compact number formatting; align digits where needed (tabular/mono where appropriate).
+* Charts **must** use the **chart-1 to chart-5** palette; minimal gridlines, thin strokes, subtle area fills; small, legible labels. No misleading axes or color one-offs.
+
+## Tiles, Grids & Hover
+
+* Clickable tiles (assets, navigable summaries) should feel **alive** yet restrained:
+
+  * Glass surface where appropriate.
+  * Subtle lift/tilt and glow on hover (existing pattern).
+  * Consistent internal spacing using the system scale; responsive stacking via shared grid helpers.
+* No fixed pixel widths; layouts must degrade gracefully on smaller viewports.
+
+## AI Analysis (premium eye-candy panel)
+
+* Present AI output **only** in the dedicated AI Analysis card on detail pages.
+* Flow: **CTA → shimmer/“analyzing” → reveal** with a tasteful fade/slide and a single brief accent pulse.
+* Content: concise paragraphs/bullets; highlight notable metrics inline using the same green/red semantics.
+* Do not introduce parallel AI containers or chat UIs unless explicitly scoped.
+
+## Prohibited / Anti-patterns
+
+* Raw HTML controls styled ad-hoc (e.g., `<button class="…">`) — **use system primitives**.
+* Hardcoded hex/rgb, spacing, shadows, or radii — **use tokens/utilities**.
+* Off-brand animations, custom parallax implementations, random chart colors, or new icon packs.
+* New global state libs without approval.
+
+---
