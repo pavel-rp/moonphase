@@ -21,6 +21,7 @@
 
 ### Documentation
 - Update relevant docs in `docs/` and the root `README.md` when behavior or public APIs change.
+- For UI work, keep `docs/Design-System.md` and `docs/Frontend-Standards.md` in sync (add notes for new variants/utilities).
 
 ### Architectural guidelines
 - Follow hexagonal boundaries: domain ↔ ports ↔ adapters. UI and API routes depend on use cases, not on adapters directly (except in light wrappers).
