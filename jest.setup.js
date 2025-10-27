@@ -10,6 +10,15 @@ if (!globalThis.TransformStream) globalThis.TransformStream = TransformStream
 if (!globalThis.ReadableStream) globalThis.ReadableStream = ReadableStream
 if (!globalThis.WritableStream) globalThis.WritableStream = WritableStream
 
+// Polyfill ResizeObserver for jsdom
+class RO {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+// @ts-expect-error jsdom lacks ResizeObserver in this environment
+if (!global.ResizeObserver) global.ResizeObserver = RO
+
 // Mock Next.js Image component
 jest.mock('next/image', () => ({
   __esModule: true,
@@ -27,15 +36,23 @@ jest.mock('*.module.css', () => ({}))
 jest.mock('gsap', () => {
   const sharedMethods = {
     registerPlugin: jest.fn(),
-    timeline: () => ({ fromTo: jest.fn() }),
+    timeline: () => ({ fromTo: jest.fn(), to: jest.fn(), set: jest.fn(), kill: jest.fn() }),
     fromTo: jest.fn(),
-  };
+    to: jest.fn(),
+    set: jest.fn(),
+    killTweensOf: jest.fn(),
+    context: (fn) => {
+      if (typeof fn === 'function') fn();
+      return { revert: () => {} };
+    },
+  }
   return {
     __esModule: true,
     default: sharedMethods,
+    gsap: sharedMethods,
     ...sharedMethods,
-  };
-});
+  }
+})
 
 jest.mock('gsap/DrawSVGPlugin', () => ({ __esModule: true }))
 jest.mock('gsap/MotionPathPlugin', () => ({ __esModule: true }))
