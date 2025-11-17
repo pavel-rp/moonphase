@@ -47,6 +47,16 @@ describe('formatNumber', () => {
   it('should handle large numbers', () => {
     expect(formatNumber(1234567.89)).toBe('1,234,567.89')
   })
+
+  it('should format ultra-cheap coins with more precision', () => {
+    // Shiba Inu-like prices
+    expect(formatNumber(0.00002)).toBe('0.00002')
+    expect(formatNumber(0.000015)).toBe('0.000015')
+    expect(formatNumber(0.0000789)).toBe('0.0000789')
+    // Still show normal formatting for prices >= 0.01
+    expect(formatNumber(0.05)).toBe('0.05')
+    expect(formatNumber(0.1)).toBe('0.1')
+  })
 })
 
 describe('formatPercent', () => {

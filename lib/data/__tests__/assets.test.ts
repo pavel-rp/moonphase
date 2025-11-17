@@ -149,10 +149,10 @@ describe('fetchAssets', () => {
     const mockResponse = {
       data: [
         {
-          id: 'test',
-          rank: '999',
-          symbol: 'TEST',
-          name: 'Test Coin',
+          id: 'bitcoin',
+          rank: '1',
+          symbol: 'BTC',
+          name: 'Bitcoin',
           supply: '1000.5000000000000000',
           maxSupply: '2000.0000000000000000',
           marketCapUsd: '50000.7500000000000000',
@@ -172,13 +172,13 @@ describe('fetchAssets', () => {
 
     const fetchPromise = fetchAssets()
     await jest.advanceTimersByTimeAsync(8000)
-    
+
     const result = await fetchPromise
 
     expect(typeof result[0].rank).toBe('number')
     expect(typeof result[0].supply).toBe('number')
     expect(typeof result[0].priceUsd).toBe('number')
-    expect(result[0].rank).toBe(999)
+    expect(result[0].rank).toBe(1)
     expect(result[0].supply).toBe(1000.5)
     expect(result[0].changePercent24Hr).toBe(-1.5)
   })

@@ -1,7 +1,5 @@
 @import "tailwindcss";
-@import "tw-animate-css";
 
-@tailwind utilities;
 @custom-variant dark (&:is(.dark *));
 
 @source inline("var(--color-red-300)", "var(--color-green-300)", "var(--color-slate-300)");
@@ -119,9 +117,11 @@
   :root {
     --moon-opacity: 0.8;
   }
-  
+
   body {
     background-color: #b9b7b4;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
   }
 }
 
@@ -136,26 +136,35 @@
   box-shadow: var(--tw-shadow), inset 0 0 20px 0 var(--tw-glow-color);
 }
 
-@utility glassmorphic {
-  @apply border-outset shadow-xl/26 transition-all duration-200 translate-z-2 transform-3d
-          bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
+@utility corner-shape-squircle {
+  @supports (corner-shape: squircle) {
+    corner-shape: squircle;
+  }
+}
+
+/* Loading rings animation for page transitions */
+@keyframes expandFade {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
 }
 
 @layer utilities {
   .glassmorphic {
-    @apply glassmorphic;
+    @apply border-outset shadow-xl/26 transition-all duration-200 translate-z-2 transform-3d
+     bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
   }
 
   .glassmorphic::after {
     content: "";
-    @apply absolute bg-white/10 inset-0 border-0 backdrop-blur-sm rounded-xl -z-1;
-  }
-
-  .border-outset {
-    @apply border-outset;
-  }
-
-  .hover\:shadow-glow:hover {
-    @apply shadow-glow;
+    @apply absolute bg-white/10 inset-0 border-0 backdrop-blur-sm rounded-3xl -z-1 corner-shape-squircle;
   }
 }

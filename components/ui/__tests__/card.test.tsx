@@ -15,7 +15,7 @@ describe('Card Components', () => {
       expect(card).toBeInTheDocument()
       expect(card).toHaveClass('bg-card')
       expect(card).toHaveClass('text-card-foreground')
-      expect(card).toHaveClass('rounded-xl')
+      expect(card).toHaveClass('rounded-3xl')
       expect(card).toHaveClass('border')
       expect(card).toHaveClass('shadow-sm')
     })

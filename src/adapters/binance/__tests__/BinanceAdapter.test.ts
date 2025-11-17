@@ -63,7 +63,7 @@ describe('BinanceAdapter', () => {
     server.use(
       http.get(`${API_BASE}/ticker/24hr`, () => HttpResponse.json({ message: 'error' }, { status: 500 })),
     );
-    await expect(adapter.get24HrStats(symbol)).rejects.toThrow(/Binance API error 500/);
+    await expect(adapter.get24HrStats(symbol)).rejects.toThrow(/Binance API error.*500/);
   });
 
   test('throws on invalid JSON shape', async () => {

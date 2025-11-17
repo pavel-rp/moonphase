@@ -4,6 +4,30 @@ import { KlinesSchema, Ticker24hrSchema } from './schema';
 import type { BinancePort, Candlestick } from '@/ports/BinancePort';
 
 export class BinanceAdapter implements BinancePort {
+  private async buildErrorMessage(res: Response | undefined): Promise<string> {
+    if (!res) {
+      return `Binance API error: Status: 500`;
+    }
+    let errorDetails = `Status: ${res.status}`;
+    if (res.statusText) {
+      errorDetails += `, StatusText: ${res.statusText}`;
+    }
+    try {
+      let errorBody: unknown;
+      try {
+        errorBody = await res.clone().json();
+      } catch {
+        errorBody = await res.clone().text().catch(() => null);
+      }
+      if (errorBody) {
+        errorDetails += `, Body: ${JSON.stringify(errorBody)}`;
+      }
+    } catch {
+      // Ignore parsing errors
+    }
+    return `Binance API error: ${errorDetails}`;
+  }
+
   async get24HrStats(symbol: string): Promise<number> {
     const key = inflightKey('binance/ticker24hr', { symbol });
     return dedupe(key, async () => {
@@ -11,7 +35,7 @@ export class BinanceAdapter implements BinancePort {
         next: { revalidate: 30 },
       });
       if (!res || !res.ok) {
-        throw new Error(`Binance API error ${res?.status ?? 500}`);
+        throw new Error(await this.buildErrorMessage(res));
       }
       const json = await res.json();
       const parsed = Ticker24hrSchema.parse(json);
@@ -26,7 +50,7 @@ export class BinanceAdapter implements BinancePort {
       if (typeof limit === 'number') query.set('limit', String(limit));
       const res = await get(`/klines?${query.toString()}`, { next: { revalidate: 60 } });
       if (!res || !res.ok) {
-        throw new Error(`Binance API error ${res?.status ?? 500}`);
+        throw new Error(await this.buildErrorMessage(res));
       }
       const json = await res.json();
       const candles = KlinesSchema.parse(json);

@@ -94,7 +94,7 @@ export function HoverEffectCard({
         {children}
       </Card>
       <div
-        className="absolute border-2 border-(--tw-glow-color) opacity-80 inset-0 rounded-xl translate-z-0"
+        className="absolute border-2 border-(--tw-glow-color) opacity-80 inset-0 rounded-3xl translate-z-0 corner-shape-squircle"
         style={glowColorVarStyle}
       />
     </motion.div>

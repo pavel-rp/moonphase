@@ -13,12 +13,12 @@ jest.mock("next/navigation", () => ({
 
 // Mock HoverEffectCard
 jest.mock("../../ui/animation/hover-effect-card.client", () => ({
-  HoverEffectCard: ({ children, onClick, glowColor }: { 
-    children: React.ReactNode; 
-    onClick?: () => void; 
+  HoverEffectCard: ({ children, onClick, glowColor }: {
+    children: React.ReactNode;
+    onClick?: () => void;
     glowColor: string;
   }) => (
-    <div 
+    <div
       data-testid="hover-effect-card"
       data-glow-color={glowColor}
       onClick={onClick}
@@ -29,10 +29,24 @@ jest.mock("../../ui/animation/hover-effect-card.client", () => ({
   ),
 }));
 
+// Mock LoadingRings
+jest.mock("../../ui/animation/loading-rings.client", () => ({
+  LoadingRings: ({ color }: { color: string }) => (
+    <div data-testid="loading-rings" data-color={color} />
+  ),
+}));
+
 // Mock UI helpers
 jest.mock("@/lib/utils/ui-helpers", () => ({
-  getPriceMovementColorVar: (changePercent: number, variation: number) => 
-    `var(--color-${changePercent > 0 ? 'green' : changePercent < 0 ? 'red' : 'white'}-${variation})`,
+  getPriceMovementColorVar: (changePercent: number, variation: number) =>
+    `var(--color-${changePercent > 0 ? 'green' : changePercent < 0 ? 'red' : 'slate'}-${variation})`,
+  getPriceMovementColorValue: (changePercent: number, variation: number) => {
+    const color = changePercent > 0 ? 'green' : changePercent < 0 ? 'red' : 'slate';
+    const value = variation === 300
+      ? (color === 'green' ? '#86efac' : color === 'red' ? '#fca5a5' : '#cbd5e1')
+      : (color === 'green' ? '#15803d' : color === 'red' ? '#b91c1c' : '#334155');
+    return value;
+  },
 }));
 
 describe("CryptoCardClickable", () => {
@@ -128,7 +142,7 @@ describe("CryptoCardClickable", () => {
 
     expect(screen.getByTestId("hover-effect-card")).toHaveAttribute(
       "data-glow-color",
-      "var(--color-white-300)"
+      "var(--color-slate-300)"
     );
   });
 
