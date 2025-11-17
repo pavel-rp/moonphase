@@ -119,9 +119,11 @@
   :root {
     --moon-opacity: 0.8;
   }
-  
+
   body {
     background-color: #b9b7b4;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
   }
 }
 
@@ -141,14 +143,39 @@
           bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
 }
 
+@utility corner-shape-squircle {
+  @supports (corner-shape: squircle) {
+    corner-shape: squircle;
+  }
+}
+
+/* Loading rings animation for page transitions */
+@keyframes expandFade {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
 @layer utilities {
+  .corner-shape-squircle {
+    @apply corner-shape-squircle;
+  }
+
   .glassmorphic {
     @apply glassmorphic;
   }
 
   .glassmorphic::after {
     content: "";
-    @apply absolute bg-white/10 inset-0 border-0 backdrop-blur-sm rounded-xl -z-1;
+    @apply absolute bg-white/10 inset-0 border-0 backdrop-blur-sm rounded-3xl -z-1 corner-shape-squircle;
   }
 
   .border-outset {

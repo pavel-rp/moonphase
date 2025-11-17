@@ -26,12 +26,13 @@ export default function CryptoCardClickable({
   // Actual hex value for LoadingRings filter (CSS variables don't work in filters)
   const ringColor = getPriceMovementColorValue(changePercent24Hr, 300);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeout and reset loading state on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
+      setShowLoadingRings(false);
     };
   }, []);
 
@@ -41,7 +42,7 @@ export default function CryptoCardClickable({
       clearTimeout(timeoutRef.current);
     }
 
-    // Show loading rings after a brief delay (150ms) to avoid flashing on fast navigations
+    // Show loading rings after a brief delay (300ms) to avoid flashing on fast navigations
     timeoutRef.current = setTimeout(() => {
       setShowLoadingRings(true);
     }, 300);
