@@ -12,10 +12,10 @@ describe("LoadingRings", () => {
   it("renders three ring elements", () => {
     const { container } = render(<LoadingRings color="#ef4444" />);
 
-    // Should render a container div with 3 motion.div children (rings)
+    // Should render a container div with 3 div children (rings)
     const rings = container.querySelectorAll("div[style*='border']");
     // The parent div with pointer-events-none should contain 3 ring divs
-    expect(rings.length).toBeGreaterThanOrEqual(0); // Motion renders elements dynamically
+    expect(rings.length).toBe(3);
   });
 
   it("applies correct border color", () => {

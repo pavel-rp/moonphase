@@ -21,7 +21,6 @@ export const formatNumber = (num: number) => {
     // Show up to 8 decimal places to preserve precision for ultra-cheap coins
     return new Intl.NumberFormat("en-US", {
       maximumFractionDigits: 8,
-      maximumSignificantDigits: 8,
     }).format(num);
   }
 

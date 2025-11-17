@@ -11,48 +11,48 @@ export type LoadingRingsProps = {
 export function LoadingRings({ color }: LoadingRingsProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50 p-8">
-      <style jsx>{`
+      <style>{`
         @keyframes expandFade {
           0% {
-            transform: scale(0);
+            transform: scale(0.8);
             opacity: 0;
           }
-          5% {
-            opacity: 0.4;
+          20% {
+            opacity: 0.7;
           }
           100% {
-            transform: scale(1.8);
+            transform: scale(2.2);
             opacity: 0;
           }
         }
-        .ring {
+        .loading-ring-anim {
           animation: expandFade 1.5s ease-out infinite;
-          filter: drop-shadow(0 0 4px ${color});
-          opacity: 0;
-          transform: scale(0);
-        }
-        .ring-1 {
-          animation-delay: 0s;
-        }
-        .ring-2 {
-          animation-delay: 0.5s;
-        }
-        .ring-3 {
-          animation-delay: 1s;
         }
       `}</style>
 
       <div
-        className="absolute rounded-full border-2 w-20 h-20 ring ring-1"
-        style={{ borderColor: color }}
+        className="absolute rounded-full border-2 w-20 h-20 loading-ring-anim"
+        style={{
+          borderColor: color,
+          filter: `drop-shadow(0 0 8px ${color})`,
+          animationDelay: "0s",
+        }}
       />
       <div
-        className="absolute rounded-full border-2 w-20 h-20 ring ring-2"
-        style={{ borderColor: color }}
+        className="absolute rounded-full border-2 w-20 h-20 loading-ring-anim"
+        style={{
+          borderColor: color,
+          filter: `drop-shadow(0 0 8px ${color})`,
+          animationDelay: "0.5s",
+        }}
       />
       <div
-        className="absolute rounded-full border-2 w-20 h-20 ring ring-3"
-        style={{ borderColor: color }}
+        className="absolute rounded-full border-2 w-20 h-20 loading-ring-anim"
+        style={{
+          borderColor: color,
+          filter: `drop-shadow(0 0 8px ${color})`,
+          animationDelay: "1s",
+        }}
       />
     </div>
   );
