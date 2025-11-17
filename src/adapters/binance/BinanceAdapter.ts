@@ -11,7 +11,20 @@ export class BinanceAdapter implements BinancePort {
         next: { revalidate: 30 },
       });
       if (!res || !res.ok) {
-        throw new Error(`Binance API error ${res?.status ?? 500}`);
+        // Extract error details from response
+        let errorDetails = `Status: ${res?.status ?? 500}`;
+        if (res?.statusText) {
+          errorDetails += `, StatusText: ${res.statusText}`;
+        }
+        try {
+          const errorBody = await res?.clone().json().catch(() => res?.clone().text());
+          if (errorBody) {
+            errorDetails += `, Body: ${JSON.stringify(errorBody)}`;
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+        throw new Error(`Binance API error: ${errorDetails}`);
       }
       const json = await res.json();
       const parsed = Ticker24hrSchema.parse(json);
@@ -26,7 +39,20 @@ export class BinanceAdapter implements BinancePort {
       if (typeof limit === 'number') query.set('limit', String(limit));
       const res = await get(`/klines?${query.toString()}`, { next: { revalidate: 60 } });
       if (!res || !res.ok) {
-        throw new Error(`Binance API error ${res?.status ?? 500}`);
+        // Extract error details from response
+        let errorDetails = `Status: ${res?.status ?? 500}`;
+        if (res?.statusText) {
+          errorDetails += `, StatusText: ${res.statusText}`;
+        }
+        try {
+          const errorBody = await res?.clone().json().catch(() => res?.clone().text());
+          if (errorBody) {
+            errorDetails += `, Body: ${JSON.stringify(errorBody)}`;
+          }
+        } catch {
+          // Ignore parsing errors
+        }
+        throw new Error(`Binance API error: ${errorDetails}`);
       }
       const json = await res.json();
       const candles = KlinesSchema.parse(json);
