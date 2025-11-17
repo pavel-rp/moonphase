@@ -5,16 +5,19 @@ import type { BinancePort, Candlestick } from '@/ports/BinancePort';
 
 export class BinanceAdapter implements BinancePort {
   private async buildErrorMessage(res: Response | undefined): Promise<string> {
-    let errorDetails = `Status: ${res?.status ?? 500}`;
-    if (res?.statusText) {
+    if (!res) {
+      return `Binance API error: Status: 500`;
+    }
+    let errorDetails = `Status: ${res.status}`;
+    if (res.statusText) {
       errorDetails += `, StatusText: ${res.statusText}`;
     }
     try {
       let errorBody: unknown;
       try {
-        errorBody = await res?.clone().json();
+        errorBody = await res.clone().json();
       } catch {
-        errorBody = await res?.clone().text().catch(() => null);
+        errorBody = await res.clone().text().catch(() => null);
       }
       if (errorBody) {
         errorDetails += `, Body: ${JSON.stringify(errorBody)}`;
