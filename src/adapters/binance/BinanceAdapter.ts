@@ -17,7 +17,12 @@ export class BinanceAdapter implements BinancePort {
           errorDetails += `, StatusText: ${res.statusText}`;
         }
         try {
-          const errorBody = await res?.clone().json().catch(() => res?.clone().text());
+          let errorBody: unknown;
+          try {
+            errorBody = await res?.clone().json();
+          } catch {
+            errorBody = await res?.clone().text().catch(() => null);
+          }
           if (errorBody) {
             errorDetails += `, Body: ${JSON.stringify(errorBody)}`;
           }
@@ -45,7 +50,12 @@ export class BinanceAdapter implements BinancePort {
           errorDetails += `, StatusText: ${res.statusText}`;
         }
         try {
-          const errorBody = await res?.clone().json().catch(() => res?.clone().text());
+          let errorBody: unknown;
+          try {
+            errorBody = await res?.clone().json();
+          } catch {
+            errorBody = await res?.clone().text().catch(() => null);
+          }
           if (errorBody) {
             errorDetails += `, Body: ${JSON.stringify(errorBody)}`;
           }
