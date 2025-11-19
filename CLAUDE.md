@@ -6,9 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **MoonPhase** is an AI-powered crypto dashboard built with Next.js 15, React 19, and TypeScript. It displays live cryptocurrency assets with animated sparklines, price deltas, and per-token details. The codebase follows **Clean/Hexagonal Architecture** with Ports & Adapters for external service integration.
 
+**Note**: The project is branded as "MoonPhase" but the npm package name is "token-pies" (historical).
+
 **Key Pages**:
-- `/` – Assets grid with responsive layout (BTC featured at 2x span)
-- `/details/[symbol]` – Token details with price, market cap, and charts (dynamic route, force-dynamic)
+- `/` – Assets grid with responsive layout (BTC featured at 2x span), shimmer loading states
+- `/details/[symbol]` – Token details with price, market cap, charts, market data card, and trading activity (dynamic route, force-dynamic)
+
+**Key Features**:
+- Live crypto data from CoinCap (assets/pricing) and Binance (market data)
+- Whitelist-filtered asset list (211 curated symbols)
+- Animated sparkline charts with GSAP
+- Glassmorphic design with custom Tailwind utilities
+- Comprehensive testing suite with Jest 30
 
 ## Commands
 
@@ -74,22 +83,50 @@ External APIs (CoinCap, Binance, whitelist.json)
 ## Directory Structure
 
 ### Key Folders
-- `app/` – Next.js App Router pages, layouts, and API routes
+**Frontend**:
+- `app/` – Next.js App Router pages, layouts, API routes
+  - `api/assets/` – Assets API route handler
+  - `details/[symbol]/` – Dynamic token details page
+  - `layout.tsx` – Root layout with fonts and metadata
+  - `page.tsx` – Home page with assets grid
+  - `globals.css` – Tailwind v4 config, design tokens, CSS variables
 - `components/crypto/` – Domain-specific components (cards, grid, icons, sparklines)
-- `components/ui/` – Reusable UI primitives and animations
-- `src/adapters/` – External service implementations (CoinCap, Binance, Whitelist, Mock)
-- `src/ports/` – Port interfaces defining contracts for adapters
-- `src/usecases/` – Business logic orchestration (getAssets, getMarketData, etc.)
-- `src/domain/` – Domain models (Asset, MarketData, TradingActivity)
-- `src/lib/` – Backend utilities (http/fetcher, env, errors, observability, rateLimit, cache)
-- `lib/` – Frontend data fetching and utilities (numbers formatting, UI helpers, random walk)
+- `components/ui/` – Reusable UI primitives (button, action-button, card, grid, header, shimmer, sparkline, animations)
+- `lib/` – Frontend utilities
+  - `data/` – Server-side data fetching (fetchAssets, fetchMarketData, fetchTradingActivity)
+  - `utils/` – Number formatting, UI helpers, random walk, sleep
+
+**Backend (Clean Architecture)**:
+- `src/adapters/` – External service implementations
+  - `coincap/` – CoinCap API adapter
+  - `binance/` – Binance API adapter
+  - `whitelist/` – Whitelist filtering adapter (211 symbols)
+  - `mock/` – Mock adapters for UI development
+- `src/ports/` – Port interfaces (contracts for adapters)
+- `src/usecases/` – Business logic orchestration (getAssets, getMarketData, getTradingActivity)
+- `src/domain/` – Domain models (Asset, MarketData, TradingActivity, types)
+- `src/lib/` – Backend utilities (http, env, errors, observability, rateLimit, cache, result)
+
+**Other**:
 - `docs/` – Comprehensive documentation
+- `public/` – Static assets (crypto-icons, logos)
+- `scripts/` – Development scripts (precommit, git hooks)
+- `types/` – Global TypeScript type definitions
 
 ### Important Files
 - `.cursor/rules/` – Development standards (.cursor/rules/00-global.mdc is mandatory)
+  - `00-global.mdc` – Minimal safe edits workflow (always applied)
+  - `frontend.mdc` – Frontend standards (app/**, components/**)
+  - `backend.mdc` – Backend standards (src/**, app/api/**)
+  - `testing.mdc` – Testing standards
+  - `security-ci.mdc` – Security and CI/CD standards
+- `.cursor/mcp.json` – MCP server configuration (spec-workflow)
+- `.claude/commands/` – Custom slash commands for Claude Code
+  - `fix-tests.md` – Systematic test fixing workflow
 - `tsconfig.json` – Path aliases for `@/*` imports
 - `jest.config.js`, `jest.setup.js` – Test configuration with mocks
-- `tailwind.config.ts` – Tailwind CSS 4 (configless, custom utilities)
+- `postcss.config.mjs` – Tailwind CSS 4 PostCSS plugin (configless mode, no tailwind.config.ts)
+- `components.json` – shadcn/ui configuration (new-york style, Lucide icons)
 
 ## Environment Setup
 
@@ -112,14 +149,19 @@ Create `.env.local` in the root directory with your API keys.
 **Framework**: Next.js App Router, Server Components by default (add `'use client'` only when needed)
 
 **Styling**:
-- Tailwind CSS 4 (configless) with design tokens only (no hardcoded colors/spacing)
+- Tailwind CSS 4 (configless) via `@tailwindcss/postcss` plugin - no tailwind.config file
+- Design tokens defined in `app/globals.css` using `@theme inline` directive
 - Semantic token system: `background/foreground`, `primary/secondary/accent/muted`, `destructive`, `chart-1` through `chart-5`
-- Utilities: `glassmorphic` (frosted panels), `shadow-glow` (interactive tiles)
+- Custom utilities: `glassmorphic` (frosted panels), `shadow-glow` (interactive tiles), `corner-shape-squircle`
+- CSS custom properties (CSS variables) for theming with OKLCH color space
+- **Never hardcode colors, spacing, radii, or shadows** - always use design tokens
 
 **Components**:
-- Must use `Button` (never raw `<button>`) and `Card` with `CardHeader|Content|Footer|Action`
-- Icons: Lucide + repo's cryptocurrency icon set (no new icon packs)
-- Reuse primitives from `components/ui/*` and domain blocks from `components/crypto/*`
+- **Required Components**: Use `Button` (never raw `<button>`), `ActionButton` for CTAs, and `Card` with `CardHeader|Content|Footer|Action`
+- **UI Primitives** (`components/ui/`): button, action-button, card, grid, header, input, shimmer-card, shimmer-grid, sparkline, animation utilities
+- **Domain Components** (`components/crypto/`): crypto-icon, crypto-sparkline, loading-sparkline, card variants, grid variants
+- **Icons**: Lucide (via `lucide-react`) + cryptocurrency-icons package (no new icon packs)
+- **Reuse First**: Always check existing components before creating new ones
 
 **Animation**:
 - GSAP 3.13 + Motion 12.23 (Framer Motion alternative)
@@ -222,10 +264,20 @@ Create `.env.local` in the root directory with your API keys.
 - `getPriceMovementColorVar(changePercent)` – CSS color variable based on price delta
 - `getPriceMovementTextColorClass(changePercent)` – Tailwind color class
 
-### HTTP (`src/lib/http/`)
+### HTTP & Backend Utilities (`src/lib/`)
+**HTTP** (`src/lib/http/`):
 - `fetchWithRetry(url, options)` – Retry with exponential backoff
 - `withTimeout(promise, ms)` – Promise timeout wrapper
-- `dedupe(key, fn)` – Request deduplication
+- `dedupe(key, fn)` – Request deduplication (prevents concurrent duplicate requests)
+- `inflight.ts` – In-flight request tracking
+
+**Core Utilities**:
+- `env.ts` – Environment variable validation via `getEnv()`
+- `errors.ts` – Typed error classes
+- `observability.ts` – Logging with contextual metadata
+- `rateLimit.ts` – Rate limiting utilities
+- `result.ts` – Result type for error handling
+- `cache/` – Caching utilities
 
 ### Random Walk (`lib/utils/random-walk.ts`)
 - Generates realistic price simulation for sparkline charts (demo/UI data, not real)
@@ -244,6 +296,28 @@ Create `.env.local` in the root directory with your API keys.
 
 6. **Type-Safe Adapters**: All adapters implement port interfaces, enabling easy test/mock swapping.
 
+7. **ActionButton Pattern**: Use `ActionButton` component (not raw `Button`) for prominent CTAs. It includes built-in hover animations (shine effect), glassmorphic styling, and proper focus states.
+
+8. **Tailwind v4 Configless**: No `tailwind.config.ts` file. All configuration is in `app/globals.css` via `@theme inline` directive and CSS custom properties.
+
+## Developer Tooling
+
+### MCP Servers
+The project is configured with Model Context Protocol (MCP) servers in `.cursor/mcp.json`:
+- **spec-workflow**: Specification and workflow management (via `@pimzino/spec-workflow-mcp`)
+
+### Claude Code Slash Commands
+Custom slash commands are available in `.claude/commands/`:
+- `/fix-tests` – Systematic test fixing workflow with root cause analysis
+
+### Cursor Rules
+Glob-scoped development standards in `.cursor/rules/`:
+- **00-global.mdc** (always applied) – Minimal safe edits, preflight checks, architecture boundaries
+- **frontend.mdc** (app/**, components/**) – React/Next.js, design system, accessibility
+- **backend.mdc** (src/**, app/api/**) – Ports & Adapters, validation, observability
+- **testing.mdc** (all files) – Jest patterns, coverage requirements
+- **security-ci.mdc** (all files) – Secrets hygiene, dependency safety, PR standards
+
 ## Documentation
 
 See comprehensive docs in `docs/`:
@@ -255,6 +329,7 @@ See comprehensive docs in `docs/`:
 - `Deployment.md` – Deployment instructions
 - `Design-System.md` – Design language and component patterns
 - `Frontend-Standards.md` – Cursor IDE guidelines
+- `Contributing.md` – Branching, commits, and contribution workflow
 
 ## CI/CD
 
