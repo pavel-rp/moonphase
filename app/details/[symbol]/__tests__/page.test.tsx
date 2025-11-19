@@ -66,6 +66,14 @@ jest.mock("@/components/ui/button", () => ({
   ),
 }));
 
+jest.mock("@/components/ui/action-button", () => ({
+  ActionButton: ({ children }: { children: React.ReactNode }) => (
+    <button data-testid="button">
+      {children}
+    </button>
+  ),
+}));
+
 // Mock crypto components
 jest.mock("@/components/crypto/crypto-icon", () => ({
   CryptoIcon: ({ symbol, name, size }: { symbol: string; name: string; size: number }) => (
@@ -100,14 +108,33 @@ jest.mock("lucide-react", () => ({
   ChevronLeft: ({ className }: { className?: string }) => (
     <div data-testid="chevron-left" className={className}>←</div>
   ),
+  BrainCircuit: ({ className }: { className?: string }) => (
+    <div data-testid="brain-circuit" className={className}>🧠</div>
+  ),
 }));
 
-// Mock MarketDataCard to keep this test focused on page integration
+// Mock MarketDataCard and TradingActivityCard to keep this test focused on page integration
+// These are async Server Components that return Card components
 jest.mock("@/components/crypto/card/market-data-card", () => ({
   __esModule: true,
-  default: ({ symbol }: { symbol: string }) => (
-    <div data-testid="card"><div data-testid="market-data-card">Market Data Card for {symbol}</div></div>
-  ),
+  default: function MockMarketDataCard({ symbol }: { symbol: string }) {
+    return (
+      <div data-testid="card">
+        <div data-testid="market-data-card">Market Data Card for {symbol}</div>
+      </div>
+    );
+  },
+}));
+
+jest.mock("@/components/crypto/card/trading-activity-card", () => ({
+  __esModule: true,
+  default: function MockTradingActivityCard({ symbol }: { symbol: string }) {
+    return (
+      <div data-testid="card">
+        <div data-testid="trading-activity-card">Trading Activity Card for {symbol}</div>
+      </div>
+    );
+  },
 }));
 
 import { notFound } from "next/navigation";
