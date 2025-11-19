@@ -137,9 +137,9 @@ jest.mock("@/components/crypto/card/trading-activity-card", () => ({
   },
 }));
 
-jest.mock("@/components/crypto/card/ai-analysis-section", () => ({
+jest.mock("../_components/ai-analysis-section", () => ({
   __esModule: true,
-  default: function MockAiAnalysisSection() {
+  AiAnalysisSection: function MockAiAnalysisSection() {
     return (
       <div data-testid="card">
         <div data-testid="card-title">AI Analysis</div>

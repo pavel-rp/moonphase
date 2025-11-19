@@ -9,14 +9,12 @@ import {
 import { ActionButton } from "@/components/ui/action-button";
 import { BrainCircuit } from "lucide-react";
 
-type AiAnalysisSectionProps = {
-  symbol: string;
+interface AiAnalysisSectionProps {
   name: string;
   onGenerate?: () => void;
-};
+}
 
-export default function AiAnalysisSection({
-  symbol,
+export function AiAnalysisSection({
   name,
   onGenerate,
 }: AiAnalysisSectionProps) {
@@ -52,8 +50,7 @@ export default function AiAnalysisSection({
                 No analysis generated yet
               </h3>
               <p className="text-sm text-muted-foreground">
-                Run an AI pass on recent {symbol} data to get an at-a-glance
-                view.
+                Run an AI pass on recent {name} data to get an at-a-glance view.
               </p>
             </div>
 

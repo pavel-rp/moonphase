@@ -15,7 +15,7 @@ import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import ShimmerCard from "@/components/ui/shimmer-card";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
-import AiAnalysisSection from "@/components/crypto/card/ai-analysis-section";
+import { AiAnalysisSection } from "./_components/ai-analysis-section";
 
 export const dynamic = "force-dynamic";
 
@@ -115,7 +115,7 @@ export default async function SymbolDetailsPage({
         </div>
 
         {/* AI Analysis Section */}
-        <AiAnalysisSection symbol={asset.symbol} name={asset.name} />
+        <AiAnalysisSection name={asset.name} />
       </div>
     </main>
   );
