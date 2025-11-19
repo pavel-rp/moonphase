@@ -20,8 +20,7 @@ export function ActionButton({ children, className = "", ...rest }: Props) {
         "group " + // <- needed for group-hover
         "translate-z-30 transform-gpu hover:scale-104 " +
         "border-orange-50/50 border-1 border-solid" +
-        "hover:border-orange-50/100" +
-        "shadow-glow" +
+        "hover:border-orange-50/100 " +
         className
       }
     >
