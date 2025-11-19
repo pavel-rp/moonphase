@@ -12,10 +12,10 @@ import { CryptoIcon } from "@/components/crypto/crypto-icon";
 import { CryptoSparkline } from "@/components/crypto/crypto-sparkline";
 import { formatNumber, formatPercent } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
-import { Button } from "@/components/ui/button";
 import ShimmerCard from "@/components/ui/shimmer-card";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
+import { ActionButton } from "@/components/ui/action-button";
 
 export const dynamic = "force-dynamic";
 
@@ -26,16 +26,20 @@ interface SymbolDetailsPageProps {
 async function getAssetBySymbol(symbol: string): Promise<Asset | null> {
   try {
     const assets = await fetchAssets();
-    return assets.find(
-      (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()
-    ) || null;
+    return (
+      assets.find(
+        (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()
+      ) || null
+    );
   } catch (error) {
     console.error(`Error fetching asset for symbol "${symbol}":`, error);
     return null;
   }
 }
 
-export default async function SymbolDetailsPage({ params }: SymbolDetailsPageProps) {
+export default async function SymbolDetailsPage({
+  params,
+}: SymbolDetailsPageProps) {
   const { symbol } = await params;
   const asset = await getAssetBySymbol(symbol);
 
@@ -43,7 +47,10 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
     notFound();
   }
 
-  const textColorClass = getPriceMovementTextColorClass(asset.changePercent24Hr, 700);
+  const textColorClass = getPriceMovementTextColorClass(
+    asset.changePercent24Hr,
+    700
+  );
   const glowClass = "text-shadow-[0_0_20px_var(--tw-glow-color)]";
 
   return (
@@ -55,8 +62,12 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
             <div className="flex items-center gap-4">
               <CryptoIcon symbol={asset.symbol} size={48} name={asset.name} />
               <div>
-                <CardTitle className="text-3xl font-bold">{asset.name}</CardTitle>
-                <CardDescription className="text-lg">{asset.symbol}</CardDescription>
+                <CardTitle className="text-3xl font-bold">
+                  {asset.name}
+                </CardTitle>
+                <CardDescription className="text-lg">
+                  {asset.symbol}
+                </CardDescription>
               </div>
             </div>
             <div className="text-right">
@@ -74,7 +85,9 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
               <CardTitle>Price Information</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className={`flex items-center justify-between ${textColorClass}`}>
+              <div
+                className={`flex items-center justify-between ${textColorClass}`}
+              >
                 <span className={`text-4xl font-bold ${glowClass}`}>
                   ${formatNumber(asset.priceUsd)}
                 </span>
@@ -106,17 +119,21 @@ export default async function SymbolDetailsPage({ params }: SymbolDetailsPagePro
           <CardHeader>
             <CardTitle>AI Analysis</CardTitle>
             <CardDescription>
-              Get AI-powered insights and analysis for {asset.name}
+              Get AI-powered{" "}
+              <a className="hover:underline" href="https://www.google.com">
+                insights
+              </a>{" "}
+              and{" "}
+              <a className="hover:underline" href="https://www.google.com">
+                analysis
+              </a>{" "}
+              for {asset.name}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              className="w-full md:w-auto"
-              variant="default"
-              size="lg"
-            >
-              Generate AI Analysis
-            </Button>
+            <div className="flex justify-center items-center gap-4">
+              <ActionButton>Generate AI Analysis</ActionButton>
+            </div>
           </CardContent>
         </Card>
       </div>

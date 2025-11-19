@@ -85,6 +85,7 @@ export function HoverEffectCard({
           "select-none",
           "cursor-pointer",
           "transform-3d",
+          "translate-z-2",
           "transform-gpu",
           "min-h-[202px]"
         )}
