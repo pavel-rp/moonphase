@@ -132,7 +132,11 @@
 }
 
 @utility border-outset {
-  border: 2px outset rgba(255, 255, 255, 0.3);
+  border-style: outset;
+}
+
+@utility border-inset {
+  border-style: inset;
 }
 
 @utility shadow-glow {
@@ -165,7 +169,7 @@
 
 @layer utilities {
   .glassmorphic {
-    @apply border-outset shadow-xl/26 transition-all duration-200 transform-3d z-0
+    @apply border-outset border-2 border-white/30 shadow-xl/26 transition-all duration-200 transform-3d z-0
      bg-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.4)_0%,rgba(255,255,255,0.1)_100%)];
   }
 

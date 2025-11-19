@@ -66,6 +66,14 @@ jest.mock("@/components/ui/button", () => ({
   ),
 }));
 
+jest.mock("@/components/ui/action-button", () => ({
+  ActionButton: ({ children }: { children: React.ReactNode }) => (
+    <button data-testid="button">
+      {children}
+    </button>
+  ),
+}));
+
 // Mock crypto components
 jest.mock("@/components/crypto/crypto-icon", () => ({
   CryptoIcon: ({ symbol, name, size }: { symbol: string; name: string; size: number }) => (

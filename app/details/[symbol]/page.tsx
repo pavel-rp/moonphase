@@ -16,6 +16,7 @@ import ShimmerCard from "@/components/ui/shimmer-card";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
 import { ActionButton } from "@/components/ui/action-button";
+import { BrainCircuit } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -119,20 +120,21 @@ export default async function SymbolDetailsPage({
           <CardHeader>
             <CardTitle>AI Analysis</CardTitle>
             <CardDescription>
-              Get AI-powered{" "}
-              <a className="hover:underline" href="https://www.google.com">
-                insights
-              </a>{" "}
-              and{" "}
-              <a className="hover:underline" href="https://www.google.com">
-                analysis
-              </a>{" "}
-              for {asset.name}
+              Get AI-powered insights and analysis for {asset.name}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex justify-center items-center gap-4">
-              <ActionButton>Generate AI Analysis</ActionButton>
+              <ActionButton>
+                Generate AI Analysis
+                <BrainCircuit
+                  className={
+                    "size-5 group-hover:translate-x-1 rotate-180 " +
+                    "group-hover:rotate-0 transition duration-300 ease-out " +
+                    "group-active:translate-x-2 "
+                  }
+                />
+              </ActionButton>
             </div>
           </CardContent>
         </Card>
