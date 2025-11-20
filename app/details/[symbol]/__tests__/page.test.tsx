@@ -137,6 +137,18 @@ jest.mock("@/components/crypto/card/trading-activity-card", () => ({
   },
 }));
 
+jest.mock("../_components/ai-analysis-section", () => ({
+  __esModule: true,
+  AiAnalysisSection: function MockAiAnalysisSection() {
+    return (
+      <div data-testid="card">
+        <div data-testid="card-title">AI Analysis</div>
+        <button data-testid="button">Generate AI Analysis</button>
+      </div>
+    );
+  },
+}));
+
 import { notFound } from "next/navigation";
 import { fetchAssets } from "@/lib/data/assets";
 
