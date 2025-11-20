@@ -24,7 +24,7 @@ export function AiAnalysisSection({
       <CardHeader>
         <CardTitle>AI Analysis</CardTitle>
         <CardDescription>
-          Get AI-powered insights and scenarios for {name}
+          Get AI-powered insights and analysis for {name}
         </CardDescription>
         <CardAction>
           <span className="inline-flex items-center justify-center rounded-full bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
