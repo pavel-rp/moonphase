@@ -160,7 +160,7 @@ export class LangChainAiAdapter implements AiAnalysisPort {
     }
 
     this.model = new ChatOpenAI({
-      model: "gpt-4o-mini",
+      model: "gpt-5.1",
       apiKey: env.OPENAI_API_KEY,
       temperature: 0.7,
     });
