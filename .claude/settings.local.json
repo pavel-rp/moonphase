@@ -7,7 +7,8 @@
       "Bash(pnpm preflight:*)",
       "Bash(pnpm test:*)",
       "Bash(cat:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(eslint:*)"
     ],
     "deny": [],
     "ask": []
