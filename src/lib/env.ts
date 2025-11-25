@@ -7,6 +7,7 @@ const EnvSchema = z.object({
   COINCAP_BASE_URL: z.string().url().optional(),
   BINANCE_API_KEY: z.string().optional(),
   BINANCE_BASE_URL: z.string().url().optional(),
+  OPENAI_API_KEY: z.string().optional(),
 });
 
 type Env = z.infer<typeof EnvSchema>;

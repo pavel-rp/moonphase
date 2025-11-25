@@ -136,6 +136,7 @@ COINCAP_API_KEY=your_coincap_key     # Required for production
 COINCAP_BASE_URL=...                 # Optional override (defaults to rest.coincap.io/v3)
 BINANCE_API_KEY=...                  # Optional (for advanced features)
 BINANCE_BASE_URL=...                 # Optional override (defaults to api.binance.com/api/v3)
+OPENAI_API_KEY=...                   # Required for AI analysis
 ```
 
 Create `.env.local` in the root directory with your API keys.
