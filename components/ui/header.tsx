@@ -1,5 +1,5 @@
-import Link from "next/link";
 import React, { ReactNode } from "react";
+import { NavLink } from "./nav-link";
 
 export type HeaderLink = { href: string; label: string };
 
@@ -8,10 +8,7 @@ interface HeaderProps {
   logo?: ReactNode;
 }
 
-const defaultLinks: HeaderLink[] = [
-  { href: "/", label: "Dashboard" },
-  { href: "/about", label: "About" },
-];
+const defaultLinks: HeaderLink[] = [{ href: "/", label: "Dashboard" }];
 
 export function Header({ links = defaultLinks, logo }: HeaderProps) {
   const Logo = (
@@ -32,18 +29,11 @@ export function Header({ links = defaultLinks, logo }: HeaderProps) {
           {Logo}
           <nav className="pointer-events-auto">
             <ul className="flex items-center gap-2">
-              {links.map((link) => {
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="rounded-full px-4 py-1.5 text-sm font-medium backdrop-blur-md bg-white/5 ring-1 ring-white/10 text-zinc-100/90 hover:bg-white/8 hover:ring-white/20 transition outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60"
-                    >
-                      {link.label}
-                    </Link>          
-                  </li>
-                );
-              })}
+              {links.map((link) => (
+                <li key={link.href}>
+                  <NavLink href={link.href}>{link.label}</NavLink>
+                </li>
+              ))}
             </ul>
           </nav>
         </div>
