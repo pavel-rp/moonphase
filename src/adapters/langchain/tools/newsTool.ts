@@ -68,10 +68,45 @@ export const getNewsArticlesTool = tool(
         return validationError;
       }
 
-      const articles = await newsAdapter.fetchNews({
-        symbol: symbol.toUpperCase(),
-        limit: limit ?? 5,
-      });
+      const upperSymbol = symbol.toUpperCase();
+      const requestLimit = limit ?? 5;
+      let articles: Awaited<ReturnType<NewsPort['fetchNews']>> = [];
+      let usedMockFallback = false;
+      let source: 'live' | 'mock' = newsAdapter instanceof MockNewsAdapter ? 'mock' : 'live';
+
+      // Try the primary adapter first
+      if (newsAdapter instanceof NewsAdapter) {
+        try {
+          articles = await newsAdapter.fetchNews({
+            symbol: upperSymbol,
+            limit: requestLimit,
+          });
+        } catch {
+          // Real adapter threw an error, fall back to mock
+          usedMockFallback = true;
+        }
+
+        // If real adapter returned empty (which can happen on internal errors due to graceful degradation),
+        // fall back to mock for better UX
+        if (!articles || articles.length === 0) {
+          usedMockFallback = true;
+        }
+
+        if (usedMockFallback) {
+          const mockAdapter = new MockNewsAdapter();
+          articles = await mockAdapter.fetchNews({
+            symbol: upperSymbol,
+            limit: requestLimit,
+          });
+          source = 'mock';
+        }
+      } else {
+        // Already using mock adapter
+        articles = await newsAdapter.fetchNews({
+          symbol: upperSymbol,
+          limit: requestLimit,
+        });
+      }
 
       if (!articles || articles.length === 0) {
         return JSON.stringify({
@@ -88,6 +123,8 @@ export const getNewsArticlesTool = tool(
         symbol,
         count: articles.length,
         data: articles,
+        source,
+        fallback: usedMockFallback,
       });
     } catch (error) {
       return handleNewsToolError(error, symbol);

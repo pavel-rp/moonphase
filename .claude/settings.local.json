@@ -8,7 +8,9 @@
       "Bash(pnpm test:*)",
       "Bash(cat:*)",
       "Bash(mkdir:*)",
-      "Bash(eslint:*)"
+      "Bash(eslint:*)",
+      "Bash(pnpm add:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

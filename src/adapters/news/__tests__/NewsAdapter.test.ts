@@ -18,26 +18,35 @@ describe('NewsAdapter', () => {
   describe('fetchNews', () => {
     it('should fetch and parse news articles successfully', async () => {
       const mockResponse = {
-        status: 'ok',
-        totalResults: 2,
-        articles: [
-          {
-            title: 'BTC News',
-            description: 'Bitcoin update',
-            url: 'https://example.com/1',
-            publishedAt: '2025-01-01T00:00:00Z',
-            source: { name: 'Test Source' },
-            content: 'Full content',
-          },
-          {
-            title: 'BTC Analysis',
-            description: 'Market analysis',
-            url: 'https://example.com/2',
-            publishedAt: '2025-01-02T00:00:00Z',
-            source: { name: 'Crypto Daily' },
-            content: 'Analysis content',
-          },
-        ],
+        articles: {
+          results: [
+            {
+              uri: 'uri1',
+              title: 'BTC News',
+              body: 'Bitcoin update content',
+              url: 'https://example.com/1',
+              dateTime: '2025-01-01T00:00:00Z',
+              source: {
+                uri: 'source1',
+                title: 'Test Source',
+              },
+              image: null,
+            },
+            {
+              uri: 'uri2',
+              title: 'BTC Analysis',
+              body: 'Market analysis content',
+              url: 'https://example.com/2',
+              dateTime: '2025-01-02T00:00:00Z',
+              source: {
+                uri: 'source2',
+                title: 'Crypto Daily',
+              },
+              image: null,
+            },
+          ],
+          totalResults: 2,
+        },
       };
 
       mockGet.mockResolvedValue({
@@ -51,7 +60,7 @@ describe('NewsAdapter', () => {
       expect(result[0].title).toBe('BTC News');
       expect(result[1].title).toBe('BTC Analysis');
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('q=BTC'),
+        expect.stringContaining('keyword=Bitcoin+cryptocurrency'),
         expect.objectContaining({ next: { revalidate: 300 } })
       );
     });
@@ -59,13 +68,18 @@ describe('NewsAdapter', () => {
     it('should use default limit of 5 when not specified', async () => {
       mockGet.mockResolvedValue({
         ok: true,
-        json: async () => ({ status: 'ok', totalResults: 0, articles: [] }),
+        json: async () => ({
+          articles: {
+            results: [],
+            totalResults: 0,
+          },
+        }),
       } as Response);
 
       await adapter.fetchNews({ symbol: 'ETH' });
 
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('pageSize=5'),
+        expect.stringContaining('articlesCount=5'),
         expect.any(Object)
       );
     });
@@ -73,13 +87,18 @@ describe('NewsAdapter', () => {
     it('should use custom limit when provided', async () => {
       mockGet.mockResolvedValue({
         ok: true,
-        json: async () => ({ status: 'ok', totalResults: 0, articles: [] }),
+        json: async () => ({
+          articles: {
+            results: [],
+            totalResults: 0,
+          },
+        }),
       } as Response);
 
       await adapter.fetchNews({ symbol: 'BTC', limit: 10 });
 
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('pageSize=10'),
+        expect.stringContaining('articlesCount=10'),
         expect.any(Object)
       );
     });
@@ -118,18 +137,23 @@ describe('NewsAdapter', () => {
 
     it('should deduplicate concurrent requests for same symbol and limit', async () => {
       const mockResponse = {
-        status: 'ok',
-        totalResults: 1,
-        articles: [
-          {
-            title: 'BTC News',
-            description: 'Test',
-            url: 'https://example.com/1',
-            publishedAt: '2025-01-01T00:00:00Z',
-            source: { name: 'Test' },
-            content: null,
-          },
-        ],
+        articles: {
+          results: [
+            {
+              uri: 'uri1',
+              title: 'BTC News',
+              body: 'Test content',
+              url: 'https://example.com/1',
+              dateTime: '2025-01-01T00:00:00Z',
+              source: {
+                uri: 'source1',
+                title: 'Test',
+              },
+              image: null,
+            },
+          ],
+          totalResults: 1,
+        },
       };
 
       mockGet.mockResolvedValue({
@@ -149,7 +173,12 @@ describe('NewsAdapter', () => {
     it('should not deduplicate requests for different symbols', async () => {
       mockGet.mockResolvedValue({
         ok: true,
-        json: async () => ({ status: 'ok', totalResults: 0, articles: [] }),
+        json: async () => ({
+          articles: {
+            results: [],
+            totalResults: 0,
+          },
+        }),
       } as Response);
 
       await Promise.all([
@@ -163,16 +192,21 @@ describe('NewsAdapter', () => {
     it('should include correct query parameters', async () => {
       mockGet.mockResolvedValue({
         ok: true,
-        json: async () => ({ status: 'ok', totalResults: 0, articles: [] }),
+        json: async () => ({
+          articles: {
+            results: [],
+            totalResults: 0,
+          },
+        }),
       } as Response);
 
       await adapter.fetchNews({ symbol: 'BTC', limit: 3 });
 
       const callArg = mockGet.mock.calls[0][0];
-      expect(callArg).toContain('q=BTC');
-      expect(callArg).toContain('sortBy=publishedAt');
-      expect(callArg).toContain('language=en');
-      expect(callArg).toContain('pageSize=3');
+      expect(callArg).toContain('keyword=Bitcoin+cryptocurrency');
+      expect(callArg).toContain('articlesSortBy=date');
+      expect(callArg).toContain('lang=eng');
+      expect(callArg).toContain('articlesCount=3');
     });
   });
 });

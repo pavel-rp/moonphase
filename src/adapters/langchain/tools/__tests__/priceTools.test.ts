@@ -146,7 +146,7 @@ describe('priceTools', () => {
       });
 
       it('should return error for invalid symbol type', async () => {
-        const result = await getPriceHistoryTool.invoke({ symbol: null as any });
+        const result = await getPriceHistoryTool.invoke({ symbol: null as unknown as string });
         const parsed = JSON.parse(result);
 
         expect(parsed.error).toContain('Invalid symbol parameter');
@@ -284,7 +284,7 @@ describe('priceTools', () => {
       });
 
       it('should return error for invalid symbol type', async () => {
-        const result = await getVWAPTool.invoke({ symbol: undefined as any });
+        const result = await getVWAPTool.invoke({ symbol: undefined as unknown as string });
         const parsed = JSON.parse(result);
 
         expect(parsed.error).toContain('Invalid symbol parameter');
@@ -294,7 +294,7 @@ describe('priceTools', () => {
 
     describe('invalid results', () => {
       it('should return error for null VWAP', async () => {
-        mockGetVWAP.mockResolvedValue(null as any);
+        mockGetVWAP.mockResolvedValue(null as unknown as number);
 
         const result = await getVWAPTool.invoke({ symbol: 'BTCUSDT' });
         const parsed = JSON.parse(result);
@@ -304,7 +304,7 @@ describe('priceTools', () => {
       });
 
       it('should return error for undefined VWAP', async () => {
-        mockGetVWAP.mockResolvedValue(undefined as any);
+        mockGetVWAP.mockResolvedValue(undefined as unknown as number);
 
         const result = await getVWAPTool.invoke({ symbol: 'BTCUSDT' });
         const parsed = JSON.parse(result);

@@ -115,7 +115,7 @@ export default async function SymbolDetailsPage({
         </div>
 
         {/* AI Analysis Section */}
-        <AiAnalysisSection name={asset.name} />
+        <AiAnalysisSection name={asset.name} symbol={asset.symbol} />
       </div>
     </main>
   );
