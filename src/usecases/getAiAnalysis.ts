@@ -1,22 +1,18 @@
-import { Asset } from "@/domain/asset";
-import { MarketData } from "@/domain/marketData";
 import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
 
 export async function getAiAnalysis(
   deps: {
     ai: AiAnalysisPort;
   },
-  asset: Asset,
-  marketData: MarketData[]
+  symbol: string
 ): Promise<string> {
-  const analysis = await deps.ai.analyzeAsset(asset, marketData);
+  const analysis = await deps.ai.analyzeAsset(symbol);
   return analysis;
 }
 
 export function getAiAnalysisStream(
   deps: { ai: AiAnalysisPort },
-  asset: Asset,
-  marketData: MarketData[]
+  symbol: string
 ): AsyncIterable<string> {
-  return deps.ai.analyzeAssetStream(asset, marketData);
+  return deps.ai.analyzeAssetStream(symbol);
 }

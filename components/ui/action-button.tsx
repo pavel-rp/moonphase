@@ -28,7 +28,7 @@ export function ActionButton({ children, className, ...rest }: Props) {
         // Interactive states
         "hover:bg-stone-800/100 hover:ring-stone-600/50 hover:shadow-lg hover:border-orange-50/100 hover:scale-104",
         "hover:border-outset hover:border-1 hover:border-[var(--tw-glow-color)]",
-        "active:border-inset active:border-1 active:ring-0",
+        "active:border-inset active:border-1 active:ring-0 active:bg-stone-900/70",
         "focus-visible:outline-none",
         // Transitions & transforms
         "transition-all duration-300",
