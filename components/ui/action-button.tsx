@@ -9,12 +9,13 @@ type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 export function ActionButton({ children, className, ...rest }: Props) {
   return (
     <Button
-      size="xl"
       {...rest}
       className={cn(
         // Layout & positioning
         "relative inline-flex items-center justify-center overflow-hidden",
         "group",
+        // Responsive sizing (overrides default Button size, py-0 resets default py-2)
+        "h-9 px-4 py-0 sm:h-10 sm:px-5 md:h-11 md:px-6",
         // Shape & typography
         "rounded-xl font-semibold corner-shape-squircle",
         // Background & borders
@@ -38,7 +39,7 @@ export function ActionButton({ children, className, ...rest }: Props) {
         className
       )}
     >
-      <span className={cn("text-lg relative z-10 transition flex items-center gap-3")}>
+      <span className={cn("text-sm sm:text-base md:text-lg relative z-10 transition flex items-center gap-2 sm:gap-3")}>
         {children}
       </span>
       <span

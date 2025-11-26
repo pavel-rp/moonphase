@@ -1,9 +1,14 @@
 import { Card } from "@/components/ui/card";
 import LoadingSparkline from "../crypto/loading-sparkline";
+import { cn } from "@/lib/utils/utils";
 
-export default function ShimmerCard() {
+interface ShimmerCardProps {
+  className?: string;
+}
+
+export default function ShimmerCard({ className }: ShimmerCardProps = {}) {
   return (
-    <Card className="glassmorphic p-6 animate-pulse min-h-[202px] flex flex-col justify-between">
+    <Card className={cn("glassmorphic p-6 animate-pulse min-h-[202px] flex flex-col justify-between", className)}>
       <div className="flex items-center justify-between">
         <div className="flex-1 gap-4">
           <div className="h-4 bg-gray-400 rounded w-1/2 opacity-30"></div>

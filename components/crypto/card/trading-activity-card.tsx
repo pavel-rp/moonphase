@@ -110,7 +110,7 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
   const volume24h = `$${prettifyNumber(ta.volume24hUsd)}`;
 
   return (
-    <Card className="glassmorphic">
+    <Card className="glassmorphic min-w-[220px]">
       <CardHeader>
         <CardTitle>Trading Activity</CardTitle>
       </CardHeader>
@@ -119,7 +119,7 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
           {/* 24h Volume */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <BarChart3 className="hidden sm:block h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">24h Volume</span>
             </div>
             <span className="text-base md:text-lg lg:text-xl font-semibold tabular-nums text-right">
@@ -130,7 +130,7 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
           {/* Liquidity Score */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <Droplet className="h-4 w-4 text-muted-foreground" />
+              <Droplet className="hidden sm:block h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Liquidity Score</span>
             </div>
             <div className="rounded-md bg-muted/40 px-2 py-0.5 font-semibold text-sm">
@@ -141,7 +141,7 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
           {/* Top Exchanges */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <PieChart className="h-4 w-4 text-muted-foreground" />
+              <PieChart className="hidden sm:block h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Top Exchanges</span>
             </div>
             <DonutChart exchanges={ta.topExchanges} />
@@ -150,7 +150,7 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
           {/* CEX/DEX Split */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <GitFork className="h-4 w-4 text-muted-foreground" />
+              <GitFork className="hidden sm:block h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">CEX/DEX Split</span>
             </div>
             <StackedBar cex={ta.cexDexSplit.cex} dex={ta.cexDexSplit.dex} />

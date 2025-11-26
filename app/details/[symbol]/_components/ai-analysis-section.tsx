@@ -51,12 +51,12 @@ export function AiAnalysisSection({
   };
 
   if (loading) {
-    return <ShimmerCard />;
+    return <ShimmerCard className="min-w-[220px]" />;
   }
 
   if (analysis) {
     return (
-      <Card className="glassmorphic min-w-[330px]">
+      <Card className="glassmorphic min-w-[220px]">
         <CardHeader>
           <CardTitle>AI Analysis</CardTitle>
           <CardDescription>
@@ -71,7 +71,7 @@ export function AiAnalysisSection({
         <CardContent className="px-4 sm:px-6">
           <div className="flex items-start gap-4 sm:gap-6 mb-6">
             {/* Icon Container */}
-            <div className="flex-shrink-0">
+            <div className="hidden sm:block flex-shrink-0">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
                 <BrainCircuit className="h-6 w-6 text-stone-300" />
               </div>
@@ -145,7 +145,7 @@ export function AiAnalysisSection({
   }
 
   return (
-    <Card className="glassmorphic">
+    <Card className="glassmorphic min-w-[220px]">
       {/* Header Zone */}
       <CardHeader>
         <CardTitle>AI Analysis</CardTitle>
@@ -163,7 +163,7 @@ export function AiAnalysisSection({
       <CardContent className="px-4 sm:px-6">
         <div className="flex items-start gap-4 sm:gap-6 mb-8">
           {/* Icon Container */}
-          <div className="flex-shrink-0">
+          <div className="hidden sm:block flex-shrink-0">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
               <BrainCircuit className="h-6 w-6 text-stone-300" />
             </div>
