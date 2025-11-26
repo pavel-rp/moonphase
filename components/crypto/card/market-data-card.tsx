@@ -45,7 +45,7 @@ export default async function MarketDataCard({ symbol }: MarketDataCardProps) {
   ];
 
   return (
-    <Card className="glassmorphic">
+    <Card className="glassmorphic min-w-[220px]">
       <CardHeader>
         <CardTitle>Market Data</CardTitle>
       </CardHeader>
@@ -59,7 +59,7 @@ export default async function MarketDataCard({ symbol }: MarketDataCardProps) {
                 className="flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <IconComponent className="h-4 w-4 text-muted-foreground" />
+                  <IconComponent className="hidden sm:block h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">{item.label}</span>
                 </div>
                 <span className="text-base md:text-lg lg:text-xl font-semibold tabular-nums text-right">

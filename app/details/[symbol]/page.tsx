@@ -54,10 +54,10 @@ export default async function SymbolDetailsPage({
   const glowClass = "text-shadow-[0_0_20px_var(--tw-glow-color)]";
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-start px-12 pb-8 pt-24">
+    <main className="flex min-h-screen flex-col items-center justify-start px-6 sm:px-12 pb-8 pt-24">
       <div className="w-full max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
-        <Card className="glassmorphic">
+        <Card className="glassmorphic min-w-[220px]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div className="flex items-center gap-4">
               <CryptoIcon symbol={asset.symbol} size={48} name={asset.name} />
@@ -80,7 +80,7 @@ export default async function SymbolDetailsPage({
         {/* Price & Market Data Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {/* Price Section */}
-          <Card className="glassmorphic">
+          <Card className="glassmorphic min-w-[220px]">
             <CardHeader>
               <CardTitle>Price Information</CardTitle>
             </CardHeader>
@@ -103,13 +103,13 @@ export default async function SymbolDetailsPage({
 
           {/* Market Data Section */}
           {/** Using mock MarketData via ports/adapters; server component by default */}
-          <Suspense fallback={<ShimmerCard />}>
+          <Suspense fallback={<ShimmerCard className="min-w-[220px]" />}>
             <MarketDataCard symbol={asset.symbol} />
           </Suspense>
 
           {/* Trading Activity Section */}
           {/** Using mock TradingActivity via ports/adapters; server component by default */}
-          <Suspense fallback={<ShimmerCard />}>
+          <Suspense fallback={<ShimmerCard className="min-w-[220px]" />}>
             <TradingActivityCard symbol={asset.symbol} />
           </Suspense>
         </div>

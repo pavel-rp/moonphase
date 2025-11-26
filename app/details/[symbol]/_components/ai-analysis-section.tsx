@@ -51,12 +51,12 @@ export function AiAnalysisSection({
   };
 
   if (loading) {
-    return <ShimmerCard />;
+    return <ShimmerCard className="min-w-[220px]" />;
   }
 
   if (analysis) {
     return (
-      <Card className="glassmorphic">
+      <Card className="glassmorphic min-w-[220px]">
         <CardHeader>
           <CardTitle>AI Analysis</CardTitle>
           <CardDescription>
@@ -68,17 +68,17 @@ export function AiAnalysisSection({
             </span>
           </CardAction>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-start gap-6 mb-6">
+        <CardContent className="px-4 sm:px-6">
+          <div className="flex items-start gap-4 sm:gap-6 mb-6">
             {/* Icon Container */}
-            <div className="flex-shrink-0">
+            <div className="hidden sm:block flex-shrink-0">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
                 <BrainCircuit className="h-6 w-6 text-stone-300" />
               </div>
             </div>
 
             {/* Analysis Content */}
-            <div className="flex-1 prose prose-invert prose-sm max-w-none">
+            <div className="flex-1 prose prose-invert prose-sm max-w-none wrap-anywhere min-w-0">
               <Markdown
                 components={{
                   h1: ({ children }) => (
@@ -97,12 +97,12 @@ export function AiAnalysisSection({
                     </h3>
                   ),
                   p: ({ children }) => (
-                    <p className="text-sm text-foreground/90 mb-3 leading-relaxed">
+                    <p className="text-sm text-foreground/90 mb-3 leading-relaxed break-words">
                       {children}
                     </p>
                   ),
                   strong: ({ children }) => (
-                    <strong className="font-semibold text-foreground whitespace-nowrap">
+                    <strong className="font-semibold text-foreground">
                       {children}
                     </strong>
                   ),
@@ -117,12 +117,12 @@ export function AiAnalysisSection({
                     </ol>
                   ),
                   li: ({ children }) => (
-                    <li className="text-sm text-foreground/90 leading-relaxed">
+                    <li className="text-sm text-foreground/90 leading-relaxed break-words">
                       {children}
                     </li>
                   ),
                   code: ({ children }) => (
-                    <code className="bg-muted/40 px-1.5 py-0.5 rounded text-xs font-mono text-foreground whitespace-nowrap">
+                    <code className="bg-muted/40 px-1.5 py-0.5 rounded text-xs font-mono text-foreground break-words">
                       {children}
                     </code>
                   ),
@@ -145,7 +145,7 @@ export function AiAnalysisSection({
   }
 
   return (
-    <Card className="glassmorphic">
+    <Card className="glassmorphic min-w-[220px]">
       {/* Header Zone */}
       <CardHeader>
         <CardTitle>AI Analysis</CardTitle>
@@ -160,10 +160,10 @@ export function AiAnalysisSection({
       </CardHeader>
 
       {/* Empty-State Content Zone */}
-      <CardContent>
-        <div className="flex items-start gap-6 mb-8">
+      <CardContent className="px-4 sm:px-6">
+        <div className="flex items-start gap-4 sm:gap-6 mb-8">
           {/* Icon Container */}
-          <div className="flex-shrink-0">
+          <div className="hidden sm:block flex-shrink-0">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
               <BrainCircuit className="h-6 w-6 text-stone-300" />
             </div>
