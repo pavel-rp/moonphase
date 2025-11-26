@@ -78,7 +78,7 @@ export function AiAnalysisSection({
             </div>
 
             {/* Analysis Content */}
-            <div className="flex-1 prose prose-invert prose-sm max-w-none overflow-wrap-anywhere min-w-0">
+            <div className="flex-1 prose prose-invert prose-sm max-w-none wrap-anywhere min-w-0">
               <Markdown
                 components={{
                   h1: ({ children }) => (
