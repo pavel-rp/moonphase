@@ -14,7 +14,22 @@ export default function AssetsGrid() {
 }
 
 async function AssetsGridContent() {
-  const assets = await fetchAssets();
+  let assets;
+
+  try {
+    assets = await fetchAssets();
+  } catch (error) {
+    console.error("Error in AssetsGridContent:", error);
+    return (
+      <div className="w-full max-w-7xl mx-auto p-8 text-center">
+        <p className="text-red-500">
+          Error loading assets:{" "}
+          {error instanceof Error ? error.message : "Unknown error"}
+        </p>
+      </div>
+    );
+  }
+
   const isFeatured = (asset: Asset) => asset.symbol === "BTC";
 
   return (
