@@ -3,17 +3,18 @@
 import { AnimatePresence, motion, Transition } from "motion/react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { useContext, useRef, useEffect } from "react";
+import { useContext, useState } from "react";
 
 function usePreviousValue<T>(value: T): T | undefined {
-  const prevValue = useRef<T | undefined>(undefined);
-  useEffect(() => {
-    prevValue.current = value;
-    return () => {
-      prevValue.current = undefined;
-    };
-  });
-  return prevValue.current;
+  const [current, setCurrent] = useState(value);
+  const [previous, setPrevious] = useState<T | undefined>();
+
+  if (value !== current) {
+    setPrevious(current);
+    setCurrent(value);
+  }
+
+  return previous;
 }
 
 function FrozenRouter(props: { children: React.ReactNode }) {

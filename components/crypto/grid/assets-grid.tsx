@@ -14,21 +14,10 @@ export default function AssetsGrid() {
 }
 
 async function AssetsGridContent() {
-  try {
-    const assets = await fetchAssets();
-    const isFeatured = (asset: Asset) => asset.symbol === "BTC";
+  let assets;
 
-    return (
-      <Grid className="w-full max-w-7xl mx-auto">
-        {assets.map((asset) => (
-          <GridItem span={isFeatured(asset) ? 2 : 1} key={asset.id}>
-            <CryptoCardClickable {...asset}>
-              <CryptoCardContent {...asset} />
-            </CryptoCardClickable>
-          </GridItem>
-        ))}
-      </Grid>
-    );
+  try {
+    assets = await fetchAssets();
   } catch (error) {
     console.error("Error in AssetsGridContent:", error);
     return (
@@ -40,4 +29,18 @@ async function AssetsGridContent() {
       </div>
     );
   }
+
+  const isFeatured = (asset: Asset) => asset.symbol === "BTC";
+
+  return (
+    <Grid className="w-full max-w-7xl mx-auto">
+      {assets.map((asset) => (
+        <GridItem span={isFeatured(asset) ? 2 : 1} key={asset.id}>
+          <CryptoCardClickable {...asset}>
+            <CryptoCardContent {...asset} />
+          </CryptoCardClickable>
+        </GridItem>
+      ))}
+    </Grid>
+  );
 }

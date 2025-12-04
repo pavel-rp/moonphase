@@ -1,3 +1,4 @@
+import React from 'react';
 import { prettifyNumber } from '@/lib/utils/numbers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchTradingActivity } from '@/lib/data/tradingActivity';
@@ -13,32 +14,37 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
   const strokeWidth = 8;
   const size = (radius + strokeWidth) * 2;
   const circumference = 2 * Math.PI * radius;
-  
-  let cumulativePercentage = 0;
-  const paths = exchanges.map((exchange, index) => {
-    const percentage = exchange.percentage / 100;
-    const strokeDasharray = `${percentage * circumference} ${circumference}`;
-    const strokeDashoffset = -cumulativePercentage * circumference;
-    cumulativePercentage += percentage;
-    
-    const colors = ['#3b82f6', '#8b5cf6', '#f59e0b']; // blue, purple, amber
-    
-    return (
-      <circle
-        key={index}
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        fill="none"
-        stroke={colors[index] || '#6b7280'}
-        strokeWidth={strokeWidth}
-        strokeDasharray={strokeDasharray}
-        strokeDashoffset={strokeDashoffset}
-        transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        className="opacity-80"
-      />
-    );
-  });
+
+  const paths = exchanges.reduce<{ cumulative: number; elements: React.JSX.Element[] }>(
+    (acc, exchange, index) => {
+      const percentage = exchange.percentage / 100;
+      const strokeDasharray = `${percentage * circumference} ${circumference}`;
+      const strokeDashoffset = -acc.cumulative * circumference;
+
+      const colors = ['#3b82f6', '#8b5cf6', '#f59e0b']; // blue, purple, amber
+
+      return {
+        cumulative: acc.cumulative + percentage,
+        elements: [
+          ...acc.elements,
+          <circle
+            key={index}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={colors[index] || '#6b7280'}
+            strokeWidth={strokeWidth}
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            className="opacity-80"
+          />
+        ]
+      };
+    },
+    { cumulative: 0, elements: [] }
+  ).elements;
 
   return (
     <div className="flex items-center gap-2">
