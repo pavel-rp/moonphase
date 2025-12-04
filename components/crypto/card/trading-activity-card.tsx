@@ -23,23 +23,25 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
 
       const colors = ['#3b82f6', '#8b5cf6', '#f59e0b']; // blue, purple, amber
 
-      acc.elements.push(
-        <circle
-          key={index}
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke={colors[index] || '#6b7280'}
-          strokeWidth={strokeWidth}
-          strokeDasharray={strokeDasharray}
-          strokeDashoffset={strokeDashoffset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          className="opacity-80"
-        />
-      );
-
-      return { cumulative: acc.cumulative + percentage, elements: acc.elements };
+      return {
+        cumulative: acc.cumulative + percentage,
+        elements: [
+          ...acc.elements,
+          <circle
+            key={index}
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke={colors[index] || '#6b7280'}
+            strokeWidth={strokeWidth}
+            strokeDasharray={strokeDasharray}
+            strokeDashoffset={strokeDashoffset}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+            className="opacity-80"
+          />
+        ]
+      };
     },
     { cumulative: 0, elements: [] }
   ).elements;
