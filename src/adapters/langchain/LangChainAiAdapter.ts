@@ -1,11 +1,14 @@
 import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
 import { ChatOpenAI } from "@langchain/openai";
 import { createPriceTools, type PriceTools } from "./tools/priceTools";
-import { getNewsArticlesTool } from "./tools/newsTool";
+import { createNewsTool, type NewsTools } from "./tools/newsTool";
 import { getEnv } from "@/lib/env";
 import { BinanceAdapter } from "@/adapters/binance/BinanceAdapter";
+import { NewsAdapter } from "@/adapters/news/NewsAdapter";
+import { MockNewsAdapter } from "@/adapters/news/MockNewsAdapter";
 import { getPriceHistory, getVWAP } from "@/usecases/getPrices";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
+import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
 
 interface PriceHistoryToolResult {
@@ -153,8 +156,9 @@ export class LangChainAiAdapter implements AiAnalysisPort {
   private model: ChatOpenAI;
   private getPriceHistoryTool: PriceTools['getPriceHistoryTool'];
   private getVWAPTool: PriceTools['getVWAPTool'];
+  private getNewsArticlesTool: NewsTools['getNewsArticlesTool'];
 
-  constructor(deps?: { binance?: BinancePort }) {
+  constructor(deps?: { binance?: BinancePort; news?: NewsPort }) {
     const env = getEnv();
 
     if (!env.OPENAI_API_KEY) {
@@ -176,6 +180,10 @@ export class LangChainAiAdapter implements AiAnalysisPort {
     });
     this.getPriceHistoryTool = getPriceHistoryTool;
     this.getVWAPTool = getVWAPTool;
+
+    const newsPort = deps?.news ?? (env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter());
+    const { getNewsArticlesTool } = createNewsTool({ newsPort });
+    this.getNewsArticlesTool = getNewsArticlesTool;
   }
 
   /**
@@ -207,7 +215,7 @@ Do not provide financial advice. Focus on data-driven observations.`;
       const [priceHistoryResult, vwapResult, newsResult] = await Promise.allSettled([
         this.getPriceHistoryTool.invoke({ symbol: binanceSymbol, limit: 14 }),
         this.getVWAPTool.invoke({ symbol: binanceSymbol }),
-        getNewsArticlesTool.invoke({ symbol: symbol.toUpperCase(), limit: 5 }),
+        this.getNewsArticlesTool.invoke({ symbol: symbol.toUpperCase(), limit: 5 }),
       ]);
 
       // Parse and format tool results for LLM consumption
