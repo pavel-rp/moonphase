@@ -1,9 +1,11 @@
 import { tool } from "langchain";
 import { z } from "zod";
-import { getPriceHistory, getVWAP } from "@/usecases/getPrices";
-import { BinanceAdapter } from "@/adapters/binance/BinanceAdapter";
+import { Candlestick } from "@/ports/BinancePort";
 
-const binance = new BinanceAdapter();
+export interface PriceToolDeps {
+  getPriceHistory: (params: { symbol: string; limit?: number }) => Promise<Candlestick[]>;
+  getVWAP: (symbol: string) => Promise<number>;
+}
 
 /**
  * Handles errors from price data fetching and returns a structured error response.
@@ -52,74 +54,78 @@ function validateSymbol(symbol: unknown): string | null {
   return null;
 }
 
-const getPriceHistoryTool = tool(
-  async ({ symbol, limit }: { symbol: string; limit?: number }) => {
-    try {
-      const validationError = validateSymbol(symbol);
-      if (validationError) {
-        return validationError;
-      }
+export function createPriceTools(deps: PriceToolDeps) {
+  const getPriceHistoryTool = tool(
+    async ({ symbol, limit }: { symbol: string; limit?: number }) => {
+      try {
+        const validationError = validateSymbol(symbol);
+        if (validationError) {
+          return validationError;
+        }
 
-      const candles = await getPriceHistory({ binance }, { symbol, limit });
+        const candles = await deps.getPriceHistory({ symbol, limit });
 
-      if (!candles || candles.length === 0) {
+        if (!candles || candles.length === 0) {
+          return JSON.stringify({
+            error: `No price history found for symbol "${symbol}". The symbol may not exist or may not be available on Binance.`,
+          });
+        }
+
         return JSON.stringify({
-          error: `No price history found for symbol "${symbol}". The symbol may not exist or may not be available on Binance.`,
+          success: true,
+          symbol,
+          count: candles.length,
+          data: candles,
         });
+      } catch (error) {
+        return handlePriceToolError(error, symbol, 'fetch price history');
       }
-
-      return JSON.stringify({
-        success: true,
-        symbol,
-        count: candles.length,
-        data: candles,
-      });
-    } catch (error) {
-      return handlePriceToolError(error, symbol, 'fetch price history');
+    },
+    {
+      name: "get_price_history",
+      description: "Get recent price and market data for a cryptocurrency symbol",
+      schema: z.object({
+        symbol: z.string().describe("The crypto symbol (e.g. BTCUSDT)."),
+        limit: z.number().describe("The number of candles to return.").optional(),
+      }),
     }
-  },
-  {
-    name: "get_price_history",
-    description: "Get recent price and market data for a cryptocurrency symbol",
-    schema: z.object({
-      symbol: z.string().describe("The crypto symbol (e.g. BTCUSDT)."),
-      limit: z.number().describe("The number of candles to return.").optional(),
-    }),
-  }
-);
+  );
 
-const getVWAPTool = tool(
-  async ({ symbol }: { symbol: string }) => {
-    try {
-      const validationError = validateSymbol(symbol);
-      if (validationError) {
-        return validationError;
-      }
+  const getVWAPTool = tool(
+    async ({ symbol }: { symbol: string }) => {
+      try {
+        const validationError = validateSymbol(symbol);
+        if (validationError) {
+          return validationError;
+        }
 
-      const vwap = await getVWAP({ binance }, symbol);
+        const vwap = await deps.getVWAP(symbol);
 
-      if (vwap === null || vwap === undefined || isNaN(vwap)) {
+        if (vwap === null || vwap === undefined || isNaN(vwap)) {
+          return JSON.stringify({
+            error: `No VWAP data found for symbol "${symbol}". The symbol may not exist or may not be available on Binance.`,
+          });
+        }
+
         return JSON.stringify({
-          error: `No VWAP data found for symbol "${symbol}". The symbol may not exist or may not be available on Binance.`,
+          success: true,
+          symbol,
+          vwap,
         });
+      } catch (error) {
+        return handlePriceToolError(error, symbol, 'fetch VWAP');
       }
+    },
+    {
+      name: "get_vwap",
+      description:
+        "Get the 24-hour volume-weighted average price for a cryptocurrency symbol",
+      schema: z.object({
+        symbol: z.string().describe("The crypto symbol (e.g. BTCUSDT)."),
+      }),
+    });
 
-      return JSON.stringify({
-        success: true,
-        symbol,
-        vwap,
-      });
-    } catch (error) {
-      return handlePriceToolError(error, symbol, 'fetch VWAP');
-    }
-  },
-  {
-    name: "get_vwap",
-    description:
-      "Get the 24-hour volume-weighted average price for a cryptocurrency symbol",
-    schema: z.object({
-      symbol: z.string().describe("The crypto symbol (e.g. BTCUSDT)."),
-    }),
-  });
+  return { getPriceHistoryTool, getVWAPTool };
+}
 
-export { getPriceHistoryTool, getVWAPTool };
+export type PriceTools = ReturnType<typeof createPriceTools>;

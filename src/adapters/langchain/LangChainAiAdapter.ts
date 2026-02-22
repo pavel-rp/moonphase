@@ -1,9 +1,11 @@
 import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
 import { ChatOpenAI } from "@langchain/openai";
-import { getPriceHistoryTool, getVWAPTool } from "./tools/priceTools";
+import { createPriceTools, type PriceTools } from "./tools/priceTools";
 import { getNewsArticlesTool } from "./tools/newsTool";
 import { getEnv } from "@/lib/env";
-import { Candlestick } from "@/ports/BinancePort";
+import { BinanceAdapter } from "@/adapters/binance/BinanceAdapter";
+import { getPriceHistory, getVWAP } from "@/usecases/getPrices";
+import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsArticle } from "@/domain/newsArticle";
 
 interface PriceHistoryToolResult {
@@ -149,8 +151,10 @@ function formatNews(result: NewsToolResult): string {
  */
 export class LangChainAiAdapter implements AiAnalysisPort {
   private model: ChatOpenAI;
+  private getPriceHistoryTool: PriceTools['getPriceHistoryTool'];
+  private getVWAPTool: PriceTools['getVWAPTool'];
 
-  constructor() {
+  constructor(deps?: { binance?: BinancePort }) {
     const env = getEnv();
 
     if (!env.OPENAI_API_KEY) {
@@ -164,6 +168,14 @@ export class LangChainAiAdapter implements AiAnalysisPort {
       apiKey: env.OPENAI_API_KEY,
       temperature: 0.7,
     });
+
+    const binance = deps?.binance ?? new BinanceAdapter();
+    const { getPriceHistoryTool, getVWAPTool } = createPriceTools({
+      getPriceHistory: (params) => getPriceHistory({ binance }, params),
+      getVWAP: (symbol) => getVWAP({ binance }, symbol),
+    });
+    this.getPriceHistoryTool = getPriceHistoryTool;
+    this.getVWAPTool = getVWAPTool;
   }
 
   /**
@@ -193,8 +205,8 @@ Do not provide financial advice. Focus on data-driven observations.`;
       const binanceSymbol = `${symbol.toUpperCase()}USDT`;
 
       const [priceHistoryResult, vwapResult, newsResult] = await Promise.allSettled([
-        getPriceHistoryTool.invoke({ symbol: binanceSymbol, limit: 14 }),
-        getVWAPTool.invoke({ symbol: binanceSymbol }),
+        this.getPriceHistoryTool.invoke({ symbol: binanceSymbol, limit: 14 }),
+        this.getVWAPTool.invoke({ symbol: binanceSymbol }),
         getNewsArticlesTool.invoke({ symbol: symbol.toUpperCase(), limit: 5 }),
       ]);
 

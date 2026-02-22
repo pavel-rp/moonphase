@@ -25,23 +25,16 @@ jest.mock('zod', () => ({
   },
 }));
 
-// Mock the use cases
-jest.mock('@/usecases/getPrices', () => ({
-  getPriceHistory: jest.fn(),
-  getVWAP: jest.fn(),
-}));
-
-// Mock the BinanceAdapter
-jest.mock('@/adapters/binance/BinanceAdapter', () => ({
-  BinanceAdapter: jest.fn().mockImplementation(() => ({})),
-}));
-
-import { getPriceHistoryTool, getVWAPTool } from '../priceTools';
-import { getPriceHistory, getVWAP } from '@/usecases/getPrices';
+import { createPriceTools } from '../priceTools';
 import type { Candlestick } from '@/ports/BinancePort';
 
-const mockGetPriceHistory = getPriceHistory as jest.MockedFunction<typeof getPriceHistory>;
-const mockGetVWAP = getVWAP as jest.MockedFunction<typeof getVWAP>;
+const mockGetPriceHistory = jest.fn();
+const mockGetVWAP = jest.fn();
+
+const { getPriceHistoryTool, getVWAPTool } = createPriceTools({
+  getPriceHistory: mockGetPriceHistory,
+  getVWAP: mockGetVWAP,
+});
 
 describe('priceTools', () => {
   beforeEach(() => {
@@ -82,7 +75,6 @@ describe('priceTools', () => {
         expect(parsed.count).toBe(2);
         expect(parsed.data).toEqual(mockCandles);
         expect(mockGetPriceHistory).toHaveBeenCalledWith(
-          expect.objectContaining({ binance: {} }),
           { symbol: 'BTCUSDT', limit: undefined }
         );
       });
@@ -108,7 +100,6 @@ describe('priceTools', () => {
         expect(parsed.success).toBe(true);
         expect(parsed.count).toBe(1);
         expect(mockGetPriceHistory).toHaveBeenCalledWith(
-          expect.objectContaining({ binance: {} }),
           { symbol: 'ETHUSDT', limit: 10 }
         );
       });
@@ -130,7 +121,6 @@ describe('priceTools', () => {
 
         await getPriceHistoryTool.invoke({ symbol: 'SOLUSDT' });
         expect(mockGetPriceHistory).toHaveBeenCalledWith(
-          expect.anything(),
           expect.objectContaining({ symbol: 'SOLUSDT' })
         );
       });
@@ -247,7 +237,6 @@ describe('priceTools', () => {
         expect(parsed.symbol).toBe('BTCUSDT');
         expect(parsed.vwap).toBe(50000.123456);
         expect(mockGetVWAP).toHaveBeenCalledWith(
-          expect.objectContaining({ binance: {} }),
           'BTCUSDT'
         );
       });
