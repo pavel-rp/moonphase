@@ -1,18 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(pnpm typecheck:*)",
-      "Bash(pnpm lint:*)",
-      "Bash(pnpm dev)",
-      "Bash(pnpm preflight:*)",
-      "Bash(pnpm test:*)",
-      "Bash(cat:*)",
-      "Bash(mkdir:*)",
-      "Bash(eslint:*)",
-      "Bash(pnpm add:*)",
-      "Bash(curl:*)"
+      "Bash(*)",
+      "Read(**)",
+      "Write(audit/**)",
+      "Edit(audit/**)"
     ],
-    "deny": [],
+    "deny": [
+      "Bash(rm *)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(npm install*)",
+      "Bash(curl *)",
+      "Bash(wget *)"
+    ],
     "ask": []
   }
 }
