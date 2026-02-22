@@ -56,17 +56,17 @@ export function createNewsTool(deps: NewsToolDeps) {
           return validationError;
         }
 
-        const upperSymbol = symbol.toUpperCase();
+        const normalizedSymbol = symbol.trim().toUpperCase();
         const requestLimit = limit ?? 5;
         const articles = await deps.newsPort.fetchNews({
-          symbol: upperSymbol,
+          symbol: normalizedSymbol,
           limit: requestLimit,
         });
 
         if (!articles || articles.length === 0) {
           return JSON.stringify({
             success: true,
-            symbol,
+            symbol: normalizedSymbol,
             count: 0,
             message: 'No recent news articles found for this symbol.',
             data: [],
@@ -75,7 +75,7 @@ export function createNewsTool(deps: NewsToolDeps) {
 
         return JSON.stringify({
           success: true,
-          symbol,
+          symbol: normalizedSymbol,
           count: articles.length,
           data: articles,
         });
@@ -86,7 +86,7 @@ export function createNewsTool(deps: NewsToolDeps) {
     {
       name: 'get_news_articles',
       description:
-        'Fetches recent cryptocurrency news articles for sentiment analysis and market context. Input: symbol (e.g., BTC, ETH), optional limit (default 5, max 10). Returns JSON array of news articles with title, description, url, publishedAt, source, and content.',
+        'Fetches recent cryptocurrency news articles for sentiment analysis and market context. Input: symbol (e.g., BTC, ETH), optional limit (default 5, max 10). Returns a JSON object with success, symbol, count, and a data array of news articles.',
       schema: z.object({
         symbol: z.string().describe('The cryptocurrency symbol (e.g., BTC, ETH).'),
         limit: z

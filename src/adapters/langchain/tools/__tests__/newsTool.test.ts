@@ -81,12 +81,22 @@ describe('newsTool', () => {
       expect(parsed.data).toEqual([mockArticle]);
     });
 
-    it('should uppercase the symbol before calling the port', async () => {
+    it('should trim and uppercase the symbol before calling the port', async () => {
       mockFetchNews.mockResolvedValue([mockArticle]);
 
       await getNewsArticlesTool.invoke({ symbol: 'btc' });
 
       expect(mockFetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5 });
+    });
+
+    it('should normalize whitespace-padded symbols', async () => {
+      mockFetchNews.mockResolvedValue([mockArticle]);
+
+      const result = await getNewsArticlesTool.invoke({ symbol: '  eth  ' });
+      const parsed = JSON.parse(result);
+
+      expect(mockFetchNews).toHaveBeenCalledWith({ symbol: 'ETH', limit: 5 });
+      expect(parsed.symbol).toBe('ETH');
     });
 
     it('should use default limit of 5 when not provided', async () => {
