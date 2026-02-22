@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { LangChainAiAdapter } from '@/adapters/langchain/LangChainAiAdapter';
-import { getAiAnalysis } from '@/usecases/getAiAnalysis';
+import { analyzeAsset } from '@/lib/data/aiAnalysisServer';
 
 export async function POST(
   req: Request,
@@ -16,10 +15,7 @@ export async function POST(
       );
     }
 
-    const analysis = await getAiAnalysis(
-      { ai: new LangChainAiAdapter() },
-      symbol
-    );
+    const analysis = await analyzeAsset(symbol);
 
     return NextResponse.json({ analysis }, { status: 200 });
   } catch (e) {
