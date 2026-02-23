@@ -3,7 +3,7 @@ import { Asset } from '@/domain/asset';
 import { get } from './client';
 import { ListAssetsResponseSchema } from './schema';
 import { dedupe, inflightKey } from '@/lib/http/inflight';
-import { logRequest, logError } from '@/lib/observability';
+import { logError } from '@/lib/observability';
 
 export class CoinCapAdapter implements CoinCapPort {
   async listAssets(params: { limit?: number; offset?: number } = {}): Promise<Asset[]> {
@@ -11,7 +11,6 @@ export class CoinCapAdapter implements CoinCapPort {
     const key = inflightKey('coincap/assets', { limit, offset });
     return dedupe(key, async () => {
       const url = `/assets?limit=${limit}&offset=${offset}`;
-      logRequest({ url, method: 'GET' });
       try {
         const res = await get(url, { next: { revalidate: 60 } });
         if (!res || !res.ok) {
