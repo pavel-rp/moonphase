@@ -38,18 +38,24 @@ let _aiAnalysisInit: Promise<{ ai: AiAnalysisPort }> | null = null;
 export function getAiAnalysisDeps(): Promise<{ ai: AiAnalysisPort }> {
   if (!_aiAnalysisInit) {
     _aiAnalysisInit = (async () => {
-      const env = getEnv();
-      const [
-        { LangChainAiAdapter },
-        { NewsAdapter },
-        { MockNewsAdapter },
-      ] = await Promise.all([
-        import('@/adapters/langchain/LangChainAiAdapter'),
-        import('@/adapters/news/NewsAdapter'),
-        import('@/adapters/news/MockNewsAdapter'),
-      ]);
-      const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
-      return { ai: new LangChainAiAdapter({ binance, news }) as AiAnalysisPort };
+      try {
+        const env = getEnv();
+        const [
+          { LangChainAiAdapter },
+          { NewsAdapter },
+          { MockNewsAdapter },
+        ] = await Promise.all([
+          import('@/adapters/langchain/LangChainAiAdapter'),
+          import('@/adapters/news/NewsAdapter'),
+          import('@/adapters/news/MockNewsAdapter'),
+        ]);
+        const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
+        return { ai: new LangChainAiAdapter({ binance, news }) as AiAnalysisPort };
+      } catch (error) {
+        // Reset the cached promise on failure so that a later call can retry.
+        _aiAnalysisInit = null;
+        throw error;
+      }
     })();
   }
   return _aiAnalysisInit;
