@@ -1,5 +1,5 @@
-import { BinanceAdapter } from '@/adapters/binance/BinanceAdapter';
 import { getPriceHistory, getVWAP } from '@/usecases/getPrices';
+import { pricesDeps } from '@/compositionRoot';
 
 // Explicit mapping table for known symbols; defaults to USDT pair otherwise
 const BINANCE_PAIR_MAP: Record<string, string> = {
@@ -24,7 +24,7 @@ function toBinanceSymbol(symbol: string): string {
 export async function fetchPrices(symbol: string) {
   const pair = toBinanceSymbol(symbol);
   const candles = await getPriceHistory(
-    { binance: new BinanceAdapter() },
+    pricesDeps,
     { symbol: pair, limit: 60 },
   );
   return candles.map((c) => c.close);
@@ -32,5 +32,5 @@ export async function fetchPrices(symbol: string) {
 
 export async function fetchVWAP(symbol: string) {
   const pair = toBinanceSymbol(symbol);
-  return getVWAP({ binance: new BinanceAdapter() }, pair);
+  return getVWAP(pricesDeps, pair);
 }
