@@ -1,6 +1,7 @@
 import { tool } from "langchain";
 import { z } from "zod";
 import { Candlestick } from "@/ports/BinancePort";
+import { symbolSchema } from "@/domain/schemas";
 
 export interface PriceToolDeps {
   getPriceHistory: (params: { symbol: string; limit?: number }) => Promise<Candlestick[]>;
@@ -41,12 +42,13 @@ function handlePriceToolError(error: unknown, symbol: string, operation: string)
 }
 
 /**
- * Validates that a symbol parameter is a non-empty string.
+ * Validates that a symbol parameter is a non-empty string using Zod.
  * @param symbol - The symbol to validate
  * @returns JSON stringified error object if invalid, null if valid
  */
 function validateSymbol(symbol: unknown): string | null {
-  if (!symbol || typeof symbol !== 'string') {
+  const result = symbolSchema.safeParse(symbol);
+  if (!result.success) {
     return JSON.stringify({
       error: 'Invalid symbol parameter. Symbol must be a non-empty string (e.g., "BTCUSDT").',
     });
