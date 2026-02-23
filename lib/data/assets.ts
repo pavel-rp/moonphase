@@ -4,5 +4,5 @@ import { Asset } from '@/domain/asset';
 export type { Asset };
 
 export async function fetchAssets(params?: { limit?: number; offset?: number }): Promise<Asset[]> {
-  return getAssets(assetsDeps, params);
+  return getAssets(assetsDeps, params ?? {});
 }

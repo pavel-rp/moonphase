@@ -30,22 +30,27 @@ export const tradingActivityDeps = { tradingActivity } as const;
 // pulls in ESM-only langchain dependencies that break Jest at import time.
 // Using dynamic import ensures the langchain module tree is only loaded
 // when AI analysis is actually needed.
-let _aiAnalysisDeps: { ai: AiAnalysisPort } | null = null;
+//
+// The initialization promise is stored to prevent concurrent calls from
+// creating multiple instances (promise-based locking).
+let _aiAnalysisInit: Promise<{ ai: AiAnalysisPort }> | null = null;
 
-export async function getAiAnalysisDeps(): Promise<{ ai: AiAnalysisPort }> {
-  if (!_aiAnalysisDeps) {
-    const env = getEnv();
-    const [
-      { LangChainAiAdapter },
-      { NewsAdapter },
-      { MockNewsAdapter },
-    ] = await Promise.all([
-      import('@/adapters/langchain/LangChainAiAdapter'),
-      import('@/adapters/news/NewsAdapter'),
-      import('@/adapters/news/MockNewsAdapter'),
-    ]);
-    const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
-    _aiAnalysisDeps = { ai: new LangChainAiAdapter({ binance, news }) };
+export function getAiAnalysisDeps(): Promise<{ ai: AiAnalysisPort }> {
+  if (!_aiAnalysisInit) {
+    _aiAnalysisInit = (async () => {
+      const env = getEnv();
+      const [
+        { LangChainAiAdapter },
+        { NewsAdapter },
+        { MockNewsAdapter },
+      ] = await Promise.all([
+        import('@/adapters/langchain/LangChainAiAdapter'),
+        import('@/adapters/news/NewsAdapter'),
+        import('@/adapters/news/MockNewsAdapter'),
+      ]);
+      const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
+      return { ai: new LangChainAiAdapter({ binance, news }) as AiAnalysisPort };
+    })();
   }
-  return _aiAnalysisDeps;
+  return _aiAnalysisInit;
 }
