@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { analyzeAsset } from '@/lib/data/aiAnalysisServer';
 import { logError } from '@/lib/observability';
 import { isExternalException } from '@/lib/errors';
+import { symbolSchema } from '@/domain/schemas';
 
 export async function POST(
   req: Request,
@@ -11,7 +12,8 @@ export async function POST(
   try {
     ({ symbol } = await params);
 
-    if (!symbol || typeof symbol !== 'string') {
+    const parsed = symbolSchema.safeParse(symbol);
+    if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid symbol parameter' },
         { status: 400 }

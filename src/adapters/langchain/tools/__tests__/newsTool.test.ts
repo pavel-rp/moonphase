@@ -11,23 +11,35 @@ jest.mock('langchain', () => ({
 }));
 
 // Mock zod
-jest.mock('zod', () => ({
-  z: {
-    object: jest.fn(() => ({})),
-    string: jest.fn(() => ({
-      describe: jest.fn(() => ({})),
-    })),
-    number: jest.fn(() => ({
-      min: jest.fn(() => ({
-        max: jest.fn(() => ({
-          optional: jest.fn(() => ({
-            describe: jest.fn(() => ({})),
+jest.mock('zod', () => {
+  const stringChain: Record<string, jest.Mock> = {};
+  stringChain.describe = jest.fn(() => stringChain);
+  stringChain.trim = jest.fn(() => stringChain);
+  stringChain.min = jest.fn(() => stringChain);
+  stringChain.max = jest.fn(() => stringChain);
+  stringChain.safeParse = jest.fn((val: unknown) => {
+    if (typeof val === 'string' && val.trim().length > 0 && val.trim().length <= 20) {
+      return { success: true, data: val.trim() };
+    }
+    return { success: false, error: { issues: [{ message: 'Invalid' }] } };
+  });
+
+  return {
+    z: {
+      object: jest.fn(() => ({})),
+      string: jest.fn(() => stringChain),
+      number: jest.fn(() => ({
+        min: jest.fn(() => ({
+          max: jest.fn(() => ({
+            optional: jest.fn(() => ({
+              describe: jest.fn(() => ({})),
+            })),
           })),
         })),
       })),
-    })),
-  },
-}));
+    },
+  };
+});
 
 import { createNewsTool } from '../newsTool';
 import type { NewsPort } from '@/ports/NewsPort';
