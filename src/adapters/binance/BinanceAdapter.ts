@@ -15,21 +15,20 @@ export class BinanceAdapter implements BinancePort {
     if (res?.statusText) {
       details.statusText = res.statusText;
     }
-    try {
-      let errorBody: unknown;
+    if (res) {
       try {
-        errorBody = await res?.clone().json();
+        let errorBody: unknown;
+        try {
+          errorBody = await res.clone().json();
+        } catch {
+          errorBody = await res.clone().text().catch(() => null);
+        }
+        if (errorBody) {
+          details.body = errorBody;
+        }
       } catch {
-        errorBody = await res
-          ?.clone()
-          .text()
-          .catch(() => null);
+        // Ignore parsing errors
       }
-      if (errorBody) {
-        details.body = errorBody;
-      }
-    } catch {
-      // Ignore parsing errors
     }
     return details;
   }

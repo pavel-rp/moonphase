@@ -55,16 +55,14 @@ export class NewsAdapter implements NewsPort {
         if (!res || !res.ok) {
           const status = res?.status ?? 500;
           const errorText = await res?.text?.();
-          logError(new ExternalException(
-            { kind: 'Unavailable', details: { status, errorText } },
-            `NewsAPI.ai ${status}: ${errorText}`,
-          ), { symbol, limit, url });
-          throw new ExternalException(
+          const error = new ExternalException(
             status === 429
-              ? { kind: 'RateLimited', details: { status } }
+              ? { kind: 'RateLimited', details: { status, errorText } }
               : { kind: 'Unavailable', details: { status, errorText } },
             `NewsAPI.ai error ${status}`,
           );
+          logError(error, { symbol, limit, url });
+          throw error;
         }
 
         const json = await res.json();
