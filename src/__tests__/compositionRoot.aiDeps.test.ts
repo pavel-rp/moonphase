@@ -71,6 +71,28 @@ describe('getAiAnalysisDeps', () => {
     expect(MockLangChainAiAdapter).toHaveBeenCalledTimes(1);
   });
 
+  it('resets the cache on failure so a later call can retry', async () => {
+    jest.doMock('@/adapters/langchain/LangChainAiAdapter', () => {
+      throw new Error('import failed');
+    });
+
+    const { getAiAnalysisDeps } = await import('../compositionRoot');
+
+    const p1 = getAiAnalysisDeps();
+    await expect(p1).rejects.toThrow('import failed');
+
+    // After rejection, cache must be reset so the next call creates a new
+    // promise (rather than re-using the cached rejected one).
+    const p2 = getAiAnalysisDeps();
+    expect(p2).not.toBe(p1);
+    await expect(p2).rejects.toThrow('import failed');
+
+    // Restore mock so subsequent tests are unaffected.
+    jest.doMock('@/adapters/langchain/LangChainAiAdapter', () => ({
+      LangChainAiAdapter: MockLangChainAiAdapter,
+    }));
+  });
+
   it('returns the same instance on sequential calls (singleton)', async () => {
     const { getAiAnalysisDeps } = await import('../compositionRoot');
 
