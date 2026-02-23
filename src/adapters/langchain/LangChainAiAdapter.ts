@@ -3,6 +3,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { createPriceTools, type PriceTools } from "./tools/priceTools";
 import { createNewsTool, type NewsTools } from "./tools/newsTool";
 import { getEnv } from "@/lib/env";
+import { logRequest, logError } from "@/lib/observability";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
@@ -202,6 +203,7 @@ Do not provide financial advice. Focus on data-driven observations.`;
     try {
       // Gather data from tools first
       const binanceSymbol = `${symbol.toUpperCase()}USDT`;
+      logRequest({ url: `openai/chat (${symbol})`, method: 'POST' });
 
       const [priceHistoryResult, vwapResult, newsResult] = await Promise.allSettled([
         this.getPriceHistoryTool.invoke({ symbol: binanceSymbol, limit: 14 }),
@@ -247,7 +249,7 @@ Do not provide financial advice. Focus on data-driven observations.`;
 
       return response.content as string;
     } catch (error) {
-      console.error("Error in AI analysis:", error);
+      logError(error, { adapter: 'LangChainAiAdapter', method: 'analyzeAsset', symbol });
       throw new Error(`Failed to analyze ${symbol}: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }

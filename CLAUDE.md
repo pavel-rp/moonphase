@@ -237,6 +237,7 @@ Create `.env.local` in the root directory with your API keys.
 ## Git Commit Rules
 
 - **NEVER add `Co-Authored-By` lines or any AI attribution to commit messages.** No exceptions.
+- **NEVER add "Generated with Claude Code" or any AI-generated promotional lines to PR descriptions, commit messages, or any other output.** No exceptions.
 
 ## Code Conventions (from .cursor/rules)
 

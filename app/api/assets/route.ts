@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchAssets } from '@/lib/data/assets';
+import { logError } from '@/lib/observability';
 
 export async function GET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
@@ -10,7 +11,7 @@ export async function GET(req: Request): Promise<Response> {
     const assets = await fetchAssets({ limit, offset });
     return NextResponse.json(assets, { status: 200 });
   } catch (e) {
-    console.error(e);
+    logError(e, { route: 'GET /api/assets', limit, offset });
     return NextResponse.json({ error: 'Upstream unavailable' }, { status: 502 });
   }
 }
