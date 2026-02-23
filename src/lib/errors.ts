@@ -10,6 +10,7 @@ export class ExternalException extends Error {
 
   constructor(error: ExternalError, message?: string) {
     super(message ?? error.kind);
+    Object.setPrototypeOf(this, new.target.prototype);
     this.name = 'ExternalException';
     this.kind = error.kind;
     this.details = error.details;
