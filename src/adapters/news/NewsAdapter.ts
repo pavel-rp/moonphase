@@ -12,6 +12,7 @@ export class NewsAdapter implements NewsPort {
     const key = inflightKey('news/newsapiai', { symbol, limit });
 
     return dedupe(key, async () => {
+      let url: string | undefined;
       try {
         // Map common crypto symbols to full names for better search results
         const symbolMap: Record<string, string> = {
@@ -41,7 +42,7 @@ export class NewsAdapter implements NewsPort {
           resultType: 'articles',
         });
 
-        const url = `/article/getArticles?${query.toString()}`;
+        url = `/article/getArticles?${query.toString()}`;
         logRequest({ url, method: 'GET' });
 
         let res: Response;
@@ -68,7 +69,7 @@ export class NewsAdapter implements NewsPort {
 
         return articles;
       } catch (err) {
-        logError(err, { symbol, limit });
+        logError(err, { symbol, limit, url });
         // Graceful degradation: return empty array on failure
         return [];
       }

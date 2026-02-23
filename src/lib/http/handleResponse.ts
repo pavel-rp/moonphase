@@ -28,8 +28,8 @@ export async function handleResponse<T>(
 
     throw new ExternalException(
       status === 429
-        ? { kind: 'RateLimited', details: { status, body } }
-        : { kind: 'Unavailable', details: { status, body } },
+        ? { kind: 'RateLimited', details: { status, statusText: res?.statusText, body } }
+        : { kind: 'Unavailable', details: { status, statusText: res?.statusText, body } },
       `${label} error ${status}`,
     );
   }
