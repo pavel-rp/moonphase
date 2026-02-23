@@ -50,7 +50,7 @@ function validateSymbol(symbol: unknown): string | null {
   const result = symbolSchema.safeParse(symbol);
   if (!result.success) {
     return JSON.stringify({
-      error: 'Invalid symbol parameter. Symbol must be a non-empty string (e.g., "BTCUSDT").',
+      error: 'Invalid symbol parameter. Symbol must be a non-empty string with maximum 20 characters (e.g., "BTCUSDT").',
     });
   }
   return null;

@@ -16,9 +16,10 @@ jest.mock('zod', () => {
   stringChain.describe = jest.fn(() => stringChain);
   stringChain.min = jest.fn(() => stringChain);
   stringChain.max = jest.fn(() => stringChain);
+  stringChain.trim = jest.fn(() => stringChain);
   stringChain.safeParse = jest.fn((val: unknown) => {
-    if (typeof val === 'string' && val.length > 0) {
-      return { success: true, data: val };
+    if (typeof val === 'string' && val.trim().length > 0 && val.trim().length <= 20) {
+      return { success: true, data: val.trim() };
     }
     return { success: false, error: { issues: [{ message: 'Invalid' }] } };
   });

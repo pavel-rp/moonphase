@@ -1,18 +1,20 @@
 import { tool } from 'langchain';
 import { z } from 'zod';
 import { NewsPort } from '@/ports/NewsPort';
+import { symbolSchema } from '@/domain/schemas';
 
 export interface NewsToolDeps {
   newsPort: NewsPort;
 }
 
 /**
- * Validates symbol parameter.
+ * Validates symbol parameter using Zod.
  */
 function validateSymbol(symbol: unknown): string | null {
-  if (!symbol || typeof symbol !== 'string' || symbol.trim() === '') {
+  const result = symbolSchema.safeParse(symbol);
+  if (!result.success) {
     return JSON.stringify({
-      error: 'Invalid symbol parameter. Symbol must be a non-empty string (e.g., "BTC", "ETH").',
+      error: 'Invalid symbol parameter. Symbol must be a non-empty string with maximum 20 characters (e.g., "BTC", "ETH").',
     });
   }
   return null;
