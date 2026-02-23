@@ -3,8 +3,8 @@ import { NewsArticle } from '@/domain/newsArticle';
 import { dedupe, inflightKey } from '@/lib/http/inflight';
 import { get } from './client';
 import { NewsAPIaiResponseSchema } from './schema';
+import { handleResponse } from '@/lib/http/handleResponse';
 import { logRequest, logError } from '@/lib/observability';
-import { ExternalException } from '@/lib/errors';
 
 export class NewsAdapter implements NewsPort {
   async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
@@ -12,6 +12,7 @@ export class NewsAdapter implements NewsPort {
     const key = inflightKey('news/newsapiai', { symbol, limit });
 
     return dedupe(key, async () => {
+      let url: string | undefined;
       try {
         // Map common crypto symbols to full names for better search results
         const symbolMap: Record<string, string> = {
@@ -41,7 +42,7 @@ export class NewsAdapter implements NewsPort {
           resultType: 'articles',
         });
 
-        const url = `/article/getArticles?${query.toString()}`;
+        url = `/article/getArticles?${query.toString()}`;
         logRequest({ url, method: 'GET' });
 
         let res: Response;
@@ -52,21 +53,7 @@ export class NewsAdapter implements NewsPort {
           throw fetchError;
         }
 
-        if (!res || !res.ok) {
-          const status = res?.status ?? 500;
-          const errorText = await res?.text?.();
-          const error = new ExternalException(
-            status === 429
-              ? { kind: 'RateLimited', details: { status, errorText } }
-              : { kind: 'Unavailable', details: { status, errorText } },
-            `NewsAPI.ai error ${status}`,
-          );
-          logError(error, { symbol, limit, url });
-          throw error;
-        }
-
-        const json = await res.json();
-        const parsed = NewsAPIaiResponseSchema.parse(json);
+        const parsed = await handleResponse(res, NewsAPIaiResponseSchema, 'NewsAPI.ai');
 
         // Transform NewsAPI.ai response to our domain model
         const articles: NewsArticle[] = parsed.articles.results.map((article) => ({
@@ -82,7 +69,7 @@ export class NewsAdapter implements NewsPort {
 
         return articles;
       } catch (err) {
-        logError(err, { symbol, limit });
+        logError(err, { symbol, limit, url });
         // Graceful degradation: return empty array on failure
         return [];
       }

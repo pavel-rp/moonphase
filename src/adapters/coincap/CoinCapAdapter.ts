@@ -3,8 +3,8 @@ import { Asset } from '@/domain/asset';
 import { get } from './client';
 import { ListAssetsResponseSchema } from './schema';
 import { dedupe, inflightKey } from '@/lib/http/inflight';
+import { handleResponse } from '@/lib/http/handleResponse';
 import { logError } from '@/lib/observability';
-import { ExternalException } from '@/lib/errors';
 
 export class CoinCapAdapter implements CoinCapPort {
   async listAssets(params: { limit?: number; offset?: number } = {}): Promise<Asset[]> {
@@ -14,17 +14,7 @@ export class CoinCapAdapter implements CoinCapPort {
       const url = `/assets?limit=${limit}&offset=${offset}`;
       try {
         const res = await get(url, { next: { revalidate: 60 } });
-        if (!res || !res.ok) {
-          const status = res?.status ?? 500;
-          throw new ExternalException(
-            status === 429
-              ? { kind: 'RateLimited', details: { status } }
-              : { kind: 'Unavailable', details: { status } },
-            `CoinCap API error ${status}`,
-          );
-        }
-        const json = await res.json();
-        const parsed = ListAssetsResponseSchema.parse(json);
+        const parsed = await handleResponse(res, ListAssetsResponseSchema, 'CoinCap API');
         return parsed.data;
       } catch (err) {
         logError(err, { adapter: 'CoinCapAdapter', method: 'listAssets', limit, offset });
