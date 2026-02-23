@@ -4,6 +4,7 @@ import { dedupe, inflightKey } from '@/lib/http/inflight';
 import { get } from './client';
 import { NewsAPIaiResponseSchema } from './schema';
 import { logRequest, logError } from '@/lib/observability';
+import { ExternalException } from '@/lib/errors';
 
 export class NewsAdapter implements NewsPort {
   async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
@@ -52,9 +53,16 @@ export class NewsAdapter implements NewsPort {
         }
 
         if (!res || !res.ok) {
+          const status = res?.status ?? 500;
           const errorText = await res?.text?.();
-          logError(new Error(`NewsAPI.ai ${res?.status}: ${errorText}`), { symbol, limit, url });
-          throw new Error(`NewsAPI.ai error ${res?.status ?? 500}`);
+          const error = new ExternalException(
+            status === 429
+              ? { kind: 'RateLimited', details: { status, errorText } }
+              : { kind: 'Unavailable', details: { status, errorText } },
+            `NewsAPI.ai error ${status}`,
+          );
+          logError(error, { symbol, limit, url });
+          throw error;
         }
 
         const json = await res.json();

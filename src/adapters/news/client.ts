@@ -1,5 +1,6 @@
 import { fetchWithRetry } from '@/lib/http/fetcher';
 import { getEnv } from '@/lib/env';
+import { ExternalException } from '@/lib/errors';
 
 // NewsAPI.ai uses eventregistry.org as the base URL
 const BASE_URL = 'https://eventregistry.org/api/v1';
@@ -9,7 +10,10 @@ export async function get(path: string, init?: RequestInit): Promise<Response> {
   const apiKey = env.NEWS_API_KEY;
 
   if (!apiKey) {
-    throw new Error('NEWS_API_KEY not configured');
+    throw new ExternalException(
+      { kind: 'InvalidRequest', details: { missingEnv: 'NEWS_API_KEY' } },
+      'NEWS_API_KEY not configured',
+    );
   }
 
   // Remove leading slash from path if present to properly join with BASE_URL

@@ -4,6 +4,7 @@ import { createPriceTools, type PriceTools } from "./tools/priceTools";
 import { createNewsTool, type NewsTools } from "./tools/newsTool";
 import { getEnv } from "@/lib/env";
 import { logRequest, logError } from "@/lib/observability";
+import { ExternalException } from "@/lib/errors";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
@@ -156,8 +157,9 @@ export class LangChainAiAdapter implements AiAnalysisPort {
     const env = getEnv();
 
     if (!env.OPENAI_API_KEY) {
-      throw new Error(
-        "OPENAI_API_KEY is required for AI analysis. Please set the environment variable."
+      throw new ExternalException(
+        { kind: 'InvalidRequest', details: { missingEnv: 'OPENAI_API_KEY' } },
+        'OPENAI_API_KEY is required for AI analysis. Please set the environment variable.',
       );
     }
 
@@ -250,7 +252,11 @@ Do not provide financial advice. Focus on data-driven observations.`;
       return response.content as string;
     } catch (error) {
       logError(error, { adapter: 'LangChainAiAdapter', method: 'analyzeAsset', symbol });
-      throw new Error(`Failed to analyze ${symbol}: ${error instanceof Error ? error.message : "Unknown error"}`);
+      if (error instanceof ExternalException) throw error;
+      throw new ExternalException(
+        { kind: 'Unavailable', details: { symbol, originalError: error instanceof Error ? error.message : String(error) } },
+        `Failed to analyze ${symbol}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
