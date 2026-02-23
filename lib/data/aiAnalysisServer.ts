@@ -1,6 +1,7 @@
-import { LangChainAiAdapter } from '@/adapters/langchain/LangChainAiAdapter';
 import { getAiAnalysis } from '@/usecases/getAiAnalysis';
+import { getAiAnalysisDeps } from '@/compositionRoot';
 
 export async function analyzeAsset(symbol: string): Promise<string> {
-  return getAiAnalysis({ ai: new LangChainAiAdapter() }, symbol);
+  const deps = await getAiAnalysisDeps();
+  return getAiAnalysis(deps, symbol);
 }

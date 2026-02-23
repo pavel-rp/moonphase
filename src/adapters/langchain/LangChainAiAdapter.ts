@@ -3,10 +3,6 @@ import { ChatOpenAI } from "@langchain/openai";
 import { createPriceTools, type PriceTools } from "./tools/priceTools";
 import { createNewsTool, type NewsTools } from "./tools/newsTool";
 import { getEnv } from "@/lib/env";
-import { BinanceAdapter } from "@/adapters/binance/BinanceAdapter";
-import { NewsAdapter } from "@/adapters/news/NewsAdapter";
-import { MockNewsAdapter } from "@/adapters/news/MockNewsAdapter";
-import { getPriceHistory, getVWAP } from "@/usecases/getPrices";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
@@ -155,7 +151,7 @@ export class LangChainAiAdapter implements AiAnalysisPort {
   private getVWAPTool: PriceTools['getVWAPTool'];
   private getNewsArticlesTool: NewsTools['getNewsArticlesTool'];
 
-  constructor(deps?: { binance?: BinancePort; news?: NewsPort }) {
+  constructor(deps: { binance: BinancePort; news: NewsPort }) {
     const env = getEnv();
 
     if (!env.OPENAI_API_KEY) {
@@ -170,16 +166,14 @@ export class LangChainAiAdapter implements AiAnalysisPort {
       temperature: 0.7,
     });
 
-    const binance = deps?.binance ?? new BinanceAdapter();
     const { getPriceHistoryTool, getVWAPTool } = createPriceTools({
-      getPriceHistory: (params) => getPriceHistory({ binance }, params),
-      getVWAP: (symbol) => getVWAP({ binance }, symbol),
+      getPriceHistory: (params) => deps.binance.getDailyCandles(params.symbol, params.limit),
+      getVWAP: (symbol) => deps.binance.get24HrStats(symbol),
     });
     this.getPriceHistoryTool = getPriceHistoryTool;
     this.getVWAPTool = getVWAPTool;
 
-    const newsPort = deps?.news ?? (env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter());
-    const { getNewsArticlesTool } = createNewsTool({ newsPort });
+    const { getNewsArticlesTool } = createNewsTool({ newsPort: deps.news });
     this.getNewsArticlesTool = getNewsArticlesTool;
   }
 

@@ -234,6 +234,10 @@ Create `.env.local` in the root directory with your API keys.
 
 **Commits**: Concise, descriptive messages. Follow conventional style if applicable.
 
+## Git Commit Rules
+
+- **NEVER add `Co-Authored-By` lines or any AI attribution to commit messages.** No exceptions.
+
 ## Code Conventions (from .cursor/rules)
 
 ### Minimal Safe Edits Workflow
