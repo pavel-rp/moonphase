@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { analyzeAsset } from '@/lib/data/aiAnalysisServer';
 import { logError } from '@/lib/observability';
+import { isExternalException } from '@/lib/errors';
 
 export async function POST(
   req: Request,
@@ -22,6 +23,13 @@ export async function POST(
     return NextResponse.json({ analysis }, { status: 200 });
   } catch (e) {
     logError(e, { route: 'POST /api/ai-analysis', symbol });
+    if (isExternalException(e)) {
+      const status = e.kind === 'RateLimited' ? 429 : e.kind === 'InvalidRequest' ? 400 : 502;
+      return NextResponse.json(
+        { error: e.message },
+        { status }
+      );
+    }
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'Failed to generate analysis' },
       { status: 502 }

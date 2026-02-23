@@ -4,6 +4,7 @@ import { get } from './client';
 import { ListAssetsResponseSchema } from './schema';
 import { dedupe, inflightKey } from '@/lib/http/inflight';
 import { logError } from '@/lib/observability';
+import { ExternalException } from '@/lib/errors';
 
 export class CoinCapAdapter implements CoinCapPort {
   async listAssets(params: { limit?: number; offset?: number } = {}): Promise<Asset[]> {
@@ -14,7 +15,13 @@ export class CoinCapAdapter implements CoinCapPort {
       try {
         const res = await get(url, { next: { revalidate: 60 } });
         if (!res || !res.ok) {
-          throw new Error(`API error ${res?.status ?? 500}`);
+          const status = res?.status ?? 500;
+          throw new ExternalException(
+            status === 429
+              ? { kind: 'RateLimited', details: { status } }
+              : { kind: 'Unavailable', details: { status } },
+            `CoinCap API error ${status}`,
+          );
         }
         const json = await res.json();
         const parsed = ListAssetsResponseSchema.parse(json);
