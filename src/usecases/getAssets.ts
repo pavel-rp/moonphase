@@ -1,12 +1,13 @@
 import { CoinCapPort } from "@/ports/CoinCapPort";
 import { AssetWhitelistPort } from "@/ports/AssetWhitelistPort";
 import { Asset } from "@/domain/asset";
+import { getEnv } from "@/lib/env";
 export async function getAssets(
   deps: { coinCap: CoinCapPort; whitelist?: AssetWhitelistPort },
   params: { limit?: number; offset?: number } = {}
 ): Promise<Asset[]> {
   const { limit = 19, offset = 0 } = params;
-  const isTestEnv = process.env.NODE_ENV === "test";
+  const isTestEnv = getEnv().NODE_ENV === "test";
   const hasWhitelist = Boolean(deps.whitelist);
   const OVERFETCH_MULTIPLIER = 5; // fetch more to compensate for whitelist filtering
   const requestLimit =
