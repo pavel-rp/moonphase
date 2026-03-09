@@ -60,7 +60,7 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
       </svg>
       <div className="grid grid-cols-1 gap-0.5 text-xs text-muted-foreground">
         {exchanges.map((exchange, index) => (
-          <div key={index} className="flex items-center gap-1">
+          <div key={exchange.name} className="flex items-center gap-1">
             <div
               className="w-2 h-2 rounded-full opacity-80"
               style={{ backgroundColor: CHART_COLORS[index] ?? CHART_COLORS[CHART_COLORS.length - 1] }}
