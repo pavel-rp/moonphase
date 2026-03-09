@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { fetchAssets } from '@/lib/data/assets';
 import { logError } from '@/lib/observability';
 import { isExternalException } from '@/lib/errors';
-import { COINCAP_DEFAULT_LIMIT, COINCAP_REVALIDATE_S } from '@/lib/config';
+import { COINCAP_DEFAULT_LIMIT } from '@/lib/config';
 
 export async function GET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
@@ -22,5 +22,6 @@ export async function GET(req: Request): Promise<Response> {
   }
 }
 
-export const revalidate = COINCAP_REVALIDATE_S;
+// Must be a static literal for Next.js segment config — matches COINCAP_REVALIDATE_S
+export const revalidate = 60;
 export const runtime = 'nodejs';

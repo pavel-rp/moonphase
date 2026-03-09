@@ -5,7 +5,7 @@
 // -- CoinCap ------------------------------------------------------------------
 export const COINCAP_REVALIDATE_S = 60;
 export const COINCAP_TIMEOUT_MS = 10_000;
-export const COINCAP_DEFAULT_LIMIT = 19; // 5× whitelist multiplier for filtered results
+export const COINCAP_DEFAULT_LIMIT = 19; // Default number of assets to request from CoinCap
 
 // -- Binance ------------------------------------------------------------------
 export const BINANCE_TICKER_REVALIDATE_S = 30;
