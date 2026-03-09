@@ -5,6 +5,7 @@ import { createNewsTool, type NewsTools } from "./tools/newsTool";
 import { getEnv } from "@/lib/env";
 import { logRequest, logError } from "@/lib/observability";
 import { ExternalException } from "@/lib/errors";
+import { toBinancePair } from "@/lib/symbolMeta";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
@@ -204,7 +205,7 @@ Do not provide financial advice. Focus on data-driven observations.`;
 
     try {
       // Gather data from tools first
-      const binanceSymbol = `${symbol.toUpperCase()}USDT`;
+      const binanceSymbol = toBinancePair(symbol);
       logRequest({ url: `openai/chat (${symbol})`, method: 'POST' });
 
       const [priceHistoryResult, vwapResult, newsResult] = await Promise.allSettled([
