@@ -1,12 +1,21 @@
-import React from 'react';
+import type React from 'react';
 import { prettifyNumber } from '@/lib/utils/numbers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DataItemGrid } from '@/components/ui/data-item-grid';
 import { fetchTradingActivity } from '@/lib/data/tradingActivity';
 import { BarChart3, Droplet, PieChart, GitFork } from 'lucide-react';
 
 type TradingActivityCardProps = {
   symbol: string;
 };
+
+/** Chart color tokens from globals.css (chart-1 through chart-4) */
+const CHART_COLORS = [
+  'var(--chart-1)',
+  'var(--chart-4)',
+  'var(--chart-3)',
+  'var(--chart-2)',
+] as const;
 
 // Server-rendered SVG donut chart
 function DonutChart({ exchanges }: { exchanges: { name: string; percentage: number }[] }) {
@@ -21,29 +30,25 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
       const strokeDasharray = `${percentage * circumference} ${circumference}`;
       const strokeDashoffset = -acc.cumulative * circumference;
 
-      const colors = ['#3b82f6', '#8b5cf6', '#f59e0b']; // blue, purple, amber
-
-      return {
-        cumulative: acc.cumulative + percentage,
-        elements: [
-          ...acc.elements,
-          <circle
-            key={index}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={colors[index] || '#6b7280'}
-            strokeWidth={strokeWidth}
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            className="opacity-80"
-          />
-        ]
-      };
+      acc.elements.push(
+        <circle
+          key={exchange.name}
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={CHART_COLORS[index] ?? CHART_COLORS[CHART_COLORS.length - 1]}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          className="opacity-80"
+        />,
+      );
+      acc.cumulative += percentage;
+      return acc;
     },
-    { cumulative: 0, elements: [] }
+    { cumulative: 0, elements: [] },
   ).elements;
 
   return (
@@ -52,16 +57,16 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
         {paths}
       </svg>
       <div className="grid grid-cols-1 gap-0.5 text-xs text-muted-foreground">
-        {exchanges.map((exchange, index) => {
-          const colors = ['bg-blue-500', 'bg-purple-500', 'bg-amber-500'];
-          return (
-            <div key={index} className="flex items-center gap-1">
-              <div className={`w-2 h-2 rounded-full ${colors[index] || 'bg-gray-500'} opacity-80`} />
-              <span className="truncate max-w-16">{exchange.name}</span>
-              <span>{exchange.percentage}%</span>
-            </div>
-          );
-        })}
+        {exchanges.map((exchange, index) => (
+          <div key={exchange.name} className="flex items-center gap-1">
+            <div
+              className="w-2 h-2 rounded-full opacity-80"
+              style={{ backgroundColor: CHART_COLORS[index] ?? CHART_COLORS[CHART_COLORS.length - 1] }}
+            />
+            <span className="truncate max-w-16">{exchange.name}</span>
+            <span>{exchange.percentage}%</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -82,7 +87,7 @@ function StackedBar({ cex, dex }: { cex: number; dex: number }) {
           y={0}
           width={cexWidth}
           height={height}
-          fill="#3b82f6"
+          fill={CHART_COLORS[0]}
           className="opacity-80"
           rx={2}
         />
@@ -91,18 +96,24 @@ function StackedBar({ cex, dex }: { cex: number; dex: number }) {
           y={0}
           width={dexWidth}
           height={height}
-          fill="#8b5cf6"
+          fill={CHART_COLORS[1]}
           className="opacity-80"
           rx={2}
         />
       </svg>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-blue-500 opacity-80" />
+          <div
+            className="w-2 h-2 rounded-full opacity-80"
+            style={{ backgroundColor: CHART_COLORS[0] }}
+          />
           <span>{cex}%</span>
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-purple-500 opacity-80" />
+          <div
+            className="w-2 h-2 rounded-full opacity-80"
+            style={{ backgroundColor: CHART_COLORS[1] }}
+          />
           <span>{dex}%</span>
         </div>
       </div>
@@ -121,47 +132,30 @@ export default async function TradingActivityCard({ symbol }: TradingActivityCar
         <CardTitle>Trading Activity</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 gap-4">
-          {/* 24h Volume */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <BarChart3 className="hidden sm:block h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">24h Volume</span>
-            </div>
-            <span className="text-base md:text-lg lg:text-xl font-semibold tabular-nums text-right">
-              {volume24h}
-            </span>
-          </div>
-
-          {/* Liquidity Score */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <Droplet className="hidden sm:block h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Liquidity Score</span>
-            </div>
-            <div className="rounded-md bg-muted/40 px-2 py-0.5 font-semibold text-sm">
-              {ta.liquidityScore}
-            </div>
-          </div>
-
-          {/* Top Exchanges */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <PieChart className="hidden sm:block h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Top Exchanges</span>
-            </div>
-            <DonutChart exchanges={ta.topExchanges} />
-          </div>
-
-          {/* CEX/DEX Split */}
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <GitFork className="hidden sm:block h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">CEX/DEX Split</span>
-            </div>
-            <StackedBar cex={ta.cexDexSplit.cex} dex={ta.cexDexSplit.dex} />
-          </div>
-        </div>
+        <DataItemGrid
+          items={[
+            { icon: BarChart3, label: '24h Volume', value: volume24h },
+            {
+              icon: Droplet,
+              label: 'Liquidity Score',
+              value: (
+                <div className="rounded-md bg-muted/40 px-2 py-0.5 font-semibold text-sm">
+                  {ta.liquidityScore}
+                </div>
+              ),
+            },
+            {
+              icon: PieChart,
+              label: 'Top Exchanges',
+              value: <DonutChart exchanges={ta.topExchanges} />,
+            },
+            {
+              icon: GitFork,
+              label: 'CEX/DEX Split',
+              value: <StackedBar cex={ta.cexDexSplit.cex} dex={ta.cexDexSplit.dex} />,
+            },
+          ]}
+        />
       </CardContent>
     </Card>
   );
