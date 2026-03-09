@@ -2,6 +2,7 @@ import { tool } from 'langchain';
 import { z } from 'zod';
 import { NewsPort } from '@/ports/NewsPort';
 import { symbolSchema } from '@/domain/schemas';
+import { NEWS_DEFAULT_LIMIT } from '@/lib/config';
 
 export interface NewsToolDeps {
   newsPort: NewsPort;
@@ -59,7 +60,7 @@ export function createNewsTool(deps: NewsToolDeps) {
         }
 
         const normalizedSymbol = symbol.trim().toUpperCase();
-        const requestLimit = limit ?? 5;
+        const requestLimit = limit ?? NEWS_DEFAULT_LIMIT;
         const articles = await deps.newsPort.fetchNews({
           symbol: normalizedSymbol,
           limit: requestLimit,

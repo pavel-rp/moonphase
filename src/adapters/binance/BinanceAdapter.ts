@@ -3,6 +3,7 @@ import { get } from "./client";
 import { KlinesSchema, Ticker24hrSchema } from "./schema";
 import type { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { handleResponse } from "@/lib/http/handleResponse";
+import { BINANCE_TICKER_REVALIDATE_S, BINANCE_CANDLES_REVALIDATE_S } from "@/lib/config";
 
 export class BinanceAdapter implements BinancePort {
   async get24HrStats(symbol: string): Promise<number> {
@@ -11,7 +12,7 @@ export class BinanceAdapter implements BinancePort {
       const res = await get(
         `/ticker/24hr?symbol=${encodeURIComponent(symbol)}`,
         {
-          next: { revalidate: 30 },
+          next: { revalidate: BINANCE_TICKER_REVALIDATE_S },
         },
       );
       const parsed = await handleResponse(res, Ticker24hrSchema, "Binance API");
@@ -32,7 +33,7 @@ export class BinanceAdapter implements BinancePort {
       const query = new URLSearchParams({ symbol, interval: "1d" });
       if (typeof limit === "number") query.set("limit", String(limit));
       const res = await get(`/klines?${query.toString()}`, {
-        next: { revalidate: 60 },
+        next: { revalidate: BINANCE_CANDLES_REVALIDATE_S },
       });
       return handleResponse(res, KlinesSchema, "Binance API");
     });

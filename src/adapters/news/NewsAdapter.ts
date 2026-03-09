@@ -6,10 +6,11 @@ import { NewsAPIaiResponseSchema } from './schema';
 import { handleResponse } from '@/lib/http/handleResponse';
 import { logRequest, logError } from '@/lib/observability';
 import { toDisplayName } from '@/lib/symbolMeta';
+import { NEWS_DEFAULT_LIMIT, NEWS_REVALIDATE_S } from '@/lib/config';
 
 export class NewsAdapter implements NewsPort {
   async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
-    const { symbol, limit = 5 } = params;
+    const { symbol, limit = NEWS_DEFAULT_LIMIT } = params;
     const key = inflightKey('news/newsapiai', { symbol, limit });
 
     return dedupe(key, async () => {
@@ -32,7 +33,7 @@ export class NewsAdapter implements NewsPort {
 
         let res: Response;
         try {
-          res = await get(url, { next: { revalidate: 300 } as never });
+          res = await get(url, { next: { revalidate: NEWS_REVALIDATE_S } as never });
         } catch (fetchError) {
           logError(fetchError, { symbol, limit, stage: 'fetch' });
           throw fetchError;
