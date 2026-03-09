@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { prettifyNumber } from '@/lib/utils/numbers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DataItemGrid } from '@/components/ui/data-item-grid';
@@ -30,27 +30,25 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
       const strokeDasharray = `${percentage * circumference} ${circumference}`;
       const strokeDashoffset = -acc.cumulative * circumference;
 
-      return {
-        cumulative: acc.cumulative + percentage,
-        elements: [
-          ...acc.elements,
-          <circle
-            key={exchange.name}
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            fill="none"
-            stroke={CHART_COLORS[index] ?? CHART_COLORS[CHART_COLORS.length - 1]}
-            strokeWidth={strokeWidth}
-            strokeDasharray={strokeDasharray}
-            strokeDashoffset={strokeDashoffset}
-            transform={`rotate(-90 ${size / 2} ${size / 2})`}
-            className="opacity-80"
-          />
-        ]
-      };
+      acc.elements.push(
+        <circle
+          key={exchange.name}
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke={CHART_COLORS[index] ?? CHART_COLORS[CHART_COLORS.length - 1]}
+          strokeWidth={strokeWidth}
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          className="opacity-80"
+        />,
+      );
+      acc.cumulative += percentage;
+      return acc;
     },
-    { cumulative: 0, elements: [] }
+    { cumulative: 0, elements: [] },
   ).elements;
 
   return (
