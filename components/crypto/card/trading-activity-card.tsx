@@ -35,7 +35,7 @@ function DonutChart({ exchanges }: { exchanges: { name: string; percentage: numb
         elements: [
           ...acc.elements,
           <circle
-            key={index}
+            key={exchange.name}
             cx={size / 2}
             cy={size / 2}
             r={radius}
