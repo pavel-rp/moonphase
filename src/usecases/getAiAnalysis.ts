@@ -1,15 +1,10 @@
+// AI analysis usecase — thin delegation to the AiAnalysisPort.
+// Future business logic (rate limiting, caching, input enrichment)
+// should be added here rather than in the adapter or wiring layer.
+
 import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
 
-/**
- * AI analysis usecase — provides both one-shot and streaming analysis.
- *
- * Currently a thin delegation to the AiAnalysisPort. The exported
- * two-function surface (getAiAnalysis + getAiAnalysisStream) is the
- * primary value add, delegating to deps.ai.analyzeAsset /
- * deps.ai.analyzeAssetStream. Future business logic such as rate
- * limiting, caching, or input enrichment should be added here rather
- * than in the adapter or wiring layer.
- */
+/** One-shot AI analysis, delegates to deps.ai.analyzeAsset. */
 export async function getAiAnalysis(
   deps: {
     ai: AiAnalysisPort;
@@ -20,6 +15,7 @@ export async function getAiAnalysis(
   return analysis;
 }
 
+/** Streaming AI analysis, delegates to deps.ai.analyzeAssetStream. */
 export function getAiAnalysisStream(
   deps: { ai: AiAnalysisPort },
   symbol: string
