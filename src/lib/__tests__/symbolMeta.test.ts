@@ -12,7 +12,7 @@ describe('toBinancePair', () => {
     expect(toBinancePair('Eth')).toBe('ETHUSDT');
   });
 
-  it('falls back to ${UPPER}USDT for unknown symbols', () => {
+  it('constructs a USDT pair from the uppercased symbol when not in the map', () => {
     expect(toBinancePair('SHIB')).toBe('SHIBUSDT');
     expect(toBinancePair('pepe')).toBe('PEPEUSDT');
   });
