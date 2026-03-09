@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Note**: The project is branded as "MoonPhase" but the npm package name is "token-pies" (historical).
 
+**Sourcebot**: This repo is indexed in Sourcebot as `github.com/pavel-rp/crypto-dashboard-demo`. Use this name when filtering sourcebot MCP tool calls (e.g. `filterByRepos: ["github.com/pavel-rp/crypto-dashboard-demo"]`).
+
 **Key Pages**:
 - `/` – Assets grid with responsive layout (BTC featured at 2x span), shimmer loading states
 - `/details/[symbol]` – Token details with price, market cap, charts, market data card, and trading activity (dynamic route, force-dynamic)
