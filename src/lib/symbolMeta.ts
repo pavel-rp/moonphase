@@ -14,14 +14,13 @@ const BINANCE_PAIRS: Record<string, string> = {
   AVAX: 'AVAXUSDT',
   LINK: 'LINKUSDT',
   TON: 'TONUSDT',
-  TEST: 'TESTUSDT',
 };
 
 const DISPLAY_NAMES: Record<string, string> = {
   BTC: 'Bitcoin',
   ETH: 'Ethereum',
   USDT: 'Tether',
-  BNB: 'Binance',
+  BNB: 'BNB',
   SOL: 'Solana',
   XRP: 'Ripple',
   ADA: 'Cardano',
