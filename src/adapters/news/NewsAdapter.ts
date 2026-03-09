@@ -5,6 +5,7 @@ import { get } from './client';
 import { NewsAPIaiResponseSchema } from './schema';
 import { handleResponse } from '@/lib/http/handleResponse';
 import { logRequest, logError } from '@/lib/observability';
+import { toDisplayName } from '@/lib/symbolMeta';
 
 export class NewsAdapter implements NewsPort {
   async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
@@ -14,23 +15,7 @@ export class NewsAdapter implements NewsPort {
     return dedupe(key, async () => {
       let url: string | undefined;
       try {
-        // Map common crypto symbols to full names for better search results
-        const symbolMap: Record<string, string> = {
-          BTC: 'Bitcoin',
-          ETH: 'Ethereum',
-          USDT: 'Tether',
-          BNB: 'Binance',
-          SOL: 'Solana',
-          XRP: 'Ripple',
-          ADA: 'Cardano',
-          DOGE: 'Dogecoin',
-          AVAX: 'Avalanche',
-          DOT: 'Polkadot',
-          MATIC: 'Polygon',
-          LINK: 'Chainlink',
-        };
-
-        const searchTerm = symbolMap[symbol] || symbol;
+        const searchTerm = toDisplayName(symbol);
 
         // NewsAPI.ai uses /article/getArticles endpoint
         const query = new URLSearchParams({
