@@ -67,6 +67,6 @@ describe('POST /api/ai-analysis/[symbol]', () => {
     const res = await POST(req, ctx);
     expect(res.status).toBe(502);
     const body = await res.json();
-    expect(body.error).toBe('Something broke');
+    expect(body.error).toBe('Upstream unavailable');
   });
 });
