@@ -6,6 +6,7 @@ import { getEnv } from "@/lib/env";
 import { logRequest, logError } from "@/lib/observability";
 import { ExternalException } from "@/lib/errors";
 import { toBinancePair } from "@/lib/symbolMeta";
+import { AI_LLM_TEMPERATURE, AI_NEWS_LIMIT, AI_PRICE_HISTORY_DAYS } from "@/lib/config";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
@@ -167,7 +168,7 @@ export class LangChainAiAdapter implements AiAnalysisPort {
     this.model = new ChatOpenAI({
       model: "gpt-5.1",
       apiKey: env.OPENAI_API_KEY,
-      temperature: 0.7,
+      temperature: AI_LLM_TEMPERATURE,
     });
 
     const { getPriceHistoryTool, getVWAPTool } = createPriceTools({
@@ -209,9 +210,9 @@ Do not provide financial advice. Focus on data-driven observations.`;
       logRequest({ url: `openai/chat (${symbol})`, method: 'POST' });
 
       const [priceHistoryResult, vwapResult, newsResult] = await Promise.allSettled([
-        this.getPriceHistoryTool.invoke({ symbol: binanceSymbol, limit: 14 }),
+        this.getPriceHistoryTool.invoke({ symbol: binanceSymbol, limit: AI_PRICE_HISTORY_DAYS }),
         this.getVWAPTool.invoke({ symbol: binanceSymbol }),
-        this.getNewsArticlesTool.invoke({ symbol: symbol.toUpperCase(), limit: 5 }),
+        this.getNewsArticlesTool.invoke({ symbol: symbol.toUpperCase(), limit: AI_NEWS_LIMIT }),
       ]);
 
       // Parse and format tool results for LLM consumption

@@ -1,6 +1,7 @@
 import { fetchWithRetry } from '@/lib/http/fetcher';
 import { logRequest } from '@/lib/observability';
 import { getEnv } from '@/lib/env';
+import { BINANCE_TIMEOUT_MS } from '@/lib/config';
 
 const { BINANCE_BASE_URL } = getEnv();
 const BASE_URL = BINANCE_BASE_URL ?? 'https://api.binance.com/api/v3';
@@ -19,7 +20,7 @@ export async function get(
   return fetchWithRetry(
     url,
     { next, headers },
-    { timeoutMs: 10_000 },
+    { timeoutMs: BINANCE_TIMEOUT_MS },
   );
 }
 

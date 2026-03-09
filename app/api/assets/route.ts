@@ -2,10 +2,11 @@ import { NextResponse } from 'next/server';
 import { fetchAssets } from '@/lib/data/assets';
 import { logError } from '@/lib/observability';
 import { isExternalException } from '@/lib/errors';
+import { COINCAP_DEFAULT_LIMIT } from '@/lib/config';
 
 export async function GET(req: Request): Promise<Response> {
   const { searchParams } = new URL(req.url);
-  const limit = Number(searchParams.get('limit') ?? '19');
+  const limit = Number(searchParams.get('limit') ?? String(COINCAP_DEFAULT_LIMIT));
   const offset = Number(searchParams.get('offset') ?? '0');
 
   try {
@@ -21,5 +22,6 @@ export async function GET(req: Request): Promise<Response> {
   }
 }
 
+// Must be a static literal for Next.js segment config — matches COINCAP_REVALIDATE_S
 export const revalidate = 60;
 export const runtime = 'nodejs';

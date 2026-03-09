@@ -2,6 +2,7 @@ import { tool } from 'langchain';
 import { z } from 'zod';
 import { NewsPort } from '@/ports/NewsPort';
 import { symbolSchema } from '@/domain/schemas';
+import { NEWS_DEFAULT_LIMIT } from '@/lib/config';
 
 export interface NewsToolDeps {
   newsPort: NewsPort;
@@ -59,7 +60,7 @@ export function createNewsTool(deps: NewsToolDeps) {
         }
 
         const normalizedSymbol = symbol.trim().toUpperCase();
-        const requestLimit = limit ?? 5;
+        const requestLimit = limit ?? NEWS_DEFAULT_LIMIT;
         const articles = await deps.newsPort.fetchNews({
           symbol: normalizedSymbol,
           limit: requestLimit,
@@ -88,7 +89,7 @@ export function createNewsTool(deps: NewsToolDeps) {
     {
       name: 'get_news_articles',
       description:
-        'Fetches recent cryptocurrency news articles for sentiment analysis and market context. Input: symbol (e.g., BTC, ETH), optional limit (default 5, max 10). Returns a JSON object with success, symbol, count, and a data array of news articles.',
+        `Fetches recent cryptocurrency news articles for sentiment analysis and market context. Input: symbol (e.g., BTC, ETH), optional limit (default ${NEWS_DEFAULT_LIMIT}, max 10). Returns a JSON object with success, symbol, count, and a data array of news articles.`,
       schema: z.object({
         symbol: z.string().describe('The cryptocurrency symbol (e.g., BTC, ETH).'),
         limit: z
@@ -96,7 +97,7 @@ export function createNewsTool(deps: NewsToolDeps) {
           .min(1)
           .max(10)
           .optional()
-          .describe('Number of articles to fetch (default 5, max 10).'),
+          .describe(`Number of articles to fetch (default ${NEWS_DEFAULT_LIMIT}, max 10).`),
       }),
     }
   );
