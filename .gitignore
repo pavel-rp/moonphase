@@ -47,3 +47,7 @@ yarn-error.log*
 .vscode/
 .claude/
 .cursor/
+
+# wf plugin
+wf.config.js
+.tmp/
