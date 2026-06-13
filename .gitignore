@@ -51,3 +51,4 @@ yarn-error.log*
 # wf plugin
 wf.config.js
 .tmp/
+docs/wf-plans/
