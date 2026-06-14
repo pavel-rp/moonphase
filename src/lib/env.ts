@@ -9,6 +9,7 @@ const EnvSchema = z.object({
   BINANCE_API_KEY: z.string().optional(),
   BINANCE_BASE_URL: z.string().url().optional(),
   OPENAI_API_KEY: z.string().optional(),
+  OPENAI_MODEL: z.string().optional(),
   NEWS_API_KEY: z.string().optional(),
 });
 

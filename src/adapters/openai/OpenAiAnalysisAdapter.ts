@@ -1,0 +1,256 @@
+import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateText, streamText, type LanguageModel } from "ai";
+import { getEnv } from "@/lib/env";
+import { logRequest, logError } from "@/lib/observability";
+import { ExternalException } from "@/lib/errors";
+import { toBinancePair } from "@/lib/symbolMeta";
+import { AI_LLM_MODEL, AI_LLM_REASONING_EFFORT, AI_NEWS_LIMIT, AI_PRICE_HISTORY_DAYS } from "@/lib/config";
+import { BinancePort, Candlestick } from "@/ports/BinancePort";
+import { NewsPort } from "@/ports/NewsPort";
+import { NewsArticle } from "@/domain/newsArticle";
+
+// GPT-5.x are reasoning models: they take `reasoning_effort`, not `temperature`
+// (a non-default temperature is rejected). The AI SDK maps `reasoningEffort`
+// to the OpenAI `reasoning_effort` parameter.
+const PROVIDER_OPTIONS = {
+  openai: { reasoningEffort: AI_LLM_REASONING_EFFORT },
+} as const;
+
+const SYSTEM_PROMPT = `You are a cryptocurrency market analyst providing concise, actionable insights.
+
+Your role:
+- Analyze price data, VWAP, and news sentiment
+- Provide short-term bias (bullish/bearish/sideways)
+- Identify key signals (trend, momentum, volatility)
+- Keep analysis brief and focused (3-4 paragraphs max)
+
+Format your response with:
+1. **Market Bias**: Current short-term direction
+2. **Price Analysis**: Key levels and VWAP context
+3. **News Sentiment**: Recent developments impact
+4. **Key Takeaway**: One clear actionable insight
+
+Do not provide financial advice. Focus on data-driven observations.`;
+
+/**
+ * Returns the rejection reason of a settled result as a short message.
+ */
+function settledError(result: PromiseRejectedResult): string {
+  return result.reason instanceof Error ? result.reason.message : String(result.reason);
+}
+
+/**
+ * Formats price history data for LLM consumption.
+ */
+function formatPriceHistory(candles: Candlestick[]): string {
+  if (candles.length === 0) {
+    return "No price history available.";
+  }
+
+  const latestCandle = candles[candles.length - 1];
+  const oldestCandle = candles[0];
+
+  // Calculate price change over period
+  const priceChange = latestCandle.close - oldestCandle.close;
+  const priceChangePercent = ((priceChange / oldestCandle.close) * 100).toFixed(2);
+  const direction = priceChange >= 0 ? "up" : "down";
+
+  // Find high and low over period
+  const highPrice = Math.max(...candles.map((c) => c.high));
+  const lowPrice = Math.min(...candles.map((c) => c.low));
+
+  // Recent trend (last 3 candles)
+  const recentCandles = candles.slice(-3);
+  const recentTrend = recentCandles.every((c, i) =>
+    i === 0 || c.close >= recentCandles[i - 1].close
+  ) ? "bullish" : recentCandles.every((c, i) =>
+    i === 0 || c.close <= recentCandles[i - 1].close
+  ) ? "bearish" : "mixed";
+
+  return `Price Summary (${candles.length} days):
+- Current Price: $${latestCandle.close.toLocaleString()}
+- Period Change: ${direction} ${Math.abs(priceChange).toLocaleString()} (${priceChangePercent}%)
+- Period High: $${highPrice.toLocaleString()}
+- Period Low: $${lowPrice.toLocaleString()}
+- Recent Trend (3d): ${recentTrend}
+- Latest Volume: ${latestCandle.volume.toLocaleString()}`;
+}
+
+/**
+ * Formats VWAP data for LLM consumption.
+ */
+function formatVWAP(vwap: number, currentPrice?: number): string {
+  if (!Number.isFinite(vwap)) {
+    return "VWAP data not available.";
+  }
+
+  let vwapContext = `24h VWAP: $${vwap.toLocaleString()}`;
+
+  if (currentPrice !== undefined) {
+    const deviation = ((currentPrice - vwap) / vwap) * 100;
+    const position = currentPrice > vwap ? "above" : "below";
+    vwapContext += `\n- Price is ${position} VWAP by ${Math.abs(deviation).toFixed(2)}%`;
+    vwapContext += deviation > 2
+      ? " (potentially overbought)"
+      : deviation < -2
+        ? " (potentially oversold)"
+        : " (near fair value)";
+  }
+
+  return vwapContext;
+}
+
+/**
+ * Formats news articles for LLM consumption.
+ */
+function formatNews(articles: NewsArticle[]): string {
+  if (articles.length === 0) {
+    return "No recent news articles found for this symbol.";
+  }
+
+  let newsContext = `Recent News:\n`;
+
+  articles.slice(0, 5).forEach((article, idx) => {
+    const date = new Date(article.publishedAt).toLocaleDateString();
+    newsContext += `${idx + 1}. "${article.title}" - ${article.source.name} (${date})\n`;
+    if (article.description) {
+      newsContext += `   ${article.description.slice(0, 100)}...\n`;
+    }
+  });
+
+  return newsContext;
+}
+
+/**
+ * Vercel AI SDK adapter for AI analysis of cryptocurrency assets.
+ *
+ * Implements the AiAnalysisPort as an explicit parallelization workflow: it
+ * gathers price / VWAP / news data by calling the Binance and News adapters
+ * directly (no agent loop, no tool-calling), formats finished numbers into a
+ * context string, and makes a single synthesis call to the OpenAI model via
+ * the AI SDK. `analyzeAsset` uses `generateText`; `analyzeAssetStream` uses
+ * `streamText` to yield real incremental token chunks.
+ */
+export class OpenAiAnalysisAdapter implements AiAnalysisPort {
+  private model: LanguageModel;
+  private binance: BinancePort;
+  private news: NewsPort;
+
+  constructor(deps: { binance: BinancePort; news: NewsPort }) {
+    const env = getEnv();
+
+    if (!env.OPENAI_API_KEY) {
+      throw new ExternalException(
+        { kind: 'InvalidRequest', details: { missingEnv: 'OPENAI_API_KEY' } },
+        'OPENAI_API_KEY is required for AI analysis. Please set the environment variable.',
+      );
+    }
+
+    const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
+    // Treat a blank OPENAI_MODEL as unset — `??` would not fall back on "".
+    this.model = openai(env.OPENAI_MODEL?.trim() || AI_LLM_MODEL);
+    this.binance = deps.binance;
+    this.news = deps.news;
+  }
+
+  /**
+   * Gathers market data in parallel and assembles the synthesis prompt.
+   * Each source degrades gracefully: a failed fetch is rendered as an error
+   * line rather than aborting the whole analysis.
+   */
+  private async buildPrompt(symbol: string): Promise<string> {
+    const binanceSymbol = toBinancePair(symbol);
+    logRequest({ url: `openai/chat (${symbol})`, method: 'POST' });
+
+    const [priceResult, vwapResult, newsResult] = await Promise.allSettled([
+      this.binance.getDailyCandles(binanceSymbol, AI_PRICE_HISTORY_DAYS),
+      this.binance.get24HrStats(binanceSymbol),
+      this.news.fetchNews({ symbol: symbol.toUpperCase(), limit: AI_NEWS_LIMIT }),
+    ]);
+
+    let context = `Market Data for ${symbol}:\n\n`;
+
+    // Price history — also extract current price for VWAP context
+    let currentPrice: number | undefined;
+    if (priceResult.status === 'fulfilled') {
+      const candles = priceResult.value;
+      context += `${formatPriceHistory(candles)}\n\n`;
+      if (candles.length > 0) {
+        currentPrice = candles[candles.length - 1].close;
+      }
+    } else {
+      context += `Error fetching price data: ${settledError(priceResult)}\n\n`;
+    }
+
+    if (vwapResult.status === 'fulfilled') {
+      context += `${formatVWAP(vwapResult.value, currentPrice)}\n\n`;
+    } else {
+      context += `Error fetching VWAP: ${settledError(vwapResult)}\n\n`;
+    }
+
+    if (newsResult.status === 'fulfilled') {
+      context += `${formatNews(newsResult.value)}\n\n`;
+    } else {
+      context += `Error fetching news: ${settledError(newsResult)}\n\n`;
+    }
+
+    return `${context}\n\nBased on the above data, provide a comprehensive analysis of ${symbol}.`;
+  }
+
+  /**
+   * Wraps an unexpected error into an ExternalException, preserving existing ones.
+   */
+  private toExternalException(error: unknown, symbol: string): ExternalException {
+    if (error instanceof ExternalException) return error;
+    return new ExternalException(
+      { kind: 'Unavailable', details: { symbol, originalError: error instanceof Error ? error.message : String(error) } },
+      `Failed to analyze ${symbol}: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
+
+  /**
+   * Analyze a cryptocurrency asset by symbol.
+   * @param symbol - The asset symbol to analyze.
+   * @returns The AI-generated analysis.
+   */
+  async analyzeAsset(symbol: string): Promise<string> {
+    try {
+      const prompt = await this.buildPrompt(symbol);
+      const { text } = await generateText({
+        model: this.model,
+        system: SYSTEM_PROMPT,
+        prompt,
+        providerOptions: PROVIDER_OPTIONS,
+      });
+      return text;
+    } catch (error) {
+      logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAsset', symbol });
+      throw this.toExternalException(error, symbol);
+    }
+  }
+
+  /**
+   * Analyze a cryptocurrency asset by symbol and stream the AI-generated
+   * analysis as incremental token chunks.
+   * @param symbol - The asset symbol to analyze.
+   * @returns An async iterable of string chunks.
+   */
+  async *analyzeAssetStream(symbol: string): AsyncIterable<string> {
+    try {
+      const prompt = await this.buildPrompt(symbol);
+      const result = streamText({
+        model: this.model,
+        system: SYSTEM_PROMPT,
+        prompt,
+        providerOptions: PROVIDER_OPTIONS,
+      });
+      for await (const chunk of result.textStream) {
+        yield chunk;
+      }
+    } catch (error) {
+      logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAssetStream', symbol });
+      throw this.toExternalException(error, symbol);
+    }
+  }
+}

@@ -1,16 +1,13 @@
 const mockAnalyzeAsset = jest.fn();
 const mockAnalyzeAssetStream = jest.fn();
 
-const MockLangChainAiAdapter = jest.fn().mockImplementation(() => ({
-  analyzeAsset: mockAnalyzeAsset,
-  analyzeAssetStream: mockAnalyzeAssetStream,
-}));
+const MockOpenAiAnalysisAdapter = jest.fn();
 
 const MockNewsAdapter = jest.fn().mockImplementation(() => ({ fetchNews: jest.fn() }));
 const MockMockNewsAdapter = jest.fn().mockImplementation(() => ({ fetchNews: jest.fn() }));
 
-jest.mock('@/adapters/langchain/LangChainAiAdapter', () => ({
-  LangChainAiAdapter: MockLangChainAiAdapter,
+jest.mock('@/adapters/openai/OpenAiAnalysisAdapter', () => ({
+  OpenAiAnalysisAdapter: MockOpenAiAnalysisAdapter,
 }));
 jest.mock('@/adapters/news/NewsAdapter', () => ({
   NewsAdapter: MockNewsAdapter,
@@ -22,7 +19,11 @@ jest.mock('@/adapters/news/MockNewsAdapter', () => ({
 // Must re-import after mocks are set up and module cache is clean
 beforeEach(() => {
   jest.resetModules();
-  MockLangChainAiAdapter.mockClear();
+  MockOpenAiAnalysisAdapter.mockReset();
+  MockOpenAiAnalysisAdapter.mockImplementation(() => ({
+    analyzeAsset: mockAnalyzeAsset,
+    analyzeAssetStream: mockAnalyzeAssetStream,
+  }));
   MockNewsAdapter.mockClear();
   MockMockNewsAdapter.mockClear();
 });
@@ -68,29 +69,25 @@ describe('getAiAnalysisDeps', () => {
     ]);
 
     expect(deps1).toBe(deps2);
-    expect(MockLangChainAiAdapter).toHaveBeenCalledTimes(1);
+    expect(MockOpenAiAnalysisAdapter).toHaveBeenCalledTimes(1);
   });
 
   it('resets the cache on failure so a later call can retry', async () => {
-    jest.doMock('@/adapters/langchain/LangChainAiAdapter', () => {
-      throw new Error('import failed');
+    // Simulate a construction-time failure (e.g. missing OPENAI_API_KEY).
+    MockOpenAiAnalysisAdapter.mockImplementation(() => {
+      throw new Error('construction failed');
     });
 
     const { getAiAnalysisDeps } = await import('../compositionRoot');
 
     const p1 = getAiAnalysisDeps();
-    await expect(p1).rejects.toThrow('import failed');
+    await expect(p1).rejects.toThrow('construction failed');
 
     // After rejection, cache must be reset so the next call creates a new
     // promise (rather than re-using the cached rejected one).
     const p2 = getAiAnalysisDeps();
     expect(p2).not.toBe(p1);
-    await expect(p2).rejects.toThrow('import failed');
-
-    // Restore mock so subsequent tests are unaffected.
-    jest.doMock('@/adapters/langchain/LangChainAiAdapter', () => ({
-      LangChainAiAdapter: MockLangChainAiAdapter,
-    }));
+    await expect(p2).rejects.toThrow('construction failed');
   });
 
   it('returns the same instance on sequential calls (singleton)', async () => {
@@ -100,6 +97,6 @@ describe('getAiAnalysisDeps', () => {
     const deps2 = await getAiAnalysisDeps();
 
     expect(deps1).toBe(deps2);
-    expect(MockLangChainAiAdapter).toHaveBeenCalledTimes(1);
+    expect(MockOpenAiAnalysisAdapter).toHaveBeenCalledTimes(1);
   });
 });
