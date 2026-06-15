@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { analyzeAsset } from '@/lib/data/aiAnalysisServer';
+import { analyzeAssetStream } from '@/lib/data/aiAnalysisServer';
 import { apiErrorResponse } from '@/lib/http/apiErrorResponse';
+import { logError } from '@/lib/observability';
 import { symbolSchema } from '@/domain/schemas';
 
 export async function POST(
@@ -19,9 +20,58 @@ export async function POST(
       );
     }
 
-    const analysis = await analyzeAsset(symbol);
+    const iterator = analyzeAssetStream(symbol)[Symbol.asyncIterator]();
 
-    return NextResponse.json({ analysis }, { status: 200 });
+    // Pull the first chunk eagerly: a pre-stream failure (missing config, an
+    // invalid request, or a first-token upstream error) is wrapped as an
+    // ExternalException here, so we can still map it to a proper JSON HTTP
+    // status before any streaming headers are sent.
+    const first = await iterator.next();
+
+    const encoder = new TextEncoder();
+    const symbolForLog = symbol;
+    let cancelled = false;
+
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        if (first.done) {
+          controller.close();
+          return;
+        }
+        controller.enqueue(encoder.encode(first.value));
+      },
+      async pull(controller) {
+        try {
+          const { value, done } = await iterator.next();
+          if (cancelled) return;
+          if (done) {
+            controller.close();
+            return;
+          }
+          controller.enqueue(encoder.encode(value));
+        } catch (e) {
+          if (cancelled) return;
+          // Headers are already sent, so the status code can no longer change.
+          // Error the stream instead — the client reader rejects rather than
+          // receiving a silently truncated analysis.
+          logError(e, { route: 'POST /api/ai-analysis (stream)', symbol: symbolForLog });
+          controller.error(e);
+        }
+      },
+      async cancel() {
+        // Client disconnected — stop generation and release the upstream call.
+        cancelled = true;
+        await iterator.return?.();
+      },
+    });
+
+    return new Response(stream, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    });
   } catch (e) {
     return apiErrorResponse(e, { route: 'POST /api/ai-analysis', symbol });
   }
