@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { ActionButton } from "@/components/ui/action-button";
 import { BrainCircuit } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import type { Components } from "react-markdown";
 import ShimmerCard from "@/components/ui/shimmer-card";
@@ -80,6 +81,7 @@ export function AiAnalysisSection({
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const reduce = useReducedMotion();
 
   // Abort any in-flight stream when the component unmounts (e.g. the user
   // navigates away mid-stream) so the server stops generating.
@@ -180,23 +182,48 @@ export function AiAnalysisSection({
             <AnalysisMarkdown>{text}</AnalysisMarkdown>
           </div>
 
-          {isStreaming ? (
-            <div
-              className="flex items-center gap-2 text-sm text-muted-foreground"
-              role="status"
-              aria-live="polite"
-            >
-              <BrainCircuit className="size-4 animate-pulse" />
-              <span className="animate-pulse">Generating analysis…</span>
-            </div>
-          ) : (
-            <div className="flex justify-end">
-              <ActionButton onClick={handleGenerate}>
-                Regenerate Analysis
-                <BrainCircuit className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2" />
-              </ActionButton>
-            </div>
-          )}
+          {/* Footer swaps the streaming indicator for the Regenerate button.
+              On streaming → complete the indicator fades out while the button
+              row grows in (height 0 → auto), easing the card taller. Collapses
+              to an instant swap when reduced motion is requested. */}
+          <AnimatePresence initial={false}>
+            {isStreaming ? (
+              <motion.div
+                key="generating"
+                className="flex items-center gap-2 text-sm text-muted-foreground"
+                role="status"
+                aria-live="polite"
+                exit={{ opacity: 0 }}
+                transition={
+                  reduce
+                    ? { duration: 0 }
+                    : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                }
+              >
+                <BrainCircuit className="size-4 animate-pulse" />
+                <span className="animate-pulse">Generating analysis…</span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="regenerate"
+                style={{ overflow: "hidden" }}
+                initial={reduce ? false : { height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                transition={
+                  reduce
+                    ? { duration: 0 }
+                    : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+                }
+              >
+                <div className="flex justify-end">
+                  <ActionButton onClick={handleGenerate}>
+                    Regenerate Analysis
+                    <BrainCircuit className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2" />
+                  </ActionButton>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardContent>
       </Card>
     );
