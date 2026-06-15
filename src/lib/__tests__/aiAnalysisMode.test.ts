@@ -21,10 +21,17 @@ describe('parseRequestedMode', () => {
 });
 
 describe('isClientOverrideAllowed', () => {
-  it('allows in any non-production environment', () => {
+  it('allows in a positively non-production environment', () => {
     expect(isClientOverrideAllowed({ VERCEL_ENV: 'preview' })).toBe(true);
     expect(isClientOverrideAllowed({ VERCEL_ENV: 'development' })).toBe(true);
-    expect(isClientOverrideAllowed({})).toBe(true);
+    expect(isClientOverrideAllowed({ NODE_ENV: 'development' })).toBe(true);
+  });
+
+  it('denies when the environment is indeterminate or non-Vercel production', () => {
+    // Neither var set → cannot prove non-production → deny.
+    expect(isClientOverrideAllowed({})).toBe(false);
+    // Non-Vercel prod (VERCEL_ENV unset, NODE_ENV=production) → deny.
+    expect(isClientOverrideAllowed({ NODE_ENV: 'production' })).toBe(false);
   });
 
   it('disallows when an explicit AI_ANALYSIS_MODE kill-switch is set', () => {
@@ -81,7 +88,17 @@ describe('resolveAiAnalysisMode', () => {
   it('defaults by environment: production with key is live, others mock', () => {
     expect(resolveAiAnalysisMode({ ...withKey, VERCEL_ENV: 'production' })).toBe('live');
     expect(resolveAiAnalysisMode({ ...withKey, VERCEL_ENV: 'preview' })).toBe('mock');
+    // Indeterminate (no signals) defaults to mock — never silently bills.
     expect(resolveAiAnalysisMode({ ...withKey })).toBe('mock');
+  });
+
+  it('falls back to NODE_ENV when VERCEL_ENV is unset (non-Vercel runtimes)', () => {
+    expect(resolveAiAnalysisMode({ ...withKey, NODE_ENV: 'production' })).toBe('live');
+    expect(resolveAiAnalysisMode({ ...withKey, NODE_ENV: 'development' })).toBe('mock');
+    // VERCEL_ENV is authoritative when present — NODE_ENV must not override it.
+    expect(
+      resolveAiAnalysisMode({ ...withKey, VERCEL_ENV: 'preview', NODE_ENV: 'production' }),
+    ).toBe('mock');
   });
 
   it('honors a permitted client override', () => {

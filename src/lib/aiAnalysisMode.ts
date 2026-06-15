@@ -22,6 +22,29 @@ export interface AiAnalysisEnv {
   AI_ANALYSIS_ALLOW_CLIENT_OVERRIDE?: string;
   OPENAI_API_KEY?: string;
   VERCEL_ENV?: 'production' | 'preview' | 'development';
+  NODE_ENV?: 'development' | 'production' | 'test';
+}
+
+/**
+ * Positively production? On Vercel, `VERCEL_ENV` is authoritative (and is the
+ * only thing that can tell preview from production — never use `NODE_ENV` for
+ * that, since preview builds also run with `NODE_ENV=production`). Off Vercel
+ * (`VERCEL_ENV` unset, e.g. a self-hosted `next start`), fall back to `NODE_ENV`
+ * so a non-Vercel production runtime is still locked down.
+ */
+function isProduction(env: AiAnalysisEnv): boolean {
+  if (env.VERCEL_ENV) return env.VERCEL_ENV === 'production';
+  return env.NODE_ENV === 'production';
+}
+
+/**
+ * Positively non-production? Requires a definite signal — an unknown
+ * environment is NOT treated as non-production, so a prod-like deployment that
+ * sets neither var never accidentally enables overrides.
+ */
+function isNonProduction(env: AiAnalysisEnv): boolean {
+  if (env.VERCEL_ENV) return env.VERCEL_ENV !== 'production';
+  return env.NODE_ENV === 'development' || env.NODE_ENV === 'test';
 }
 
 /** Narrows an arbitrary header/string value to a valid mode, or `undefined`. */
@@ -39,13 +62,14 @@ function isTruthyFlag(value: string | undefined): boolean {
  * Whether a per-browser override is permitted for this deployment. An explicit
  * `AI_ANALYSIS_MODE` kill-switch is absolute and disables overrides entirely
  * (so the UI toggle is only shown where it would actually take effect).
- * Otherwise allowed in any non-production environment, or in production only
- * when explicitly enabled via `AI_ANALYSIS_ALLOW_CLIENT_OVERRIDE`.
+ * Otherwise allowed only in a positively non-production environment, or in
+ * production only when explicitly enabled via `AI_ANALYSIS_ALLOW_CLIENT_OVERRIDE`.
+ * An indeterminate environment is treated as production (override denied).
  */
 export function isClientOverrideAllowed(env: AiAnalysisEnv): boolean {
   if (env.AI_ANALYSIS_MODE) return false;
   if (isTruthyFlag(env.AI_ANALYSIS_ALLOW_CLIENT_OVERRIDE)) return true;
-  return env.VERCEL_ENV !== 'production';
+  return isNonProduction(env);
 }
 
 /**
@@ -57,7 +81,7 @@ export function isClientOverrideAllowed(env: AiAnalysisEnv): boolean {
  * 2. A client-requested mode, but only when override is permitted. A requested
  *    `live` with no key degrades to `mock`.
  * 3. No `OPENAI_API_KEY` ⇒ `mock` (graceful, mirrors the news adapter swap).
- * 4. Environment default: `VERCEL_ENV === 'production'` ⇒ `live`, else `mock`.
+ * 4. Environment default: positively production ⇒ `live`, else `mock`.
  */
 export function resolveAiAnalysisMode(
   env: AiAnalysisEnv,
@@ -75,5 +99,5 @@ export function resolveAiAnalysisMode(
 
   if (!hasKey) return 'mock';
 
-  return env.VERCEL_ENV === 'production' ? 'live' : 'mock';
+  return isProduction(env) ? 'live' : 'mock';
 }
