@@ -32,7 +32,7 @@ const customJestConfig = {
     '!**/*.d.ts',
   ],
   transformIgnorePatterns: [
-    'node_modules/(?!(langchain|@langchain|p-retry|is-network-error)/)',
+    'node_modules/(?!(ai|@ai-sdk)/)',
   ],
 }
 

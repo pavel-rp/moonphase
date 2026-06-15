@@ -1,0 +1,229 @@
+/** @jest-environment node */
+
+const mockGenerateText = jest.fn();
+const mockStreamText = jest.fn();
+const mockProvider = jest.fn((id: string) => ({ modelId: id }));
+const mockCreateOpenAI = jest.fn(() => mockProvider);
+
+// Wrapper-arrow form defers the reference to the mock fns until call time,
+// sidestepping the jest.mock hoist/TDZ ordering pitfall.
+jest.mock('ai', () => ({
+  generateText: (...args: unknown[]) => (mockGenerateText as jest.Mock)(...args),
+  streamText: (...args: unknown[]) => (mockStreamText as jest.Mock)(...args),
+}));
+jest.mock('@ai-sdk/openai', () => ({
+  createOpenAI: (...args: unknown[]) => (mockCreateOpenAI as jest.Mock)(...args),
+}));
+
+import { OpenAiAnalysisAdapter } from '../OpenAiAnalysisAdapter';
+import { ExternalException } from '@/lib/errors';
+import type { Candlestick } from '@/ports/BinancePort';
+import type { NewsArticle } from '@/domain/newsArticle';
+
+function candle(close: number): Candlestick {
+  return {
+    openTime: 0,
+    open: close,
+    high: close + 10,
+    low: close - 10,
+    close,
+    volume: 1000,
+    closeTime: 0,
+  };
+}
+
+function article(title: string): NewsArticle {
+  return {
+    title,
+    description: 'Some description that is reasonably long for slicing.',
+    url: 'https://example.com',
+    publishedAt: '2026-06-01T00:00:00.000Z',
+    source: { name: 'TestSource' },
+    content: null,
+  };
+}
+
+async function* gen(chunks: string[]): AsyncGenerator<string> {
+  for (const c of chunks) yield c;
+}
+
+function makeDeps() {
+  return {
+    binance: {
+      getDailyCandles: jest.fn(),
+      get24HrStats: jest.fn(),
+    },
+    news: {
+      fetchNews: jest.fn(),
+    },
+  };
+}
+
+type Deps = ReturnType<typeof makeDeps>;
+
+describe('OpenAiAnalysisAdapter', () => {
+  const ORIGINAL_ENV = process.env;
+  let deps: Deps;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockProvider.mockImplementation((id: string) => ({ modelId: id }));
+    mockCreateOpenAI.mockImplementation(() => mockProvider);
+    process.env = { ...ORIGINAL_ENV, OPENAI_API_KEY: 'test-key' };
+    delete process.env.OPENAI_MODEL;
+    deps = makeDeps();
+  });
+
+  afterAll(() => {
+    process.env = ORIGINAL_ENV;
+  });
+
+  function freshAdapter(): OpenAiAnalysisAdapter {
+    return new OpenAiAnalysisAdapter(deps);
+  }
+
+  describe('constructor', () => {
+    it('throws ExternalException(InvalidRequest) when OPENAI_API_KEY is missing', () => {
+      delete process.env.OPENAI_API_KEY;
+      expect(() => freshAdapter()).toThrow(ExternalException);
+      try {
+        freshAdapter();
+      } catch (e) {
+        expect((e as ExternalException).kind).toBe('InvalidRequest');
+      }
+    });
+
+    it('uses OPENAI_MODEL when set, default otherwise', () => {
+      process.env.OPENAI_MODEL = 'gpt-5.4-mini';
+      freshAdapter();
+      expect(mockProvider).toHaveBeenLastCalledWith('gpt-5.4-mini');
+    });
+
+    it('falls back to the default model when OPENAI_MODEL is blank', () => {
+      process.env.OPENAI_MODEL = '   ';
+      freshAdapter();
+      expect(mockProvider).toHaveBeenLastCalledWith('gpt-5.5');
+    });
+  });
+
+  describe('analyzeAsset', () => {
+    it('gathers data, builds the prompt, and returns the model text', async () => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100), candle(110), candle(120)]);
+      deps.binance.get24HrStats.mockResolvedValue(115);
+      deps.news.fetchNews.mockResolvedValue([article('BTC rallies')]);
+      mockGenerateText.mockResolvedValue({ text: 'ANALYSIS RESULT' });
+
+      const result = await freshAdapter().analyzeAsset('BTC');
+
+      expect(result).toBe('ANALYSIS RESULT');
+      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14);
+      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT');
+      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5 });
+
+      const call = mockGenerateText.mock.calls[0][0];
+      expect(call.providerOptions).toEqual({ openai: { reasoningEffort: 'low' } });
+      expect(call.system).toContain('cryptocurrency market analyst');
+      expect(call.prompt).toContain('Price Summary (3 days)');
+      expect(call.prompt).toContain('24h VWAP');
+      expect(call.prompt).toContain('Price is above VWAP');
+      expect(call.prompt).toContain('Recent News');
+      expect(call.prompt).toContain('"BTC rallies"');
+      expect(call.prompt).toContain('Based on the above data, provide a comprehensive analysis of BTC.');
+    });
+
+    it('renders error lines for each rejected data source without crashing', async () => {
+      deps.binance.getDailyCandles.mockRejectedValue(new Error('price boom'));
+      deps.binance.get24HrStats.mockRejectedValue(new Error('vwap boom'));
+      deps.news.fetchNews.mockRejectedValue(new Error('news boom'));
+      mockGenerateText.mockResolvedValue({ text: 'X' });
+
+      const result = await freshAdapter().analyzeAsset('ETH');
+
+      expect(result).toBe('X');
+      const prompt = mockGenerateText.mock.calls[0][0].prompt;
+      expect(prompt).toContain('Error fetching price data: price boom');
+      expect(prompt).toContain('Error fetching VWAP: vwap boom');
+      expect(prompt).toContain('Error fetching news: news boom');
+    });
+
+    it('renders graceful placeholders for empty/invalid data', async () => {
+      deps.binance.getDailyCandles.mockResolvedValue([]);
+      deps.binance.get24HrStats.mockResolvedValue(Number.NaN);
+      deps.news.fetchNews.mockResolvedValue([]);
+      mockGenerateText.mockResolvedValue({ text: 'Y' });
+
+      await freshAdapter().analyzeAsset('SOL');
+
+      const prompt = mockGenerateText.mock.calls[0][0].prompt;
+      expect(prompt).toContain('No price history available.');
+      expect(prompt).toContain('VWAP data not available.');
+      expect(prompt).toContain('No recent news articles found for this symbol.');
+    });
+
+    it('wraps unexpected errors in ExternalException(Unavailable)', async () => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100)]);
+      deps.binance.get24HrStats.mockResolvedValue(100);
+      deps.news.fetchNews.mockResolvedValue([]);
+      mockGenerateText.mockRejectedValue(new Error('openai down'));
+
+      await expect(freshAdapter().analyzeAsset('BTC')).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Unavailable',
+      });
+    });
+
+    it('re-throws an existing ExternalException unchanged', async () => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100)]);
+      deps.binance.get24HrStats.mockResolvedValue(100);
+      deps.news.fetchNews.mockResolvedValue([]);
+      const original = new ExternalException({ kind: 'RateLimited', retryAfterSec: 5 }, 'slow down');
+      mockGenerateText.mockRejectedValue(original);
+
+      await expect(freshAdapter().analyzeAsset('BTC')).rejects.toBe(original);
+    });
+  });
+
+  describe('analyzeAssetStream', () => {
+    it('yields incremental token chunks from the model stream', async () => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100), candle(120)]);
+      deps.binance.get24HrStats.mockResolvedValue(110);
+      deps.news.fetchNews.mockResolvedValue([article('news')]);
+      mockStreamText.mockReturnValue({ textStream: gen(['Hello', ' ', 'World']) });
+
+      const chunks: string[] = [];
+      for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual(['Hello', ' ', 'World']);
+      const call = mockStreamText.mock.calls[0][0];
+      expect(call.providerOptions).toEqual({ openai: { reasoningEffort: 'low' } });
+      expect(call.prompt).toContain('Based on the above data, provide a comprehensive analysis of BTC.');
+    });
+
+    it('wraps a mid-stream error in ExternalException(Unavailable)', async () => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100)]);
+      deps.binance.get24HrStats.mockResolvedValue(100);
+      deps.news.fetchNews.mockResolvedValue([]);
+
+      async function* throwing(): AsyncGenerator<string> {
+        yield 'partial';
+        throw new Error('stream boom');
+      }
+      mockStreamText.mockReturnValue({ textStream: throwing() });
+
+      const run = async () => {
+        const out: string[] = [];
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+          out.push(chunk);
+        }
+        return out;
+      };
+
+      await expect(run()).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Unavailable',
+      });
+    });
+  });
+});

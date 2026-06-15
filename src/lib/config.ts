@@ -16,7 +16,15 @@ export const BINANCE_TIMEOUT_MS = 10_000;
 export const NEWS_REVALIDATE_S = 300;
 export const NEWS_DEFAULT_LIMIT = 5;
 
-// -- AI / LangChain -----------------------------------------------------------
+// -- AI / LLM -----------------------------------------------------------------
 export const AI_PRICE_HISTORY_DAYS = 14;
 export const AI_NEWS_LIMIT = 5;
-export const AI_LLM_TEMPERATURE = 0.7;
+// Default OpenAI model. Override per-environment with the OPENAI_MODEL env var.
+// gpt-5.5 is the current flagship reasoning model; switch to gpt-5.4 or
+// gpt-5.4-mini via OPENAI_MODEL for lower cost/latency if needed. Overrides must
+// stay GPT-5.x reasoning models — the adapter always sends `reasoning_effort`,
+// which non-reasoning models reject.
+export const AI_LLM_MODEL = "gpt-5.5";
+// GPT-5.x are reasoning models and use `reasoning_effort` instead of `temperature`.
+// "low" keeps latency close to the <10s target for these short analyses.
+export const AI_LLM_REASONING_EFFORT = "low";
