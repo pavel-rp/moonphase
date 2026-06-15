@@ -9,6 +9,10 @@ jest.mock("react-markdown", () => ({
 }));
 
 import { AiAnalysisSection } from "../ai-analysis-section";
+import {
+  AI_ANALYSIS_MODE_HEADER,
+  AI_ANALYSIS_MODE_STORAGE_KEY,
+} from "@/lib/aiAnalysisMode";
 
 /** Build a fetch Response-like object whose body streams the given chunks. */
 function streamResponse(chunks: string[]): Response {
@@ -44,6 +48,7 @@ describe("AiAnalysisSection", () => {
   afterEach(() => {
     global.fetch = originalFetch;
     jest.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it("renders the empty state with a Generate button", () => {
@@ -77,6 +82,75 @@ describe("AiAnalysisSection", () => {
     expect(global.fetch).toHaveBeenCalledWith(
       "/api/ai-analysis/BTC",
       expect.objectContaining({ method: "POST" }),
+    );
+  });
+
+  it("does not render the inference toggle or send a mode header by default", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(streamResponse(["Bullish."]));
+    global.fetch = fetchMock;
+
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    expect(
+      screen.queryByRole("group", { name: /inference mode/i }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /generate ai analysis/i }),
+    );
+    await screen.findByText(/Bullish\./i);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers).toEqual({});
+  });
+
+  it("renders the toggle and sends the stored mode header when override is allowed", async () => {
+    window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, "mock");
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValue(streamResponse(["## Market Bias\n", "Bullish."]));
+    global.fetch = fetchMock;
+
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
+
+    expect(
+      screen.getByRole("group", { name: /inference mode/i }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /generate ai analysis/i }),
+    );
+    await screen.findByText(/Bullish\./i);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/ai-analysis/BTC",
+      expect.objectContaining({
+        method: "POST",
+        headers: { [AI_ANALYSIS_MODE_HEADER]: "mock" },
+      }),
+    );
+  });
+
+  it("persists the selected mode and sends it after toggling", async () => {
+    const fetchMock = jest.fn().mockResolvedValue(streamResponse(["Bullish."]));
+    global.fetch = fetchMock;
+
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
+
+    const mockButton = screen.getByRole("button", { name: /^mock$/i });
+    fireEvent.click(mockButton);
+    expect(mockButton).toHaveAttribute("aria-pressed", "true");
+    expect(window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY)).toBe("mock");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /generate ai analysis/i }),
+    );
+    await screen.findByText(/Bullish\./i);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/ai-analysis/BTC",
+      expect.objectContaining({ headers: { [AI_ANALYSIS_MODE_HEADER]: "mock" } }),
     );
   });
 

@@ -16,6 +16,8 @@ import ShimmerCard from "@/components/ui/shimmer-card";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
 import { AiAnalysisSection } from "./_components/ai-analysis-section";
+import { getEnv } from "@/lib/env";
+import { isClientOverrideAllowed } from "@/lib/aiAnalysisMode";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +54,10 @@ export default async function SymbolDetailsPage({
     700
   );
   const glowClass = "text-shadow-[0_0_20px_var(--tw-glow-color)]";
+
+  // Computed server-side so the per-browser mock/live toggle only renders where
+  // the server would actually honor the override. The server stays authoritative.
+  const aiOverrideAllowed = isClientOverrideAllowed(getEnv());
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-start px-6 sm:px-12 pb-8 pt-24">
@@ -115,7 +121,11 @@ export default async function SymbolDetailsPage({
         </div>
 
         {/* AI Analysis Section */}
-        <AiAnalysisSection name={asset.name} symbol={asset.symbol} />
+        <AiAnalysisSection
+          name={asset.name}
+          symbol={asset.symbol}
+          aiOverrideAllowed={aiOverrideAllowed}
+        />
       </div>
     </main>
   );

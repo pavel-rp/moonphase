@@ -5,9 +5,11 @@ import { BinanceAdapter } from '@/adapters/binance/BinanceAdapter';
 import { MockMarketDataAdapter } from '@/adapters/mock/MockMarketDataAdapter';
 import { MockTradingActivityAdapter } from '@/adapters/mock/MockTradingActivityAdapter';
 import { OpenAiAnalysisAdapter } from '@/adapters/openai/OpenAiAnalysisAdapter';
+import { MockAiAnalysisAdapter } from '@/adapters/mock/MockAiAnalysisAdapter';
 import { NewsAdapter } from '@/adapters/news/NewsAdapter';
 import { MockNewsAdapter } from '@/adapters/news/MockNewsAdapter';
 import { getEnv } from '@/lib/env';
+import type { AiAnalysisMode } from '@/lib/aiAnalysisMode';
 
 import type { CoinCapPort } from '@/ports/CoinCapPort';
 import type { AssetWhitelistPort } from '@/ports/AssetWhitelistPort';
@@ -29,28 +31,33 @@ export const pricesDeps = { binance } as const;
 export const marketDataDeps = { marketData } as const;
 export const tradingActivityDeps = { tradingActivity } as const;
 
-// AI analysis deps are memoized so concurrent callers share a single adapter
-// instance (promise-based locking). The promise return type is kept so callers
-// (the route, use case) stay unchanged; construction is now synchronous since
-// the AI SDK imports cleanly under Jest — no dynamic-import workaround needed.
-let _aiAnalysisInit: Promise<{ ai: AiAnalysisPort }> | null = null;
+// AI analysis deps are memoized per mode so concurrent callers share a single
+// adapter instance (promise-based locking). `live` builds the OpenAI adapter
+// (with the news swap); `mock` builds the inference-free stub, which needs no
+// API key. The promise return type is kept so callers stay unchanged.
+const _aiAnalysisInit = new Map<AiAnalysisMode, Promise<{ ai: AiAnalysisPort }>>();
 
-export function getAiAnalysisDeps(): Promise<{ ai: AiAnalysisPort }> {
-  if (!_aiAnalysisInit) {
-    const init = (async () => {
-      const env = getEnv();
-      const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
-      return { ai: new OpenAiAnalysisAdapter({ binance, news }) as AiAnalysisPort };
-    })();
-    // Reset the cached promise on failure so a later call can retry. The adapter
-    // is constructed synchronously inside the async IIFE, so a constructor throw
-    // rejects `init` in the same tick; running the reset in this `.catch`
-    // microtask (after the assignment below) keeps it from clobbering the
-    // assignment, and the identity guard avoids discarding a newer in-flight init.
-    init.catch(() => {
-      if (_aiAnalysisInit === init) _aiAnalysisInit = null;
-    });
-    _aiAnalysisInit = init;
-  }
-  return _aiAnalysisInit;
+export function getAiAnalysisDeps(mode: AiAnalysisMode): Promise<{ ai: AiAnalysisPort }> {
+  const cached = _aiAnalysisInit.get(mode);
+  if (cached) return cached;
+
+  const init = (async () => {
+    if (mode === 'mock') {
+      return { ai: new MockAiAnalysisAdapter() as AiAnalysisPort };
+    }
+    const env = getEnv();
+    const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
+    return { ai: new OpenAiAnalysisAdapter({ binance, news }) as AiAnalysisPort };
+  })();
+
+  // Reset the cached promise on failure so a later call can retry. The adapter
+  // is constructed synchronously inside the async IIFE, so a constructor throw
+  // rejects `init` in the same tick; running the reset in this `.catch`
+  // microtask (after the set below) keeps it from clobbering the assignment, and
+  // the identity guard avoids discarding a newer in-flight init for this mode.
+  init.catch(() => {
+    if (_aiAnalysisInit.get(mode) === init) _aiAnalysisInit.delete(mode);
+  });
+  _aiAnalysisInit.set(mode, init);
+  return init;
 }

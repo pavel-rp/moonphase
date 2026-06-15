@@ -99,6 +99,32 @@ describe('POST /api/ai-analysis/[symbol]', () => {
     expect(returnSpy).toHaveBeenCalled();
   });
 
+  it('forwards a valid x-ai-analysis-mode header as requestedMode', async () => {
+    mockAnalyzeAssetStream.mockReturnValue(iterableOf(['ok']));
+    const req = new Request('http://localhost/api/ai-analysis/BTC', {
+      method: 'POST',
+      headers: { 'x-ai-analysis-mode': 'mock' },
+    });
+    const ctx = { params: Promise.resolve({ symbol: 'BTC' }) };
+
+    await POST(req, ctx);
+
+    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('BTC', { requestedMode: 'mock' });
+  });
+
+  it('passes requestedMode undefined when the header is absent or invalid', async () => {
+    mockAnalyzeAssetStream.mockReturnValue(iterableOf(['ok']));
+    const req = new Request('http://localhost/api/ai-analysis/BTC', {
+      method: 'POST',
+      headers: { 'x-ai-analysis-mode': 'bogus' },
+    });
+    const ctx = { params: Promise.resolve({ symbol: 'BTC' }) };
+
+    await POST(req, ctx);
+
+    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('BTC', { requestedMode: undefined });
+  });
+
   it('returns 400 for an invalid symbol without invoking the stream', async () => {
     const [req, ctx] = makeRequest('A'.repeat(21));
     const res = await POST(req, ctx);
