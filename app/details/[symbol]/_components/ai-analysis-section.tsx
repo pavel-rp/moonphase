@@ -15,13 +15,30 @@ import { useEffect, useRef, useState } from "react";
 import type { Components } from "react-markdown";
 import ShimmerCard from "@/components/ui/shimmer-card";
 import Markdown from "react-markdown";
+import {
+  AI_ANALYSIS_MODE_HEADER,
+  AI_ANALYSIS_MODE_STORAGE_KEY,
+  type AiAnalysisMode,
+} from "@/lib/aiAnalysisMode";
 
 interface AiAnalysisSectionProps {
   name: string;
   symbol: string;
+  /**
+   * When true, render a per-browser mock/live toggle and send the
+   * `x-ai-analysis-mode` header. Computed server-side from the deployment env;
+   * the server remains authoritative over whether the request is honored.
+   */
+  aiOverrideAllowed?: boolean;
 }
 
 type Status = "idle" | "loading" | "streaming" | "complete" | "error";
+
+function readStoredMode(): AiAnalysisMode | null {
+  if (typeof window === "undefined") return null;
+  const value = window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY);
+  return value === "live" || value === "mock" ? value : null;
+}
 
 // Shared markdown renderer overrides — used by both the streaming and the
 // final reveal states so partial and complete analysis render identically.
@@ -73,13 +90,57 @@ function AnalysisMarkdown({ children }: { children: string }) {
   );
 }
 
+/**
+ * QA/demo-only mock vs. live inference toggle, persisted per browser. Rendered
+ * only where the server permits the override (see `aiOverrideAllowed`).
+ */
+function ModeToggle({
+  value,
+  onChange,
+}: {
+  value: AiAnalysisMode | null;
+  onChange: (mode: AiAnalysisMode) => void;
+}) {
+  const modes: AiAnalysisMode[] = ["live", "mock"];
+  return (
+    <div
+      role="group"
+      aria-label="AI inference mode"
+      className="inline-flex items-center gap-1 rounded-full bg-muted/40 p-0.5 text-xs"
+    >
+      <span className="px-1.5 text-muted-foreground">Inference</span>
+      {modes.map((mode) => {
+        const active = value === mode;
+        return (
+          <button
+            key={mode}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(mode)}
+            className={
+              "rounded-full px-2.5 py-0.5 capitalize transition-colors " +
+              (active
+                ? "bg-stone-700/70 text-foreground"
+                : "text-muted-foreground hover:text-foreground")
+            }
+          >
+            {mode}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function AiAnalysisSection({
   name,
   symbol,
+  aiOverrideAllowed = false,
 }: AiAnalysisSectionProps) {
   const [status, setStatus] = useState<Status>("idle");
   const [text, setText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [requestedMode, setRequestedMode] = useState<AiAnalysisMode | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const reduce = useReducedMotion();
 
@@ -88,6 +149,19 @@ export function AiAnalysisSection({
   useEffect(() => {
     return () => abortRef.current?.abort();
   }, []);
+
+  // Hydrate the per-browser override preference from localStorage after mount to
+  // avoid an SSR/client mismatch.
+  useEffect(() => {
+    if (aiOverrideAllowed) setRequestedMode(readStoredMode());
+  }, [aiOverrideAllowed]);
+
+  const updateRequestedMode = (mode: AiAnalysisMode) => {
+    setRequestedMode(mode);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, mode);
+    }
+  };
 
   const handleGenerate = async () => {
     // Cancel a previous in-flight request (e.g. a rapid regenerate).
@@ -100,8 +174,14 @@ export function AiAnalysisSection({
     setError(null);
 
     try {
+      const headers: Record<string, string> = {};
+      if (aiOverrideAllowed && requestedMode) {
+        headers[AI_ANALYSIS_MODE_HEADER] = requestedMode;
+      }
+
       const response = await fetch(`/api/ai-analysis/${symbol}`, {
         method: "POST",
+        headers,
         signal: controller.signal,
       });
 
@@ -313,7 +393,12 @@ export function AiAnalysisSection({
         </div>
 
         {/* Button Row */}
-        <div className="flex justify-end">
+        <div className="flex items-center justify-between gap-3">
+          {aiOverrideAllowed ? (
+            <ModeToggle value={requestedMode} onChange={updateRequestedMode} />
+          ) : (
+            <span />
+          )}
           <ActionButton onClick={handleGenerate}>
             {status === "error" ? "Try Again" : "Generate AI Analysis"}
             <BrainCircuit

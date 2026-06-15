@@ -23,6 +23,11 @@ describe('aiAnalysisServer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetDeps.mockResolvedValue(deps);
+    // Mode resolution reads the real env; start from a clean slate each test.
+    delete process.env.OPENAI_API_KEY;
+    delete process.env.VERCEL_ENV;
+    delete process.env.AI_ANALYSIS_MODE;
+    delete process.env.AI_ANALYSIS_ALLOW_CLIENT_OVERRIDE;
   });
 
   it('analyzeAsset resolves deps and delegates to the usecase', async () => {
@@ -47,5 +52,28 @@ describe('aiAnalysisServer', () => {
     expect(collected).toEqual(['Bull', 'ish.']);
     expect(mockGetDeps).toHaveBeenCalledTimes(1);
     expect(mockGetStream).toHaveBeenCalledWith(deps, 'BTC');
+  });
+
+  it('selects mock deps when no API key is set', async () => {
+    mockGetAnalysis.mockResolvedValue('Mock.');
+    await analyzeAsset('BTC');
+    expect(mockGetDeps).toHaveBeenCalledWith('mock');
+  });
+
+  it('forwards a permitted client override into mode resolution', async () => {
+    process.env.OPENAI_API_KEY = 'sk-test';
+    process.env.VERCEL_ENV = 'preview';
+
+    async function* chunks() {
+      yield 'x';
+    }
+    mockGetStream.mockReturnValue(chunks());
+
+    const collected: string[] = [];
+    for await (const chunk of analyzeAssetStream('BTC', { requestedMode: 'live' })) {
+      collected.push(chunk);
+    }
+
+    expect(mockGetDeps).toHaveBeenCalledWith('live');
   });
 });

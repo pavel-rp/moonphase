@@ -3,6 +3,7 @@ import { analyzeAssetStream } from '@/lib/data/aiAnalysisServer';
 import { apiErrorResponse } from '@/lib/http/apiErrorResponse';
 import { logError } from '@/lib/observability';
 import { symbolSchema } from '@/domain/schemas';
+import { AI_ANALYSIS_MODE_HEADER, parseRequestedMode } from '@/lib/aiAnalysisMode';
 
 export async function POST(
   req: Request,
@@ -20,7 +21,11 @@ export async function POST(
       );
     }
 
-    const iterator = analyzeAssetStream(symbol)[Symbol.asyncIterator]();
+    // The client may request a mode via header; the server stays authoritative —
+    // `resolveAiAnalysisMode` only honors it where override is permitted.
+    const requestedMode = parseRequestedMode(req.headers.get(AI_ANALYSIS_MODE_HEADER));
+
+    const iterator = analyzeAssetStream(symbol, { requestedMode })[Symbol.asyncIterator]();
 
     // Pull the first chunk eagerly: a pre-stream failure (missing config, an
     // invalid request, or a first-token upstream error) is wrapped as an
