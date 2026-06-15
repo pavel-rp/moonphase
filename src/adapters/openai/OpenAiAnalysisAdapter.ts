@@ -81,7 +81,8 @@ function formatPriceHistory(candles: Candlestick[]): string {
  * Formats VWAP data for LLM consumption.
  */
 function formatVWAP(vwap: number, currentPrice?: number): string {
-  if (!Number.isFinite(vwap)) {
+  // Guard 0 as well as non-finite: a 0 VWAP would make the deviation Infinity/NaN.
+  if (!Number.isFinite(vwap) || vwap === 0) {
     return "VWAP data not available.";
   }
 
@@ -111,7 +112,7 @@ function formatNews(articles: NewsArticle[]): string {
 
   let newsContext = `Recent News:\n`;
 
-  articles.slice(0, 5).forEach((article, idx) => {
+  articles.slice(0, AI_NEWS_LIMIT).forEach((article, idx) => {
     const date = new Date(article.publishedAt).toLocaleDateString();
     newsContext += `${idx + 1}. "${article.title}" - ${article.source.name} (${date})\n`;
     if (article.description) {

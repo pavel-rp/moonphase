@@ -42,10 +42,11 @@ export function getAiAnalysisDeps(): Promise<{ ai: AiAnalysisPort }> {
       const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
       return { ai: new OpenAiAnalysisAdapter({ binance, news }) as AiAnalysisPort };
     })();
-    // Reset the cached promise on failure so a later call can retry. This runs
-    // as a microtask after the assignment below, so it cannot be clobbered when
-    // construction throws synchronously; the identity guard avoids discarding a
-    // newer in-flight init.
+    // Reset the cached promise on failure so a later call can retry. The adapter
+    // is constructed synchronously inside the async IIFE, so a constructor throw
+    // rejects `init` in the same tick; running the reset in this `.catch`
+    // microtask (after the assignment below) keeps it from clobbering the
+    // assignment, and the identity guard avoids discarding a newer in-flight init.
     init.catch(() => {
       if (_aiAnalysisInit === init) _aiAnalysisInit = null;
     });
