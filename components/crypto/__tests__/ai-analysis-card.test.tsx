@@ -56,7 +56,7 @@ jest.mock("@ai-sdk/react", () => {
   };
 });
 
-import { AiAnalysisSection } from "../ai-analysis-section";
+import { AiAnalysisCard } from "@/components/crypto/ai-analysis-card";
 import {
   AI_ANALYSIS_MODE_HEADER,
   AI_ANALYSIS_MODE_STORAGE_KEY,
@@ -74,7 +74,7 @@ function setHook(
   });
 }
 
-describe("AiAnalysisSection", () => {
+describe("AiAnalysisCard", () => {
   beforeEach(() => {
     mockHookState.completion = "";
     mockHookState.isLoading = false;
@@ -92,13 +92,13 @@ describe("AiAnalysisSection", () => {
   });
 
   it("points the hook at the per-symbol route using the text stream protocol", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     expect(mockCapturedOptions.api).toBe("/api/ai-analysis/BTC");
     expect(mockCapturedOptions.streamProtocol).toBe("text");
   });
 
   it("renders the idle empty state with a Generate button", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
 
     expect(
       screen.getByRole("region", { name: /ai analysis/i }),
@@ -110,7 +110,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("triggers a generation with an empty prompt and no mode header by default", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
 
     expect(
       screen.queryByRole("group", { name: /inference mode/i }),
@@ -124,7 +124,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("shows the shimmer loading state with a polite status while awaiting the first token", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({ isLoading: true, completion: "" });
 
     const status = screen.getByRole("status");
@@ -136,7 +136,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("renders streaming markdown progressively inside a labelled region", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({ isLoading: true, completion: "## Market Bias\nBullish momentum" });
 
     expect(
@@ -152,7 +152,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("reveals the complete analysis with a Regenerate button and an announcement", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({ isLoading: true, completion: "Bullish momentum building." });
     setHook(
       { isLoading: false, completion: "Bullish momentum building." },
@@ -167,7 +167,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("regenerates: clicking Regenerate triggers another generation", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({ isLoading: false, completion: "Some analysis." }, { finish: true });
 
     fireEvent.click(
@@ -178,7 +178,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("treats a finished-but-empty stream as complete, not idle", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     // A successful stream that emitted no text still resolves to the complete
     // card (Regenerate available) rather than silently reverting to idle.
     setHook({ isLoading: true, completion: "" });
@@ -193,7 +193,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("normalizes a JSON error body and surfaces it as an alert with Try Again", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     // The AI SDK text protocol surfaces the route's JSON `{ error }` body
     // verbatim in `error.message`; the component recovers the message.
     setHook({
@@ -209,7 +209,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("falls back to the raw message for a non-JSON (mid-stream) error", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({
       isLoading: false,
       completion: "Partial analysis ",
@@ -223,14 +223,14 @@ describe("AiAnalysisSection", () => {
   });
 
   it("shows a generic message for an error with no message text", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({ isLoading: false, error: new Error("") });
 
     expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong");
   });
 
   it("falls back to the raw text for a JSON error body without an error field", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({
       isLoading: false,
       error: new Error(JSON.stringify({ message: "nope" })),
@@ -241,7 +241,7 @@ describe("AiAnalysisSection", () => {
 
   it("renders the toggle and sends the stored mode header when override is allowed", () => {
     window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, "mock");
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
 
     expect(
       screen.getByRole("group", { name: /inference mode/i }),
@@ -257,7 +257,7 @@ describe("AiAnalysisSection", () => {
   });
 
   it("persists the selected mode and sends it after toggling", () => {
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
 
     const mockButton = screen.getByRole("button", { name: /^mock$/i });
     fireEvent.click(mockButton);
@@ -277,7 +277,7 @@ describe("AiAnalysisSection", () => {
 
   it("aborts the in-flight stream on unmount", () => {
     const { unmount } = render(
-      <AiAnalysisSection name="Bitcoin" symbol="BTC" />,
+      <AiAnalysisCard name="Bitcoin" symbol="BTC" />,
     );
     setHook({ isLoading: true, completion: "partial" });
 

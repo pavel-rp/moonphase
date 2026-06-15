@@ -1,5 +1,6 @@
 import { Asset, fetchAssets } from "@/lib/data/assets";
 import { Suspense } from "react";
+import dynamicImport from "next/dynamic";
 import { notFound } from "next/navigation";
 import {
   Card,
@@ -15,11 +16,18 @@ import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import ShimmerCard from "@/components/ui/shimmer-card";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
-import { AiAnalysisSection } from "./_components/ai-analysis-section";
 import { getEnv } from "@/lib/env";
 import { isClientOverrideAllowed } from "@/lib/aiAnalysisMode";
 
 export const dynamic = "force-dynamic";
+
+// Lazy-load the AI analysis card so its client bundle (react-markdown, motion,
+// the AI SDK) is code-split out of the initial page payload. `next/dynamic`
+// defaults to `ssr: true`, which is the only mode supported inside a Server
+// Component; the Suspense boundary below shows a ShimmerCard while it loads.
+const AiAnalysisCard = dynamicImport(() =>
+  import("@/components/crypto/ai-analysis-card").then((m) => m.AiAnalysisCard),
+);
 
 interface SymbolDetailsPageProps {
   params: Promise<{ symbol: string }>;
@@ -120,12 +128,15 @@ export default async function SymbolDetailsPage({
           </Suspense>
         </div>
 
-        {/* AI Analysis Section */}
-        <AiAnalysisSection
-          name={asset.name}
-          symbol={asset.symbol}
-          aiOverrideAllowed={aiOverrideAllowed}
-        />
+        {/* AI Analysis Section — lazy-loaded below the market-data grid so it
+            does not block the initial render. */}
+        <Suspense fallback={<ShimmerCard className="min-w-[220px]" />}>
+          <AiAnalysisCard
+            name={asset.name}
+            symbol={asset.symbol}
+            aiOverrideAllowed={aiOverrideAllowed}
+          />
+        </Suspense>
       </div>
     </main>
   );

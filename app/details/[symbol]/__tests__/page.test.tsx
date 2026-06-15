@@ -137,15 +137,29 @@ jest.mock("@/components/crypto/card/trading-activity-card", () => ({
   },
 }));
 
-jest.mock("../_components/ai-analysis-section", () => ({
+jest.mock("@/components/crypto/ai-analysis-card", () => ({
   __esModule: true,
-  AiAnalysisSection: function MockAiAnalysisSection() {
+  AiAnalysisCard: function MockAiAnalysisCard() {
     return (
       <div data-testid="card">
         <div data-testid="card-title">AI Analysis</div>
         <button data-testid="button">Generate AI Analysis</button>
       </div>
     );
+  },
+}));
+
+// The page loads the AI card via `next/dynamic`, which code-splits at runtime.
+// This unit test does not exercise code-splitting, so resolve the dynamic import
+// synchronously to the (mocked) card — keeping rendering synchronous and the
+// Suspense fallback out of the way.
+jest.mock("next/dynamic", () => ({
+  __esModule: true,
+  default: () => {
+    const { AiAnalysisCard } = jest.requireMock(
+      "@/components/crypto/ai-analysis-card"
+    );
+    return AiAnalysisCard;
   },
 }));
 
@@ -274,5 +288,26 @@ describe("SymbolDetailsPage", () => {
     expect(screen.getByTestId("crypto-icon")).toBeInTheDocument();
     expect(screen.getByTestId("crypto-sparkline")).toBeInTheDocument();
     expect(screen.getByTestId("button")).toBeInTheDocument();
+  });
+
+  it("renders the lazy AI analysis card below the market data section", async () => {
+    mockFetchAssets.mockResolvedValue([mockAsset]);
+
+    const params = Promise.resolve({ symbol: "btc" });
+    const component = await SymbolDetailsPage({ params });
+    render(component);
+
+    // The lazily-loaded AI card resolves and renders (Suspense fallback is not
+    // shown because the dynamic import resolves synchronously in tests).
+    const marketData = screen.getByTestId("market-data-card");
+    const aiAnalysis = screen.getByText("AI Analysis");
+    expect(marketData).toBeInTheDocument();
+    expect(aiAnalysis).toBeInTheDocument();
+
+    // Placement: the AI card appears after the market-data section in DOM order.
+    expect(
+      marketData.compareDocumentPosition(aiAnalysis) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
   });
 });
