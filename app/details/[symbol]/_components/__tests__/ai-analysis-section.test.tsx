@@ -1,12 +1,60 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-// react-markdown ships as ESM and is not transformed by Jest; mock it with a
-// passthrough that renders the raw markdown text so we can assert on content.
+// react-markdown ships as ESM and is not transformed the same way; mock it with
+// a passthrough that renders the raw markdown text so we can assert on content.
 jest.mock("react-markdown", () => ({
   __esModule: true,
   default: ({ children }: { children: string }) => <>{children}</>,
 }));
+
+// Controllable mock of the AI SDK `useCompletion` hook. The component derives
+// all of its render state from the hook return values, so the tests drive those
+// values directly and assert on the resulting UI + the arguments the component
+// passes back into `complete()`. jest only allows the factory to reference
+// out-of-scope identifiers prefixed with `mock`.
+type MockHookState = {
+  completion: string;
+  isLoading: boolean;
+  error: Error | undefined;
+};
+const mockHookState: MockHookState = {
+  completion: "",
+  isLoading: false,
+  error: undefined,
+};
+let mockComplete: jest.Mock;
+let mockStop: jest.Mock;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockCapturedOptions: any;
+let mockOnFinish: (() => void) | undefined;
+let mockForce: (() => void) | undefined;
+
+jest.mock("@ai-sdk/react", () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require("react");
+  return {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    useCompletion: (options: any) => {
+      mockCapturedOptions = options;
+      mockOnFinish = options?.onFinish;
+      const [, force] = React.useReducer((c: number) => c + 1, 0);
+      mockForce = force;
+      return {
+        completion: mockHookState.completion,
+        isLoading: mockHookState.isLoading,
+        error: mockHookState.error,
+        complete: mockComplete,
+        stop: mockStop,
+        setCompletion: jest.fn(),
+        input: "",
+        setInput: jest.fn(),
+        handleInputChange: jest.fn(),
+        handleSubmit: jest.fn(),
+      };
+    },
+  };
+});
 
 import { AiAnalysisSection } from "../ai-analysis-section";
 import {
@@ -14,84 +62,56 @@ import {
   AI_ANALYSIS_MODE_STORAGE_KEY,
 } from "@/lib/aiAnalysisMode";
 
-/** Build a fetch Response-like object whose body streams the given chunks. */
-function streamResponse(chunks: string[]): Response {
-  const encoder = new TextEncoder();
-  return {
-    ok: true,
-    body: new ReadableStream<Uint8Array>({
-      start(controller) {
-        for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
-        controller.close();
-      },
-    }),
-  } as unknown as Response;
-}
-
-/** A streaming Response that emits one chunk then errors the stream. */
-function midStreamErrorResponse(first: string): Response {
-  const encoder = new TextEncoder();
-  return {
-    ok: true,
-    body: new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(encoder.encode(first));
-        controller.error(new Error("stream blew up"));
-      },
-    }),
-  } as unknown as Response;
+/** Mutate the mocked hook state (and optionally fire onFinish), then re-render. */
+function setHook(
+  partial: Partial<MockHookState>,
+  opts: { finish?: boolean } = {},
+) {
+  act(() => {
+    Object.assign(mockHookState, partial);
+    if (opts.finish) mockOnFinish?.();
+    mockForce?.();
+  });
 }
 
 describe("AiAnalysisSection", () => {
-  const originalFetch = global.fetch;
+  beforeEach(() => {
+    mockHookState.completion = "";
+    mockHookState.isLoading = false;
+    mockHookState.error = undefined;
+    mockComplete = jest.fn();
+    mockStop = jest.fn();
+    mockCapturedOptions = undefined;
+    mockOnFinish = undefined;
+    mockForce = undefined;
+  });
 
   afterEach(() => {
-    global.fetch = originalFetch;
     jest.clearAllMocks();
     window.localStorage.clear();
   });
 
-  it("renders the empty state with a Generate button", () => {
+  it("points the hook at the per-symbol route using the text stream protocol", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    expect(mockCapturedOptions.api).toBe("/api/ai-analysis/BTC");
+    expect(mockCapturedOptions.streamProtocol).toBe("text");
+  });
+
+  it("renders the idle empty state with a Generate button", () => {
     render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
 
-    expect(screen.getByText("AI Analysis")).toBeInTheDocument();
+    expect(
+      screen.getByRole("region", { name: /ai analysis/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/no analysis generated yet/i)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /generate ai analysis/i }),
     ).toBeInTheDocument();
   });
 
-  it("streams the analysis and then reveals it with a Regenerate button", async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        // Leading empty chunk exercises the "skip empty chunk" path.
-        streamResponse(["", "## Market Bias\n", "Bullish ", "momentum building."]),
-      );
-
+  it("triggers a generation with an empty prompt and no mode header by default", () => {
     render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: /generate ai analysis/i }),
-    );
 
-    // Progressive content is rendered from the stream.
-    expect(await screen.findByText(/Bullish momentum building\./i)).toBeInTheDocument();
-    // On completion the Regenerate CTA appears.
-    expect(
-      await screen.findByRole("button", { name: /regenerate analysis/i }),
-    ).toBeInTheDocument();
-    expect(global.fetch).toHaveBeenCalledWith(
-      "/api/ai-analysis/BTC",
-      expect.objectContaining({ method: "POST" }),
-    );
-  });
-
-  it("does not render the inference toggle or send a mode header by default", async () => {
-    const fetchMock = jest
-      .fn()
-      .mockResolvedValue(streamResponse(["Bullish."]));
-    global.fetch = fetchMock;
-
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
     expect(
       screen.queryByRole("group", { name: /inference mode/i }),
     ).not.toBeInTheDocument();
@@ -99,19 +119,128 @@ describe("AiAnalysisSection", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /generate ai analysis/i }),
     );
-    await screen.findByText(/Bullish\./i);
 
-    const [, init] = fetchMock.mock.calls[0];
-    expect(init.headers).toEqual({});
+    expect(mockComplete).toHaveBeenCalledWith("", undefined);
   });
 
-  it("renders the toggle and sends the stored mode header when override is allowed", async () => {
-    window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, "mock");
-    const fetchMock = jest
-      .fn()
-      .mockResolvedValue(streamResponse(["## Market Bias\n", "Bullish."]));
-    global.fetch = fetchMock;
+  it("shows the shimmer loading state with a polite status while awaiting the first token", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({ isLoading: true, completion: "" });
 
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent(/generating analysis/i);
+    // The empty/idle CTA is gone while loading.
+    expect(
+      screen.queryByRole("button", { name: /generate ai analysis/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders streaming markdown progressively inside a labelled region", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({ isLoading: true, completion: "## Market Bias\nBullish momentum" });
+
+    expect(
+      screen.getByRole("region", { name: /ai analysis/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Bullish momentum/)).toBeInTheDocument();
+    // A live status region exists during streaming.
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    // No Regenerate button yet — still streaming.
+    expect(
+      screen.queryByRole("button", { name: /regenerate analysis/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("reveals the complete analysis with a Regenerate button and an announcement", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({ isLoading: true, completion: "Bullish momentum building." });
+    setHook(
+      { isLoading: false, completion: "Bullish momentum building." },
+      { finish: true },
+    );
+
+    expect(screen.getByText("Bullish momentum building.")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /regenerate analysis/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(/analysis ready/i);
+  });
+
+  it("regenerates: clicking Regenerate triggers another generation", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({ isLoading: false, completion: "Some analysis." }, { finish: true });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /regenerate analysis/i }),
+    );
+
+    expect(mockComplete).toHaveBeenCalledWith("", undefined);
+  });
+
+  it("treats a finished-but-empty stream as complete, not idle", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    // A successful stream that emitted no text still resolves to the complete
+    // card (Regenerate available) rather than silently reverting to idle.
+    setHook({ isLoading: true, completion: "" });
+    setHook({ isLoading: false, completion: "" }, { finish: true });
+
+    expect(
+      screen.getByRole("button", { name: /regenerate analysis/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /generate ai analysis/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("normalizes a JSON error body and surfaces it as an alert with Try Again", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    // The AI SDK text protocol surfaces the route's JSON `{ error }` body
+    // verbatim in `error.message`; the component recovers the message.
+    setHook({
+      isLoading: false,
+      error: new Error(JSON.stringify({ error: "Too many requests" })),
+    });
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Too many requests");
+    expect(
+      screen.getByRole("button", { name: /try again/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("falls back to the raw message for a non-JSON (mid-stream) error", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({
+      isLoading: false,
+      completion: "Partial analysis ",
+      error: new Error("stream blew up"),
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("stream blew up");
+    expect(
+      screen.getByRole("button", { name: /try again/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows a generic message for an error with no message text", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({ isLoading: false, error: new Error("") });
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Something went wrong");
+  });
+
+  it("falls back to the raw text for a JSON error body without an error field", () => {
+    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
+    setHook({
+      isLoading: false,
+      error: new Error(JSON.stringify({ message: "nope" })),
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent('{"message":"nope"}');
+  });
+
+  it("renders the toggle and sends the stored mode header when override is allowed", () => {
+    window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, "mock");
     render(<AiAnalysisSection name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
 
     expect(
@@ -121,68 +250,39 @@ describe("AiAnalysisSection", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /generate ai analysis/i }),
     );
-    await screen.findByText(/Bullish\./i);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/ai-analysis/BTC",
-      expect.objectContaining({
-        method: "POST",
-        headers: { [AI_ANALYSIS_MODE_HEADER]: "mock" },
-      }),
-    );
+    expect(mockComplete).toHaveBeenCalledWith("", {
+      headers: { [AI_ANALYSIS_MODE_HEADER]: "mock" },
+    });
   });
 
-  it("persists the selected mode and sends it after toggling", async () => {
-    const fetchMock = jest.fn().mockResolvedValue(streamResponse(["Bullish."]));
-    global.fetch = fetchMock;
-
+  it("persists the selected mode and sends it after toggling", () => {
     render(<AiAnalysisSection name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
 
     const mockButton = screen.getByRole("button", { name: /^mock$/i });
     fireEvent.click(mockButton);
     expect(mockButton).toHaveAttribute("aria-pressed", "true");
-    expect(window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY)).toBe("mock");
+    expect(window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY)).toBe(
+      "mock",
+    );
 
     fireEvent.click(
       screen.getByRole("button", { name: /generate ai analysis/i }),
     );
-    await screen.findByText(/Bullish\./i);
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/ai-analysis/BTC",
-      expect.objectContaining({ headers: { [AI_ANALYSIS_MODE_HEADER]: "mock" } }),
-    );
+    expect(mockComplete).toHaveBeenCalledWith("", {
+      headers: { [AI_ANALYSIS_MODE_HEADER]: "mock" },
+    });
   });
 
-  it("shows the error state when the response is not ok", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: false,
-      json: async () => ({ error: "Too many requests" }),
-    } as unknown as Response);
-
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: /generate ai analysis/i }),
+  it("aborts the in-flight stream on unmount", () => {
+    const { unmount } = render(
+      <AiAnalysisSection name="Bitcoin" symbol="BTC" />,
     );
+    setHook({ isLoading: true, completion: "partial" });
 
-    expect(await screen.findByText("Too many requests")).toBeInTheDocument();
-    expect(
-      await screen.findByRole("button", { name: /try again/i }),
-    ).toBeInTheDocument();
-  });
+    unmount();
 
-  it("shows the error state when the stream fails mid-way", async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(midStreamErrorResponse("Partial analysis "));
-
-    render(<AiAnalysisSection name="Bitcoin" symbol="BTC" />);
-    fireEvent.click(
-      screen.getByRole("button", { name: /generate ai analysis/i }),
-    );
-
-    expect(
-      await screen.findByRole("button", { name: /try again/i }),
-    ).toBeInTheDocument();
+    expect(mockStop).toHaveBeenCalled();
   });
 });

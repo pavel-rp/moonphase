@@ -11,10 +11,11 @@ import {
 import { ActionButton } from "@/components/ui/action-button";
 import { BrainCircuit } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { Components } from "react-markdown";
 import ShimmerCard from "@/components/ui/shimmer-card";
 import Markdown from "react-markdown";
+import { useCompletion } from "@ai-sdk/react";
 import {
   AI_ANALYSIS_MODE_HEADER,
   AI_ANALYSIS_MODE_STORAGE_KEY,
@@ -38,6 +39,57 @@ function readStoredMode(): AiAnalysisMode | null {
   if (typeof window === "undefined") return null;
   const value = window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY);
   return value === "live" || value === "mock" ? value : null;
+}
+
+// The per-browser mode preference is read through `useSyncExternalStore` so the
+// value is SSR-safe (the server snapshot is null, avoiding a hydration mismatch)
+// and updates reactively — both from this tab's writes and cross-tab `storage`
+// events — without a setState-in-effect hydration hack.
+const modeListeners = new Set<() => void>();
+
+function subscribeStoredMode(callback: () => void) {
+  modeListeners.add(callback);
+  if (typeof window !== "undefined") {
+    window.addEventListener("storage", callback);
+  }
+  return () => {
+    modeListeners.delete(callback);
+    if (typeof window !== "undefined") {
+      window.removeEventListener("storage", callback);
+    }
+  };
+}
+
+function getServerStoredMode(): AiAnalysisMode | null {
+  return null;
+}
+
+function writeStoredMode(mode: AiAnalysisMode) {
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, mode);
+  }
+  // Notify same-tab subscribers — the `storage` event only fires cross-tab.
+  modeListeners.forEach((listener) => listener());
+}
+
+/**
+ * The route returns a JSON `{ error }` body on a pre-stream failure, which the
+ * AI SDK's text stream protocol surfaces verbatim as `error.message`. Recover
+ * the clean message where possible, falling back to the raw text.
+ */
+function normalizeError(error: Error | undefined): string | null {
+  if (!error) return null;
+  const raw = error.message?.trim();
+  if (!raw) return "Something went wrong";
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.error === "string" && parsed.error.trim()) {
+      return parsed.error;
+    }
+  } catch {
+    // Not JSON (e.g. a mid-stream failure) — fall through to the raw message.
+  }
+  return raw;
 }
 
 // Shared markdown renderer overrides — used by both the streaming and the
@@ -137,109 +189,94 @@ export function AiAnalysisSection({
   symbol,
   aiOverrideAllowed = false,
 }: AiAnalysisSectionProps) {
-  const [status, setStatus] = useState<Status>("idle");
-  const [text, setText] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [requestedMode, setRequestedMode] = useState<AiAnalysisMode | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const requestedMode = useSyncExternalStore(
+    subscribeStoredMode,
+    readStoredMode,
+    getServerStoredMode,
+  );
+  // Whether a generation has finished successfully at least once. Distinguishes
+  // the pristine "idle" state from a finished run that happened to stream no
+  // text, so an empty-but-successful response still reveals the completed card
+  // (matching the pre-migration behavior) instead of silently reverting to idle.
+  const [hasCompleted, setHasCompleted] = useState(false);
   const reduce = useReducedMotion();
+  const titleId = useId();
+
+  // The AI SDK hook owns the streaming lifecycle: `completion` accumulates the
+  // streamed text, `isLoading` covers the request window, `error` captures
+  // failures, and `stop` aborts the in-flight request. Render state is derived
+  // from these rather than tracked with ad-hoc flags. The route streams plain
+  // token chunks, so the `text` stream protocol consumes it directly.
+  const { completion, complete, error, isLoading, stop } = useCompletion({
+    api: `/api/ai-analysis/${symbol}`,
+    streamProtocol: "text",
+    onFinish: () => setHasCompleted(true),
+  });
 
   // Abort any in-flight stream when the component unmounts (e.g. the user
-  // navigates away mid-stream) so the server stops generating.
+  // navigates away mid-stream) so the server stops generating. `stop` can change
+  // identity between renders, so call the latest via a ref to keep the cleanup
+  // strictly unmount-only.
+  const stopRef = useRef(stop);
   useEffect(() => {
-    return () => abortRef.current?.abort();
-  }, []);
+    stopRef.current = stop;
+  });
+  useEffect(() => () => stopRef.current(), []);
 
-  // Hydrate the per-browser override preference from localStorage after mount to
-  // avoid an SSR/client mismatch.
-  useEffect(() => {
-    if (aiOverrideAllowed) setRequestedMode(readStoredMode());
-  }, [aiOverrideAllowed]);
-
-  const updateRequestedMode = (mode: AiAnalysisMode) => {
-    setRequestedMode(mode);
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, mode);
-    }
+  const handleGenerate = () => {
+    // Send the per-browser override as a request header where permitted. Passing
+    // it per-call (rather than at hook init) ensures the latest selection is used
+    // and avoids a stale value after toggling. The hook clears the previous
+    // completion and aborts any prior request, so this also covers regenerate.
+    const options =
+      aiOverrideAllowed && requestedMode
+        ? { headers: { [AI_ANALYSIS_MODE_HEADER]: requestedMode } }
+        : undefined;
+    setHasCompleted(false);
+    void complete("", options);
   };
 
-  const handleGenerate = async () => {
-    // Cancel a previous in-flight request (e.g. a rapid regenerate).
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const errorMessage = normalizeError(error);
 
-    setStatus("loading");
-    setText("");
-    setError(null);
-
-    try {
-      const headers: Record<string, string> = {};
-      if (aiOverrideAllowed && requestedMode) {
-        headers[AI_ANALYSIS_MODE_HEADER] = requestedMode;
-      }
-
-      const response = await fetch(`/api/ai-analysis/${symbol}`, {
-        method: "POST",
-        headers,
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        throw new Error(data?.error || "Failed to generate analysis");
-      }
-
-      if (!response.body) {
-        throw new Error("No response stream");
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulated = "";
-      let started = false;
-
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        if (!chunk) continue;
-        accumulated += chunk;
-        if (!started) {
-          started = true;
-          setStatus("streaming");
-        }
-        setText(accumulated);
-      }
-
-      // Flush any buffered multi-byte character left in the decoder.
-      const tail = decoder.decode();
-      if (tail) {
-        accumulated += tail;
-        setText(accumulated);
-      }
-
-      setStatus("complete");
-    } catch (err) {
-      // A deliberate abort (unmount / regenerate) is not an error to surface.
-      if (err instanceof DOMException && err.name === "AbortError") {
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Something went wrong");
-      setStatus("error");
-    }
-  };
+  const status: Status = errorMessage
+    ? "error"
+    : isLoading && completion.length === 0
+      ? "loading"
+      : isLoading
+        ? "streaming"
+        : completion.length > 0 || hasCompleted
+          ? "complete"
+          : "idle";
 
   if (status === "loading") {
-    return <ShimmerCard className="min-w-[220px]" />;
+    return (
+      <div aria-busy="true">
+        <span className="sr-only" role="status" aria-live="polite">
+          Generating analysis…
+        </span>
+        <ShimmerCard className="min-w-[220px]" />
+      </div>
+    );
   }
 
   if (status === "streaming" || status === "complete") {
     const isStreaming = status === "streaming";
     return (
-      <Card className="glassmorphic min-w-[220px]">
+      <Card
+        className="glassmorphic min-w-[220px]"
+        role="region"
+        aria-labelledby={titleId}
+        aria-busy={isStreaming}
+      >
+        {/* Polite live region announces completion. It stays silent while
+            streaming because the loading state already announced "Generating
+            analysis…" — re-announcing on the loading → streaming transition
+            would double-speak — and reading every streamed token would be noise. */}
+        <span className="sr-only" role="status" aria-live="polite">
+          {isStreaming ? "" : "Analysis ready."}
+        </span>
         <CardHeader>
-          <CardTitle>AI Analysis</CardTitle>
+          <CardTitle id={titleId}>AI Analysis</CardTitle>
           <CardDescription>
             AI-powered insights for {name}
           </CardDescription>
@@ -254,12 +291,15 @@ export function AiAnalysisSection({
             {/* Icon Container */}
             <div className="hidden sm:block flex-shrink-0">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
-                <BrainCircuit className="h-6 w-6 text-stone-300" />
+                <BrainCircuit
+                  aria-hidden="true"
+                  className="h-6 w-6 text-stone-300"
+                />
               </div>
             </div>
 
             {/* Analysis Content */}
-            <AnalysisMarkdown>{text}</AnalysisMarkdown>
+            <AnalysisMarkdown>{completion}</AnalysisMarkdown>
           </div>
 
           {/* Footer swaps the streaming indicator for the Regenerate button.
@@ -271,8 +311,7 @@ export function AiAnalysisSection({
               <motion.div
                 key="generating"
                 className="flex items-center gap-2 text-sm text-muted-foreground"
-                role="status"
-                aria-live="polite"
+                aria-hidden="true"
                 exit={{ opacity: 0 }}
                 transition={
                   reduce
@@ -298,7 +337,10 @@ export function AiAnalysisSection({
                 <div className="flex justify-end">
                   <ActionButton onClick={handleGenerate}>
                     Regenerate Analysis
-                    <BrainCircuit className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2" />
+                    <BrainCircuit
+                      aria-hidden="true"
+                      className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2"
+                    />
                   </ActionButton>
                 </div>
               </motion.div>
@@ -310,10 +352,14 @@ export function AiAnalysisSection({
   }
 
   return (
-    <Card className="glassmorphic min-w-[220px]">
+    <Card
+      className="glassmorphic min-w-[220px]"
+      role="region"
+      aria-labelledby={titleId}
+    >
       {/* Header Zone */}
       <CardHeader>
-        <CardTitle>AI Analysis</CardTitle>
+        <CardTitle id={titleId}>AI Analysis</CardTitle>
         <CardDescription>
           Get AI-powered insights and analysis for {name}
         </CardDescription>
@@ -330,7 +376,10 @@ export function AiAnalysisSection({
           {/* Icon Container */}
           <div className="hidden sm:block flex-shrink-0">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
-              <BrainCircuit className="h-6 w-6 text-stone-300" />
+              <BrainCircuit
+                aria-hidden="true"
+                className="h-6 w-6 text-stone-300"
+              />
             </div>
           </div>
 
@@ -395,13 +444,14 @@ export function AiAnalysisSection({
         {/* Button Row */}
         <div className="flex items-center justify-between gap-3">
           {aiOverrideAllowed ? (
-            <ModeToggle value={requestedMode} onChange={updateRequestedMode} />
+            <ModeToggle value={requestedMode} onChange={writeStoredMode} />
           ) : (
             <span />
           )}
           <ActionButton onClick={handleGenerate}>
             {status === "error" ? "Try Again" : "Generate AI Analysis"}
             <BrainCircuit
+              aria-hidden="true"
               className={
                 "size-5 group-hover:translate-x-1 rotate-180 " +
                 "group-hover:rotate-0 transition duration-300 ease-out " +
@@ -411,9 +461,12 @@ export function AiAnalysisSection({
           </ActionButton>
         </div>
 
-        {error && (
-          <div className="mt-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+        {errorMessage && (
+          <div
+            role="alert"
+            className="mt-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
+          >
+            {errorMessage}
           </div>
         )}
       </CardContent>
