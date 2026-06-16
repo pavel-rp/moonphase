@@ -33,6 +33,14 @@ interface AiAnalysisShimmerProps {
 // `ai-analysis-card.tsx` changes materially, re-measure and update these.
 export const AI_CARD_MIN_H = "min-h-[680px] sm:min-h-[510px] lg:min-h-[400px]";
 
+// Evenly spaced text-line bars (gray-400 @ 30% — the ShimmerCard idiom) that
+// FILL whatever height they're given, so the generating skeleton is as large as
+// the idle text it stands in for, with no empty void below the lines. A
+// repeating gradient fills any height/width without guessing a line count:
+// 16px bar + 12px gap = 28px period (matches the old `h-4` + `space-y-3` rhythm).
+const LINE_FILL =
+  "repeating-linear-gradient(to bottom, rgb(156 163 175 / 0.3) 0 16px, transparent 16px 28px)";
+
 // Reuse the ShimmerCard idiom — `bg-gray-400 rounded opacity-30` bars — so the
 // AI skeleton reads as the same visual family. The pulse lives on the Card
 // wrapper (as in ShimmerCard) and is suppressed under `prefers-reduced-motion`.
@@ -89,19 +97,32 @@ export function AiAnalysisShimmer({
           </CardAction>
         </CardHeader>
 
-        <CardContent className="px-4 sm:px-6">
-          {/* Content row — 12×12 avatar bubble + varied-width text lines, using
-              the streaming card's exact spacing so there is no layout shift. */}
-          <div className="flex items-start gap-4 sm:gap-6 mb-6">
+        <CardContent className="flex flex-1 flex-col px-4 sm:px-6">
+          {/* Content row — 12×12 avatar bubble + text-line body, using the
+              streaming card's exact spacing so there is no layout shift. The row
+              grows to fill the reserved height. */}
+          <div className="flex flex-1 items-start gap-4 sm:gap-6 mb-6">
             <div className="hidden sm:block flex-shrink-0">
               <Bar className="h-12 w-12 rounded-full" />
             </div>
-            <div className="flex-1 space-y-3">
-              <Bar className="h-4 w-full" />
-              <Bar className="h-4 w-11/12" />
-              <Bar className="h-4 w-4/5" />
-              <Bar className="h-4 w-2/3" />
-            </div>
+            {isGenerating ? (
+              // Fill the reserved height with line bars so the skeleton is as
+              // large as the idle text (no void below the lines).
+              <div
+                aria-hidden="true"
+                className="flex-1 self-stretch"
+                style={{ backgroundImage: LINE_FILL }}
+              />
+            ) : (
+              // Compact body — the neutral fallback stays small and grows into
+              // the idle state it resolves to.
+              <div className="flex-1 space-y-3">
+                <Bar className="h-4 w-full" />
+                <Bar className="h-4 w-11/12" />
+                <Bar className="h-4 w-4/5" />
+                <Bar className="h-4 w-2/3" />
+              </div>
+            )}
           </div>
 
           {/* Footer — pulsing "Generating analysis…" indicator (mirrors the
