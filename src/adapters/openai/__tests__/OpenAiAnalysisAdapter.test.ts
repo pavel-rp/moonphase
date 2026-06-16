@@ -293,6 +293,42 @@ describe('OpenAiAnalysisAdapter', () => {
         timeoutMs: 20,
       });
     });
+
+    it('does not classify an analyzeAsset buildPrompt failure as Timeout (signal not yet created)', async () => {
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      deps.binance.getDailyCandles.mockImplementation(() => {
+        throw new Error('build boom');
+      });
+      mockGenerateText.mockResolvedValue({ text: 'unused' });
+
+      await expect(freshAdapter().analyzeAsset('BTC')).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Unavailable',
+      });
+      expect(mockGenerateText).not.toHaveBeenCalled();
+    });
+
+    it('does not classify an analyzeAssetStream buildPrompt failure as Timeout (signal not yet created)', async () => {
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      deps.binance.getDailyCandles.mockImplementation(() => {
+        throw new Error('build boom');
+      });
+      mockStreamText.mockReturnValue({ textStream: gen(['unused']) });
+
+      const run = async () => {
+        const out: string[] = [];
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+          out.push(chunk);
+        }
+        return out;
+      };
+
+      await expect(run()).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Unavailable',
+      });
+      expect(mockStreamText).not.toHaveBeenCalled();
+    });
   });
 });
 

@@ -224,9 +224,12 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
    * @returns The AI-generated analysis.
    */
   async analyzeAsset(symbol: string): Promise<string> {
-    const signal = AbortSignal.timeout(this.timeoutMs);
+    let signal: AbortSignal | undefined;
     try {
       const prompt = await this.buildPrompt(symbol);
+      // Start the timeout only for the model call — prompt-building has its own
+      // per-source timeouts and must not consume the model-call budget.
+      signal = AbortSignal.timeout(this.timeoutMs);
       const { text } = await generateText({
         model: this.model,
         system: ANALYST_SYSTEM_PROMPT,
@@ -238,7 +241,9 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
     } catch (error) {
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAsset', symbol });
       // The timeout signal is the only abort source, so `aborted` means we hit it.
-      if (signal.aborted) throw this.timeoutException(symbol);
+      // It only exists once the model call has started, so a buildPrompt error
+      // is never misclassified as a timeout.
+      if (signal?.aborted) throw this.timeoutException(symbol);
       throw this.toExternalException(error, symbol);
     }
   }
@@ -250,9 +255,12 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
    * @returns An async iterable of string chunks.
    */
   async *analyzeAssetStream(symbol: string): AsyncIterable<string> {
-    const signal = AbortSignal.timeout(this.timeoutMs);
+    let signal: AbortSignal | undefined;
     try {
       const prompt = await this.buildPrompt(symbol);
+      // Start the timeout only for the model call — prompt-building has its own
+      // per-source timeouts and must not consume the model-call budget.
+      signal = AbortSignal.timeout(this.timeoutMs);
       const result = streamText({
         model: this.model,
         system: ANALYST_SYSTEM_PROMPT,
@@ -266,7 +274,9 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
     } catch (error) {
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAssetStream', symbol });
       // The timeout signal is the only abort source, so `aborted` means we hit it.
-      if (signal.aborted) throw this.timeoutException(symbol);
+      // It only exists once the model call has started, so a buildPrompt error
+      // is never misclassified as a timeout.
+      if (signal?.aborted) throw this.timeoutException(symbol);
       throw this.toExternalException(error, symbol);
     }
   }
