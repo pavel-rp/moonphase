@@ -21,6 +21,10 @@ const EnvSchema = z.object({
   // When truthy, permits the gated per-browser `x-ai-analysis-mode` override
   // even in production. In non-prod the override is allowed regardless.
   AI_ANALYSIS_ALLOW_CLIENT_OVERRIDE: z.string().optional(),
+  // Request timeout (ms) for the AI analysis model call. String here; the
+  // adapter parses and positive-integer-guards it, falling back to
+  // AI_LLM_TIMEOUT_MS when unset or invalid.
+  AI_ANALYSIS_TIMEOUT_MS: z.string().optional(),
 });
 
 type Env = z.infer<typeof EnvSchema>;

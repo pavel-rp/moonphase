@@ -5,7 +5,8 @@ import { getEnv } from "@/lib/env";
 import { logRequest, logError } from "@/lib/observability";
 import { ExternalException } from "@/lib/errors";
 import { toBinancePair } from "@/lib/symbolMeta";
-import { AI_LLM_MODEL, AI_LLM_REASONING_EFFORT, AI_NEWS_LIMIT, AI_PRICE_HISTORY_DAYS } from "@/lib/config";
+import { AI_LLM_MODEL, AI_LLM_REASONING_EFFORT, AI_LLM_TIMEOUT_MS, AI_NEWS_LIMIT, AI_PRICE_HISTORY_DAYS } from "@/lib/config";
+import { ANALYST_SYSTEM_PROMPT } from "@/adapters/openai/prompts/analystPrompt";
 import { BinancePort, Candlestick } from "@/ports/BinancePort";
 import { NewsPort } from "@/ports/NewsPort";
 import { NewsArticle } from "@/domain/newsArticle";
@@ -17,27 +18,21 @@ const PROVIDER_OPTIONS = {
   openai: { reasoningEffort: AI_LLM_REASONING_EFFORT },
 } as const;
 
-const SYSTEM_PROMPT = `You are a cryptocurrency market analyst providing concise, actionable insights.
-
-Your role:
-- Analyze price data, VWAP, and news sentiment
-- Provide short-term bias (bullish/bearish/sideways)
-- Identify key signals (trend, momentum, volatility)
-- Keep analysis brief and focused (3-4 paragraphs max)
-
-Format your response with:
-1. **Market Bias**: Current short-term direction
-2. **Price Analysis**: Key levels and VWAP context
-3. **News Sentiment**: Recent developments impact
-4. **Key Takeaway**: One clear actionable insight
-
-Do not provide financial advice. Focus on data-driven observations.`;
-
 /**
  * Returns the rejection reason of a settled result as a short message.
  */
 function settledError(result: PromiseRejectedResult): string {
   return result.reason instanceof Error ? result.reason.message : String(result.reason);
+}
+
+/**
+ * Resolves the model-call timeout: the AI_ANALYSIS_TIMEOUT_MS env value when it
+ * is a positive integer, otherwise the AI_LLM_TIMEOUT_MS default.
+ * Exported for unit testing of the parse/guard logic.
+ */
+export function resolveTimeoutMs(raw: string | undefined): number {
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : AI_LLM_TIMEOUT_MS;
 }
 
 /**
@@ -137,6 +132,7 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
   private model: LanguageModel;
   private binance: BinancePort;
   private news: NewsPort;
+  private timeoutMs: number;
 
   constructor(deps: { binance: BinancePort; news: NewsPort }) {
     const env = getEnv();
@@ -151,8 +147,20 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
     const openai = createOpenAI({ apiKey: env.OPENAI_API_KEY });
     // Treat a blank OPENAI_MODEL as unset — `??` would not fall back on "".
     this.model = openai(env.OPENAI_MODEL?.trim() || AI_LLM_MODEL);
+    this.timeoutMs = resolveTimeoutMs(env.AI_ANALYSIS_TIMEOUT_MS);
     this.binance = deps.binance;
     this.news = deps.news;
+  }
+
+  /**
+   * Builds an ExternalException(Timeout) for a model call aborted by our
+   * timeout signal.
+   */
+  private timeoutException(symbol: string): ExternalException {
+    return new ExternalException(
+      { kind: 'Timeout', timeoutMs: this.timeoutMs, details: { symbol } },
+      `Analysis of ${symbol} timed out after ${this.timeoutMs}ms`,
+    );
   }
 
   /**
@@ -216,17 +224,21 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
    * @returns The AI-generated analysis.
    */
   async analyzeAsset(symbol: string): Promise<string> {
+    const signal = AbortSignal.timeout(this.timeoutMs);
     try {
       const prompt = await this.buildPrompt(symbol);
       const { text } = await generateText({
         model: this.model,
-        system: SYSTEM_PROMPT,
+        system: ANALYST_SYSTEM_PROMPT,
         prompt,
         providerOptions: PROVIDER_OPTIONS,
+        abortSignal: signal,
       });
       return text;
     } catch (error) {
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAsset', symbol });
+      // The timeout signal is the only abort source, so `aborted` means we hit it.
+      if (signal.aborted) throw this.timeoutException(symbol);
       throw this.toExternalException(error, symbol);
     }
   }
@@ -238,19 +250,23 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
    * @returns An async iterable of string chunks.
    */
   async *analyzeAssetStream(symbol: string): AsyncIterable<string> {
+    const signal = AbortSignal.timeout(this.timeoutMs);
     try {
       const prompt = await this.buildPrompt(symbol);
       const result = streamText({
         model: this.model,
-        system: SYSTEM_PROMPT,
+        system: ANALYST_SYSTEM_PROMPT,
         prompt,
         providerOptions: PROVIDER_OPTIONS,
+        abortSignal: signal,
       });
       for await (const chunk of result.textStream) {
         yield chunk;
       }
     } catch (error) {
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAssetStream', symbol });
+      // The timeout signal is the only abort source, so `aborted` means we hit it.
+      if (signal.aborted) throw this.timeoutException(symbol);
       throw this.toExternalException(error, symbol);
     }
   }
