@@ -5,6 +5,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { BrainCircuit } from "lucide-react";
+import { ActionButton } from "@/components/ui/action-button";
 import { cn } from "@/lib/utils/utils";
 
 interface AiAnalysisShimmerProps {
@@ -143,12 +144,14 @@ export function AiAnalysisShimmer({
           {/* Footer — pulsing "Generating analysis…" indicator (mirrors the
               streaming footer) or a neutral button-shaped shimmer bar. */}
           {isGenerating ? (
-            <div
-              aria-hidden="true"
-              className="flex items-center justify-end gap-2 text-sm text-muted-foreground"
-            >
-              <BrainCircuit className="size-4" />
-              <span>Generating analysis…</span>
+            // Same muted, animated CTA as the streaming card so the
+            // "Generating analysis…" affordance is identical through
+            // loading → streaming → (active) Regenerate.
+            <div className="flex justify-end" aria-hidden="true">
+              <ActionButton loading>
+                Generating analysis…
+                <BrainCircuit className="size-5 animate-pulse motion-reduce:animate-none" />
+              </ActionButton>
             </div>
           ) : (
             <div className="flex justify-end">

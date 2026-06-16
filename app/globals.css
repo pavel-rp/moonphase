@@ -152,6 +152,25 @@
   }
 }
 
+/* Continuous shine sweep for the ActionButton's loading state (mirrors the
+   hover sweep, looped) — signals "working" on the muted Generating button. */
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-120%) skewX(-20deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(360%) skewX(-20deg);
+    opacity: 0;
+  }
+}
+
 /* Loading rings animation for page transitions */
 @keyframes expandFade {
   0% {
