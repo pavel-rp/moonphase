@@ -311,7 +311,32 @@ export function AiAnalysisCard({
               onClick={handleGenerate}
               aria-hidden={isStreaming || undefined}
             >
-              {isStreaming ? "Generating analysis…" : "Regenerate Analysis"}
+              {/* Both labels share one grid cell so the button width stays
+                  constant across the streaming → complete morph (no width snap)
+                  and the label cross-fades. Self-sizes to the wider label at any
+                  breakpoint — no hardcoded width. */}
+              <span className="grid place-items-center">
+                <span
+                  aria-hidden={!isStreaming}
+                  style={{ gridArea: "1 / 1" }}
+                  className={cn(
+                    "transition-opacity duration-300",
+                    isStreaming ? "opacity-100" : "opacity-0",
+                  )}
+                >
+                  Generating analysis…
+                </span>
+                <span
+                  aria-hidden={isStreaming || undefined}
+                  style={{ gridArea: "1 / 1" }}
+                  className={cn(
+                    "transition-opacity duration-300",
+                    isStreaming ? "opacity-0" : "opacity-100",
+                  )}
+                >
+                  Regenerate Analysis
+                </span>
+              </span>
               {isStreaming ? (
                 // Animate an HTML wrapper (not the <svg> directly) — CSS
                 // transform animations on SVG elements are unreliable.
