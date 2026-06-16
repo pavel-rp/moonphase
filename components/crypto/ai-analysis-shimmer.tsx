@@ -105,11 +105,14 @@ export function AiAnalysisShimmer({
           </CardAction>
         </CardHeader>
 
-        <CardContent className="flex flex-1 flex-col px-4 sm:px-6">
+        {/* `min-h-0` + `overflow-hidden` so the fill grid shrinks to the card's
+            fixed height and clips inside it — without `min-h-0` the flex chain
+            keeps its content's natural height and overflows past the card. */}
+        <CardContent className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 sm:px-6">
           {/* Content row — 12×12 avatar bubble + text-line body, using the
               streaming card's exact spacing so there is no layout shift. The row
               grows to fill the reserved height. */}
-          <div className="flex flex-1 items-start gap-4 sm:gap-6 mb-6">
+          <div className="flex min-h-0 flex-1 items-start gap-4 sm:gap-6 mb-6">
             <div className="hidden sm:block flex-shrink-0">
               <Bar className="h-12 w-12 rounded-full" />
             </div>
