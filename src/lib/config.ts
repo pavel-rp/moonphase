@@ -28,3 +28,7 @@ export const AI_LLM_MODEL = "gpt-5.5";
 // GPT-5.x are reasoning models and use `reasoning_effort` instead of `temperature`.
 // "low" keeps latency close to the <10s target for these short analyses.
 export const AI_LLM_REASONING_EFFORT = "low";
+// Default request timeout for the model call. Override per-environment with the
+// AI_ANALYSIS_TIMEOUT_MS env var; the adapter falls back to this default when
+// the env var is unset or not a positive integer.
+export const AI_LLM_TIMEOUT_MS = 30_000;

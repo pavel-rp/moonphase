@@ -15,7 +15,7 @@ jest.mock('@ai-sdk/openai', () => ({
   createOpenAI: (...args: unknown[]) => (mockCreateOpenAI as jest.Mock)(...args),
 }));
 
-import { OpenAiAnalysisAdapter } from '../OpenAiAnalysisAdapter';
+import { OpenAiAnalysisAdapter, resolveTimeoutMs } from '../OpenAiAnalysisAdapter';
 import { ExternalException } from '@/lib/errors';
 import type { Candlestick } from '@/ports/BinancePort';
 import type { NewsArticle } from '@/domain/newsArticle';
@@ -71,6 +71,10 @@ describe('OpenAiAnalysisAdapter', () => {
     mockCreateOpenAI.mockImplementation(() => mockProvider);
     process.env = { ...ORIGINAL_ENV, OPENAI_API_KEY: 'test-key' };
     delete process.env.OPENAI_MODEL;
+    // Keep the per-call AbortSignal.timeout short so its timer doesn't outlive
+    // the (fast, immediately-resolving) test and leak into Jest teardown.
+    // The timeout tests below override this with their own tiny value.
+    process.env.AI_ANALYSIS_TIMEOUT_MS = '100';
     deps = makeDeps();
   });
 
@@ -225,5 +229,126 @@ describe('OpenAiAnalysisAdapter', () => {
         kind: 'Unavailable',
       });
     });
+  });
+
+  describe('timeout', () => {
+    beforeEach(() => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100)]);
+      deps.binance.get24HrStats.mockResolvedValue(100);
+      deps.news.fetchNews.mockResolvedValue([]);
+    });
+
+    it('passes an AbortSignal to generateText and streamText', async () => {
+      mockGenerateText.mockResolvedValue({ text: 'ok' });
+      mockStreamText.mockReturnValue({ textStream: gen(['ok']) });
+
+      await freshAdapter().analyzeAsset('BTC');
+      expect(mockGenerateText.mock.calls[0][0].abortSignal).toBeInstanceOf(AbortSignal);
+
+      const streamed: string[] = [];
+      for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+        streamed.push(chunk);
+      }
+      expect(streamed).toEqual(['ok']);
+      expect(mockStreamText.mock.calls[0][0].abortSignal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('maps an analyzeAsset timeout to ExternalException(Timeout)', async () => {
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      mockGenerateText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          abortSignal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+        }),
+      );
+
+      await expect(freshAdapter().analyzeAsset('BTC')).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Timeout',
+        timeoutMs: 20,
+      });
+    });
+
+    it('maps an analyzeAssetStream timeout to ExternalException(Timeout)', async () => {
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          await new Promise<never>((_resolve, reject) => {
+            abortSignal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+          });
+          yield 'never';
+        })(),
+      }));
+
+      const run = async () => {
+        const out: string[] = [];
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+          out.push(chunk);
+        }
+        return out;
+      };
+
+      await expect(run()).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Timeout',
+        timeoutMs: 20,
+      });
+    });
+
+    it('does not classify an analyzeAsset buildPrompt failure as Timeout (signal not yet created)', async () => {
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      deps.binance.getDailyCandles.mockImplementation(() => {
+        throw new Error('build boom');
+      });
+      mockGenerateText.mockResolvedValue({ text: 'unused' });
+
+      await expect(freshAdapter().analyzeAsset('BTC')).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Unavailable',
+      });
+      expect(mockGenerateText).not.toHaveBeenCalled();
+    });
+
+    it('does not classify an analyzeAssetStream buildPrompt failure as Timeout (signal not yet created)', async () => {
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      deps.binance.getDailyCandles.mockImplementation(() => {
+        throw new Error('build boom');
+      });
+      mockStreamText.mockReturnValue({ textStream: gen(['unused']) });
+
+      const run = async () => {
+        const out: string[] = [];
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+          out.push(chunk);
+        }
+        return out;
+      };
+
+      await expect(run()).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Unavailable',
+      });
+      expect(mockStreamText).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('resolveTimeoutMs', () => {
+  const DEFAULT = 30_000;
+
+  it('accepts a positive integer string', () => {
+    expect(resolveTimeoutMs('5000')).toBe(5000);
+  });
+
+  it('falls back to the default for unset/blank/whitespace', () => {
+    expect(resolveTimeoutMs(undefined)).toBe(DEFAULT);
+    expect(resolveTimeoutMs('')).toBe(DEFAULT);
+    expect(resolveTimeoutMs('   ')).toBe(DEFAULT);
+  });
+
+  it('falls back to the default for non-positive, non-integer, or non-numeric values', () => {
+    expect(resolveTimeoutMs('0')).toBe(DEFAULT);
+    expect(resolveTimeoutMs('-5')).toBe(DEFAULT);
+    expect(resolveTimeoutMs('30.5')).toBe(DEFAULT);
+    expect(resolveTimeoutMs('abc')).toBe(DEFAULT);
   });
 });
