@@ -22,7 +22,7 @@ import {
   type AiAnalysisMode,
 } from "@/lib/aiAnalysisMode";
 
-interface AiAnalysisSectionProps {
+interface AiAnalysisCardProps {
   name: string;
   symbol: string;
   /**
@@ -184,11 +184,11 @@ function ModeToggle({
   );
 }
 
-export function AiAnalysisSection({
+export function AiAnalysisCard({
   name,
   symbol,
   aiOverrideAllowed = false,
-}: AiAnalysisSectionProps) {
+}: AiAnalysisCardProps) {
   const requestedMode = useSyncExternalStore(
     subscribeStoredMode,
     readStoredMode,
