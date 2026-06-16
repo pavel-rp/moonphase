@@ -129,6 +129,24 @@
   --text-shadow-outline: 1px 0 0 var(--tw-text-shadow-color),
     -1px 0 0 var(--tw-text-shadow-color), 0 1px 0 var(--tw-text-shadow-color),
     0 -1px 0 var(--tw-text-shadow-color);
+
+  /* "Thinking" spin for the generating icon: an eased full turn that slows at
+     each loop seam (ease-in-out) while the icon breathes larger at the half-turn
+     — reads as inhale-spin-exhale, not a mechanical linear spinner. */
+  --animate-icon-thinking: iconThinking 2.2s cubic-bezier(0.65, 0, 0.35, 1)
+    infinite;
+}
+
+@keyframes iconThinking {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.18);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
 }
 
 @utility border-outset {

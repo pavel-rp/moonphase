@@ -150,7 +150,9 @@ export function AiAnalysisShimmer({
             <div className="flex justify-end" aria-hidden="true">
               <ActionButton loading>
                 Generating analysis…
-                <BrainCircuit className="size-5 animate-pulse motion-reduce:animate-none" />
+                <span className="inline-flex animate-icon-thinking motion-reduce:animate-none">
+                  <BrainCircuit className="size-5" />
+                </span>
               </ActionButton>
             </div>
           ) : (

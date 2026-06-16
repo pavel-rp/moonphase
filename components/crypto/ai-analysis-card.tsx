@@ -312,15 +312,18 @@ export function AiAnalysisCard({
               aria-hidden={isStreaming || undefined}
             >
               {isStreaming ? "Generating analysis…" : "Regenerate Analysis"}
-              <BrainCircuit
-                aria-hidden="true"
-                className={cn(
-                  "size-5",
-                  isStreaming
-                    ? "animate-pulse motion-reduce:animate-none"
-                    : "rotate-180 transition duration-300 ease-out group-hover:translate-x-1 group-hover:rotate-0 group-active:translate-x-2",
-                )}
-              />
+              {isStreaming ? (
+                // Animate an HTML wrapper (not the <svg> directly) — CSS
+                // transform animations on SVG elements are unreliable.
+                <span className="inline-flex animate-icon-thinking motion-reduce:animate-none">
+                  <BrainCircuit aria-hidden="true" className="size-5" />
+                </span>
+              ) : (
+                <BrainCircuit
+                  aria-hidden="true"
+                  className="size-5 rotate-180 transition duration-300 ease-out group-hover:translate-x-1 group-hover:rotate-0 group-active:translate-x-2"
+                />
+              )}
             </ActionButton>
           </div>
         </CardContent>
