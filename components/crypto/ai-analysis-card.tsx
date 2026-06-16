@@ -203,6 +203,10 @@ export function AiAnalysisCard({
   // text, so an empty-but-successful response still reveals the completed card
   // (matching the pre-migration behavior) instead of silently reverting to idle.
   const [hasCompleted, setHasCompleted] = useState(false);
+  // Tracks whether the Regenerate button's reveal (height grow) has finished, so
+  // the wrapper can clip during the grow but switch to `overflow: visible` after
+  // — otherwise the persistent clip cuts the button's hover translate / shadow.
+  const [regenRevealed, setRegenRevealed] = useState(false);
   const reduce = useReducedMotion();
   const titleId = useId();
 
@@ -237,6 +241,8 @@ export function AiAnalysisCard({
         ? { headers: { [AI_ANALYSIS_MODE_HEADER]: requestedMode } }
         : undefined;
     setHasCompleted(false);
+    // Re-arm the reveal clip so the next streaming → complete grows in cleanly.
+    setRegenRevealed(false);
     void complete("", options);
   };
 
@@ -304,49 +310,60 @@ export function AiAnalysisCard({
           </div>
 
           {/* Footer swaps the streaming indicator for the Regenerate button.
-              On streaming → complete the indicator fades out while the button
-              row grows in (height 0 → auto), easing the card taller. Collapses
-              to an instant swap when reduced motion is requested. */}
-          <AnimatePresence initial={false}>
-            {isStreaming ? (
-              <motion.div
-                key="generating"
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-                aria-hidden="true"
-                exit={{ opacity: 0 }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
-                }
-              >
-                <BrainCircuit className="size-4 animate-pulse" />
-                <span className="animate-pulse">Generating analysis…</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="regenerate"
-                style={{ overflow: "hidden" }}
-                initial={reduce ? false : { height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
-                }
-              >
-                <div className="flex justify-end">
-                  <ActionButton onClick={handleGenerate}>
-                    Regenerate Analysis
-                    <BrainCircuit
-                      aria-hidden="true"
-                      className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2"
-                    />
-                  </ActionButton>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              Both states share one CSS grid cell (`col/row-start-1`), so the
+              footer height always tracks the taller child: on streaming →
+              complete the indicator cross-fades out while the button row grows
+              in (height 0 → auto), easing the card taller monotonically — no
+              overshoot, no dip. Collapses to an instant swap under reduced
+              motion. */}
+          <div className="grid">
+            <AnimatePresence initial={false}>
+              {isStreaming ? (
+                <motion.div
+                  key="generating"
+                  className="col-start-1 row-start-1 flex items-center gap-2 text-sm text-muted-foreground"
+                  aria-hidden="true"
+                  exit={{ opacity: 0 }}
+                  transition={
+                    reduce
+                      ? { duration: 0 }
+                      : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
+                  }
+                >
+                  <BrainCircuit className="size-4 animate-pulse" />
+                  <span className="animate-pulse">Generating analysis…</span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="regenerate"
+                  className="col-start-1 row-start-1"
+                  // Clip only while the row grows in; once revealed, switch to
+                  // visible so the button's hover translate and shadow aren't cut.
+                  style={{
+                    overflow: regenRevealed || reduce ? undefined : "hidden",
+                  }}
+                  initial={reduce ? false : { height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  onAnimationComplete={() => setRegenRevealed(true)}
+                  transition={
+                    reduce
+                      ? { duration: 0 }
+                      : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+                  }
+                >
+                  <div className="flex justify-end">
+                    <ActionButton onClick={handleGenerate}>
+                      Regenerate Analysis
+                      <BrainCircuit
+                        aria-hidden="true"
+                        className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2"
+                      />
+                    </ActionButton>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </CardContent>
       </Card>
     );
