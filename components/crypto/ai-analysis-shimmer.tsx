@@ -22,6 +22,17 @@ interface AiAnalysisShimmerProps {
   className?: string;
 }
 
+// Shared minimum footprint so the AI card only ever GROWS across
+// idle → loading → streaming, never shrinks (NEU-23 feedback). The idle/empty
+// state is the tallest of the lightweight states, and it grows taller as the
+// viewport narrows (more text wrapping), so the floor is sized per breakpoint to
+// the measured idle height: ~670px @320 · ~554px @360 · ~502px @640 · ~398px
+// @≥1024. Applied to the states that FOLLOW idle — the "generating" skeleton and
+// the streaming/complete card — but not to idle itself or the neutral Suspense
+// fallback (which precede idle and should grow into it). If the idle copy in
+// `ai-analysis-card.tsx` changes materially, re-measure and update these.
+export const AI_CARD_MIN_H = "min-h-[680px] sm:min-h-[510px] lg:min-h-[400px]";
+
 // Reuse the ShimmerCard idiom — `bg-gray-400 rounded opacity-30` bars — so the
 // AI skeleton reads as the same visual family. The pulse lives on the Card
 // wrapper (as in ShimmerCard) and is suppressed under `prefers-reduced-motion`.
@@ -57,6 +68,10 @@ export function AiAnalysisShimmer({
       <Card
         className={cn(
           "glassmorphic min-w-[220px] animate-pulse motion-reduce:animate-none",
+          // Only the generating skeleton follows the idle state, so only it
+          // carries the no-shrink floor; the neutral Suspense fallback stays
+          // compact and grows into idle.
+          isGenerating && AI_CARD_MIN_H,
           className,
         )}
       >

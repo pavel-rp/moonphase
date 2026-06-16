@@ -13,7 +13,11 @@ import { BrainCircuit } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { Components } from "react-markdown";
-import { AiAnalysisShimmer } from "@/components/crypto/ai-analysis-shimmer";
+import {
+  AiAnalysisShimmer,
+  AI_CARD_MIN_H,
+} from "@/components/crypto/ai-analysis-shimmer";
+import { cn } from "@/lib/utils/utils";
 import Markdown from "react-markdown";
 import { useCompletion } from "@ai-sdk/react";
 import {
@@ -256,7 +260,7 @@ export function AiAnalysisCard({
     const isStreaming = status === "streaming";
     return (
       <Card
-        className="glassmorphic min-w-[220px]"
+        className={cn("glassmorphic min-w-[220px]", AI_CARD_MIN_H)}
         role="region"
         aria-labelledby={titleId}
         aria-busy={isStreaming}
