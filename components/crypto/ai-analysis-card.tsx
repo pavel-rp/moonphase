@@ -13,7 +13,7 @@ import { BrainCircuit } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { Components } from "react-markdown";
-import ShimmerCard from "@/components/ui/shimmer-card";
+import { AiAnalysisShimmer } from "@/components/crypto/ai-analysis-shimmer";
 import Markdown from "react-markdown";
 import { useCompletion } from "@ai-sdk/react";
 import {
@@ -249,14 +249,7 @@ export function AiAnalysisCard({
           : "idle";
 
   if (status === "loading") {
-    return (
-      <div aria-busy="true">
-        <span className="sr-only" role="status" aria-live="polite">
-          Generating analysis…
-        </span>
-        <ShimmerCard className="min-w-[220px]" />
-      </div>
-    );
+    return <AiAnalysisShimmer footer="generating" />;
   }
 
   if (status === "streaming" || status === "complete") {
