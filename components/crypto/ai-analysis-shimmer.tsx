@@ -145,7 +145,7 @@ export function AiAnalysisShimmer({
           {isGenerating ? (
             <div
               aria-hidden="true"
-              className="flex items-center gap-2 text-sm text-muted-foreground"
+              className="flex items-center justify-end gap-2 text-sm text-muted-foreground"
             >
               <BrainCircuit className="size-4" />
               <span>Generating analysis…</span>

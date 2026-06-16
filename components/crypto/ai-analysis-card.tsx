@@ -321,7 +321,7 @@ export function AiAnalysisCard({
               {isStreaming ? (
                 <motion.div
                   key="generating"
-                  className="col-start-1 row-start-1 flex items-center gap-2 text-sm text-muted-foreground"
+                  className="col-start-1 row-start-1 flex items-center justify-end gap-2 text-sm text-muted-foreground"
                   aria-hidden="true"
                   exit={{ opacity: 0 }}
                   transition={
