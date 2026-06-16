@@ -10,10 +10,13 @@ import {
 } from "@/components/ui/card";
 import { ActionButton } from "@/components/ui/action-button";
 import { BrainCircuit } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { Components } from "react-markdown";
-import ShimmerCard from "@/components/ui/shimmer-card";
+import {
+  AiAnalysisShimmer,
+  AI_CARD_MIN_H,
+} from "@/components/crypto/ai-analysis-shimmer";
+import { cn } from "@/lib/utils/utils";
 import Markdown from "react-markdown";
 import { useCompletion } from "@ai-sdk/react";
 import {
@@ -199,7 +202,6 @@ export function AiAnalysisCard({
   // text, so an empty-but-successful response still reveals the completed card
   // (matching the pre-migration behavior) instead of silently reverting to idle.
   const [hasCompleted, setHasCompleted] = useState(false);
-  const reduce = useReducedMotion();
   const titleId = useId();
 
   // The AI SDK hook owns the streaming lifecycle: `completion` accumulates the
@@ -249,21 +251,14 @@ export function AiAnalysisCard({
           : "idle";
 
   if (status === "loading") {
-    return (
-      <div aria-busy="true">
-        <span className="sr-only" role="status" aria-live="polite">
-          Generating analysis…
-        </span>
-        <ShimmerCard className="min-w-[220px]" />
-      </div>
-    );
+    return <AiAnalysisShimmer footer="generating" />;
   }
 
   if (status === "streaming" || status === "complete") {
     const isStreaming = status === "streaming";
     return (
       <Card
-        className="glassmorphic min-w-[220px]"
+        className={cn("glassmorphic min-w-[220px]", AI_CARD_MIN_H)}
         role="region"
         aria-labelledby={titleId}
         aria-busy={isStreaming}
@@ -286,8 +281,12 @@ export function AiAnalysisCard({
             </span>
           </CardAction>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <div className="flex items-start gap-4 sm:gap-6 mb-6">
+        <CardContent className="flex flex-1 flex-col px-4 sm:px-6">
+          {/* Content row grows to fill the reserved height so the footer below
+              stays pinned to the bottom — the "Generating analysis…" indicator
+              holds the same position from the loading skeleton through streaming
+              instead of jumping up to sit under the first token. */}
+          <div className="flex flex-1 items-start gap-4 sm:gap-6 mb-6">
             {/* Icon Container */}
             <div className="hidden sm:block flex-shrink-0">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
@@ -302,50 +301,56 @@ export function AiAnalysisCard({
             <AnalysisMarkdown>{completion}</AnalysisMarkdown>
           </div>
 
-          {/* Footer swaps the streaming indicator for the Regenerate button.
-              On streaming → complete the indicator fades out while the button
-              row grows in (height 0 → auto), easing the card taller. Collapses
-              to an instant swap when reduced motion is requested. */}
-          <AnimatePresence initial={false}>
-            {isStreaming ? (
-              <motion.div
-                key="generating"
-                className="flex items-center gap-2 text-sm text-muted-foreground"
-                aria-hidden="true"
-                exit={{ opacity: 0 }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : { duration: 0.2, ease: [0.22, 1, 0.36, 1] }
-                }
-              >
-                <BrainCircuit className="size-4 animate-pulse" />
-                <span className="animate-pulse">Generating analysis…</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="regenerate"
-                style={{ overflow: "hidden" }}
-                initial={reduce ? false : { height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
-                }
-              >
-                <div className="flex justify-end">
-                  <ActionButton onClick={handleGenerate}>
-                    Regenerate Analysis
-                    <BrainCircuit
-                      aria-hidden="true"
-                      className="size-5 group-hover:translate-x-1 rotate-180 group-hover:rotate-0 transition duration-300 ease-out group-active:translate-x-2"
-                    />
-                  </ActionButton>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* One button for both states: a muted, animated "Generating
+              analysis…" while streaming that morphs into the active Regenerate
+              CTA on completion — same element, same position, fixed height, so
+              there is no layout shift on the streaming → complete transition. */}
+          <div className="flex justify-end">
+            <ActionButton
+              loading={isStreaming}
+              onClick={handleGenerate}
+              aria-hidden={isStreaming || undefined}
+            >
+              {/* Both labels share one grid cell so the button width stays
+                  constant across the streaming → complete morph (no width snap)
+                  and the label cross-fades. Self-sizes to the wider label at any
+                  breakpoint — no hardcoded width. */}
+              <span className="grid place-items-center">
+                <span
+                  aria-hidden={!isStreaming}
+                  style={{ gridArea: "1 / 1" }}
+                  className={cn(
+                    "transition-opacity duration-300",
+                    isStreaming ? "opacity-100" : "opacity-0",
+                  )}
+                >
+                  Generating analysis…
+                </span>
+                <span
+                  aria-hidden={isStreaming || undefined}
+                  style={{ gridArea: "1 / 1" }}
+                  className={cn(
+                    "transition-opacity duration-300",
+                    isStreaming ? "opacity-0" : "opacity-100",
+                  )}
+                >
+                  Regenerate Analysis
+                </span>
+              </span>
+              {isStreaming ? (
+                // Animate an HTML wrapper (not the <svg> directly) — CSS
+                // transform animations on SVG elements are unreliable.
+                <span className="inline-flex animate-icon-thinking motion-reduce:animate-none">
+                  <BrainCircuit aria-hidden="true" className="size-5" />
+                </span>
+              ) : (
+                <BrainCircuit
+                  aria-hidden="true"
+                  className="size-5 rotate-180 transition duration-300 ease-out group-hover:translate-x-1 group-hover:rotate-0 group-active:translate-x-2"
+                />
+              )}
+            </ActionButton>
+          </div>
         </CardContent>
       </Card>
     );

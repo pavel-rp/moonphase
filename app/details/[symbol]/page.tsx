@@ -14,6 +14,7 @@ import { CryptoSparkline } from "@/components/crypto/crypto-sparkline";
 import { formatNumber, formatPercent } from "@/lib/utils/numbers";
 import { getPriceMovementTextColorClass } from "@/lib/utils/ui-helpers";
 import ShimmerCard from "@/components/ui/shimmer-card";
+import { AiAnalysisShimmer } from "@/components/crypto/ai-analysis-shimmer";
 import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
 import { getEnv } from "@/lib/env";
@@ -24,7 +25,7 @@ export const dynamic = "force-dynamic";
 // Lazy-load the AI analysis card so its client bundle (react-markdown, motion,
 // the AI SDK) is code-split out of the initial page payload. `next/dynamic`
 // defaults to `ssr: true`, which is the only mode supported inside a Server
-// Component; the Suspense boundary below shows a ShimmerCard while it loads.
+// Component; the Suspense boundary below shows an AiAnalysisShimmer while it loads.
 const AiAnalysisCard = dynamicImport(() =>
   import("@/components/crypto/ai-analysis-card").then((m) => m.AiAnalysisCard),
 );
@@ -130,7 +131,7 @@ export default async function SymbolDetailsPage({
 
         {/* AI Analysis Section — lazy-loaded below the market-data grid so it
             does not block the initial render. */}
-        <Suspense fallback={<ShimmerCard className="min-w-[220px]" />}>
+        <Suspense fallback={<AiAnalysisShimmer />}>
           <AiAnalysisCard
             name={asset.name}
             symbol={asset.symbol}

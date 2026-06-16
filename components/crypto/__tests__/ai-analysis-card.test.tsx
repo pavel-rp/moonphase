@@ -123,9 +123,12 @@ describe("AiAnalysisCard", () => {
     expect(mockComplete).toHaveBeenCalledWith("", undefined);
   });
 
-  it("shows the shimmer loading state with a polite status while awaiting the first token", () => {
+  it("shows the AI-shaped shimmer loading state with a polite status while awaiting the first token", () => {
     render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
     setHook({ isLoading: true, completion: "" });
+
+    // The dedicated AI skeleton renders — not the generic crypto ShimmerCard.
+    expect(screen.getByTestId("ai-analysis-shimmer")).toBeInTheDocument();
 
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent(/generating analysis/i);
