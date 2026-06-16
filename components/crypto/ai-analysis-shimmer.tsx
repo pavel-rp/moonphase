@@ -33,13 +33,21 @@ interface AiAnalysisShimmerProps {
 // `ai-analysis-card.tsx` changes materially, re-measure and update these.
 export const AI_CARD_MIN_H = "min-h-[680px] sm:min-h-[510px] lg:min-h-[400px]";
 
-// Evenly spaced text-line bars (gray-400 @ 30% — the ShimmerCard idiom) that
-// FILL whatever height they're given, so the generating skeleton is as large as
-// the idle text it stands in for, with no empty void below the lines. A
-// repeating gradient fills any height/width without guessing a line count:
-// 16px bar + 12px gap = 28px period (matches the old `h-4` + `space-y-3` rhythm).
-const LINE_FILL =
-  "repeating-linear-gradient(to bottom, rgb(156 163 175 / 0.3) 0 16px, transparent 16px 28px)";
+// The generating skeleton uses a FIXED height (not just a floor) — same
+// per-breakpoint values as AI_CARD_MIN_H — so the line-fill grid below has a
+// definite height to lay out whole rows against (CSS `auto-fill` can't resolve
+// against an indefinite `min-height`). It is still ≥ the idle height, so the
+// skeleton only ever grows from idle. Keep these values in sync with
+// AI_CARD_MIN_H.
+const AI_SHIMMER_H = "h-[680px] sm:h-[510px] lg:h-[400px]";
+
+// A body that fills its height with WHOLE text-line bars (no clipped half-line)
+// so the generating skeleton is as large as the idle text it stands in for. CSS
+// grid `auto-fill` lays out as many 1rem (16px) line rows as fully fit, with a
+// 12px gap; any leftover (< one line) stays empty at the bottom. Extra bars
+// beyond what fits collapse to `grid-auto-rows: 0`, so a partial line can never
+// render regardless of the card's height. `aria-hidden` — purely decorative.
+const SHIMMER_LINE_COUNT = 28; // enough to fill the tallest (narrow-mobile) card
 
 // Reuse the ShimmerCard idiom — `bg-gray-400 rounded opacity-30` bars — so the
 // AI skeleton reads as the same visual family. The pulse lives on the Card
@@ -77,9 +85,9 @@ export function AiAnalysisShimmer({
         className={cn(
           "glassmorphic min-w-[220px] animate-pulse motion-reduce:animate-none",
           // Only the generating skeleton follows the idle state, so only it
-          // carries the no-shrink floor; the neutral Suspense fallback stays
+          // carries the no-shrink height; the neutral Suspense fallback stays
           // compact and grows into idle.
-          isGenerating && AI_CARD_MIN_H,
+          isGenerating && AI_SHIMMER_H,
           className,
         )}
       >
@@ -106,13 +114,17 @@ export function AiAnalysisShimmer({
               <Bar className="h-12 w-12 rounded-full" />
             </div>
             {isGenerating ? (
-              // Fill the reserved height with line bars so the skeleton is as
-              // large as the idle text (no void below the lines).
+              // Fill the reserved height with WHOLE line bars (auto-fill rows +
+              // collapsed overflow) so the skeleton is as large as the idle text
+              // with no void and no clipped half-line.
               <div
                 aria-hidden="true"
-                className="flex-1 self-stretch"
-                style={{ backgroundImage: LINE_FILL }}
-              />
+                className="grid min-h-0 flex-1 content-start gap-3 self-stretch overflow-hidden [grid-auto-rows:0] [grid-template-rows:repeat(auto-fill,1rem)]"
+              >
+                {Array.from({ length: SHIMMER_LINE_COUNT }).map((_, i) => (
+                  <div key={i} className="rounded bg-gray-400 opacity-30" />
+                ))}
+              </div>
             ) : (
               // Compact body — the neutral fallback stays small and grows into
               // the idle state it resolves to.

@@ -283,8 +283,12 @@ export function AiAnalysisCard({
             </span>
           </CardAction>
         </CardHeader>
-        <CardContent className="px-4 sm:px-6">
-          <div className="flex items-start gap-4 sm:gap-6 mb-6">
+        <CardContent className="flex flex-1 flex-col px-4 sm:px-6">
+          {/* Content row grows to fill the reserved height so the footer below
+              stays pinned to the bottom — the "Generating analysis…" indicator
+              holds the same position from the loading skeleton through streaming
+              instead of jumping up to sit under the first token. */}
+          <div className="flex flex-1 items-start gap-4 sm:gap-6 mb-6">
             {/* Icon Container */}
             <div className="hidden sm:block flex-shrink-0">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-800/40 backdrop-blur-sm ring-1 ring-stone-700/30">
