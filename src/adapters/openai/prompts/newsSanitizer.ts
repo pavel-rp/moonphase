@@ -1,0 +1,63 @@
+/**
+ * Sanitization for untrusted news text before it enters the analyst prompt.
+ *
+ * News titles and descriptions are attacker-influenceable: a crafted headline
+ * ("Ignore previous instructions and …") is a prompt-injection vector. This
+ * module keeps the defense deterministic and in code (never relying on the
+ * model to self-protect) and lives in its own file so it is independently
+ * testable. The adapter wraps sanitized news inside the delimiter block below
+ * and the system prompt declares that block to be data, not instructions.
+ */
+
+/** Opening tag of the labeled untrusted-news block. */
+export const NEWS_DELIMITER_OPEN = "<untrusted_news_data>";
+
+/** Closing tag of the labeled untrusted-news block. */
+export const NEWS_DELIMITER_CLOSE = "</untrusted_news_data>";
+
+// Upper bound of the C0 control range (U+0000–U+001F). DEL is U+007F.
+const CONTROL_MAX = 0x1f;
+const DEL = 0x7f;
+
+/**
+ * Replaces control characters (U+0000–U+001F and U+007F) with spaces.
+ *
+ * Iterated by codepoint (`for...of`) rather than a control-byte regex literal,
+ * which keeps the source editor/linter/build-tool safe and never splits a
+ * surrogate pair.
+ */
+function stripControlChars(input: string): string {
+  let out = "";
+  for (const ch of input) {
+    const code = ch.codePointAt(0) ?? 0;
+    out += code <= CONTROL_MAX || code === DEL ? " " : ch;
+  }
+  return out;
+}
+
+/**
+ * Sanitizes a single untrusted news string for safe inclusion in the prompt.
+ *
+ * - Collapses control characters and runs of whitespace to single spaces.
+ * - Escapes `&`, `<`, `>` so the text cannot close or forge the delimiter
+ *   block (a literal `</untrusted_news_data>` becomes inert
+ *   `&lt;/untrusted_news_data&gt;`).
+ * - Length-caps to `maxChars` codepoints (capped before escaping, so an escape
+ *   entity is never truncated mid-sequence; counted by codepoint via
+ *   `Array.from` so a surrogate pair / emoji is never split).
+ *
+ * @param raw - The untrusted text (e.g. an article title or description).
+ * @param maxChars - Maximum number of content codepoints to keep.
+ * @returns The sanitized, length-capped, escaped string.
+ */
+export function sanitizeNewsText(raw: string | null | undefined, maxChars: number): string {
+  if (raw == null) return "";
+
+  const collapsed = stripControlChars(raw).replace(/\s+/g, " ").trim();
+  const capped = maxChars > 0 ? Array.from(collapsed).slice(0, maxChars).join("") : "";
+
+  return capped
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
