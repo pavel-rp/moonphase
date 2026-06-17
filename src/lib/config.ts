@@ -39,3 +39,20 @@ export const AI_LLM_REASONING_EFFORT = "low";
 // AI_ANALYSIS_TIMEOUT_MS env var; the adapter falls back to this default when
 // the env var is unset or not a positive integer.
 export const AI_LLM_TIMEOUT_MS = 30_000;
+
+// -- AI analysis cache (CachingAiAnalysisAdapter) -----------------------------
+// TTL for a stored analysis. Within this window a repeat request for the same
+// `mode:model:SYMBOL` is served from the in-memory cache as a paced stream
+// instead of calling the model again. ~5 minutes balances freshness against the
+// cost/latency saving on repeat views.
+export const AI_ANALYSIS_CACHE_TTL_S = 300;
+// Soft cap on distinct cached entries. The cache is a module-level Map with LRU
+// eviction (least-recently-used dropped first), bounding memory on a long-lived
+// instance. Small because the asset whitelist is small.
+export const AI_ANALYSIS_CACHE_MAX_ENTRIES = 100;
+// Paced cache-hit replay: target total wall-time for re-emitting stored text as
+// a "typed" stream, so a cache hit feels like a fresh generation. Kept inside
+// the ~0.6–1.2s band; the per-chunk floor stops a short analysis from replaying
+// in one instant burst.
+export const AI_ANALYSIS_REPLAY_TOTAL_MS = 900;
+export const AI_ANALYSIS_REPLAY_MIN_CHUNK_MS = 15;

@@ -6,9 +6,11 @@ import { MockMarketDataAdapter } from '@/adapters/mock/MockMarketDataAdapter';
 import { MockTradingActivityAdapter } from '@/adapters/mock/MockTradingActivityAdapter';
 import { OpenAiAnalysisAdapter } from '@/adapters/openai/OpenAiAnalysisAdapter';
 import { MockAiAnalysisAdapter } from '@/adapters/mock/MockAiAnalysisAdapter';
+import { CachingAiAnalysisAdapter } from '@/adapters/cache/CachingAiAnalysisAdapter';
 import { NewsAdapter } from '@/adapters/news/NewsAdapter';
 import { MockNewsAdapter } from '@/adapters/news/MockNewsAdapter';
 import { getEnv } from '@/lib/env';
+import { AI_LLM_MODEL } from '@/lib/config';
 import type { AiAnalysisMode } from '@/lib/aiAnalysisMode';
 
 import type { CoinCapPort } from '@/ports/CoinCapPort';
@@ -42,12 +44,21 @@ export function getAiAnalysisDeps(mode: AiAnalysisMode): Promise<{ ai: AiAnalysi
   if (cached) return cached;
 
   const init = (async () => {
-    if (mode === 'mock') {
-      return { ai: new MockAiAnalysisAdapter() as AiAnalysisPort };
-    }
     const env = getEnv();
+    // Treat a blank OPENAI_MODEL as unset, matching the OpenAI adapter, so the
+    // cache key tracks the model that actually answers the request.
+    const model = env.OPENAI_MODEL?.trim() || AI_LLM_MODEL;
+
+    // The caching decorator wraps both modes (keyed separately by mode + model)
+    // so duplicate/concurrent requests are deduped and replayed identically
+    // whether running live or mock. The route and use case stay unchanged.
+    if (mode === 'mock') {
+      const inner = new MockAiAnalysisAdapter();
+      return { ai: new CachingAiAnalysisAdapter(inner, { mode, model }) as AiAnalysisPort };
+    }
     const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
-    return { ai: new OpenAiAnalysisAdapter({ binance, news }) as AiAnalysisPort };
+    const inner = new OpenAiAnalysisAdapter({ binance, news });
+    return { ai: new CachingAiAnalysisAdapter(inner, { mode, model }) as AiAnalysisPort };
   })();
 
   // Reset the cached promise on failure so a later call can retry. The adapter
