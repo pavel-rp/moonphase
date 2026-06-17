@@ -220,25 +220,28 @@ function CopyButton({ text }: { text: string }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      aria-label="Copy analysis to clipboard"
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors cursor-pointer hover:bg-muted/40 hover:text-foreground"
-    >
-      {copied ? (
-        <Check aria-hidden="true" className="size-4" />
-      ) : (
-        <Copy aria-hidden="true" className="size-4" />
-      )}
-      {copied ? "Copied" : "Copy"}
-      {/* Polite announcement of the copy, separate from the card-level
-          "Analysis ready." status. No `role="status"` here — that would add a
-          second status region; `aria-live` alone announces the change. */}
+    <>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors cursor-pointer hover:bg-muted/40 hover:text-foreground"
+      >
+        {copied ? (
+          <Check aria-hidden="true" className="size-4" />
+        ) : (
+          <Copy aria-hidden="true" className="size-4" />
+        )}
+        {copied ? "Copied" : "Copy"}
+      </button>
+      {/* Polite announcement of the copy result. Kept OUTSIDE the button so the
+          button's accessible name stays equal to its visible label ("Copy" /
+          "Copied", WCAG 2.5.3) rather than a stale `aria-label`. No
+          `role="status"` — that would add a second status region alongside the
+          card's "Analysis ready." one; `aria-live` alone announces the change. */}
       <span className="sr-only" aria-live="polite">
         {copied ? "Analysis copied to clipboard." : ""}
       </span>
-    </button>
+    </>
   );
 }
 

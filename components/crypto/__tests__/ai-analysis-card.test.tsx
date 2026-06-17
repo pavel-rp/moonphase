@@ -290,6 +290,20 @@ describe("AiAnalysisCard", () => {
   });
 
   describe("copy-to-clipboard", () => {
+    // Capture the original `navigator.clipboard` descriptor so each test's mock
+    // is reverted afterwards and never leaks into other tests.
+    const originalClipboard = Object.getOwnPropertyDescriptor(
+      navigator,
+      "clipboard",
+    );
+    afterEach(() => {
+      if (originalClipboard) {
+        Object.defineProperty(navigator, "clipboard", originalClipboard);
+      } else {
+        Reflect.deleteProperty(navigator, "clipboard");
+      }
+    });
+
     /** Install a controllable `navigator.clipboard.writeText` mock. */
     function mockClipboard(impl: () => Promise<void>) {
       const writeText = jest.fn(impl);
@@ -309,7 +323,7 @@ describe("AiAnalysisCard", () => {
       );
 
       fireEvent.click(
-        screen.getByRole("button", { name: /copy analysis to clipboard/i }),
+        screen.getByRole("button", { name: "Copy" }),
       );
 
       expect(writeText).toHaveBeenCalledWith("## Bias\nBullish momentum.");
@@ -328,7 +342,7 @@ describe("AiAnalysisCard", () => {
         setHook({ isLoading: false, completion: "Done." }, { finish: true });
 
         fireEvent.click(
-          screen.getByRole("button", { name: /copy analysis to clipboard/i }),
+          screen.getByRole("button", { name: "Copy" }),
         );
         // Flush the writeText microtask so `copied` flips to true.
         await act(async () => {
@@ -351,7 +365,7 @@ describe("AiAnalysisCard", () => {
       setHook({ isLoading: false, completion: "Done." }, { finish: true });
 
       fireEvent.click(
-        screen.getByRole("button", { name: /copy analysis to clipboard/i }),
+        screen.getByRole("button", { name: "Copy" }),
       );
       await act(async () => {
         await Promise.resolve();
@@ -369,7 +383,7 @@ describe("AiAnalysisCard", () => {
       setHook({ isLoading: false, completion: "Done." }, { finish: true });
 
       const button = screen.getByRole("button", {
-        name: /copy analysis to clipboard/i,
+        name: "Copy",
       });
       expect(() => fireEvent.click(button)).not.toThrow();
       expect(screen.queryByText("Copied")).not.toBeInTheDocument();
@@ -380,12 +394,12 @@ describe("AiAnalysisCard", () => {
 
       setHook({ isLoading: true, completion: "Streaming…" });
       expect(
-        screen.queryByRole("button", { name: /copy analysis to clipboard/i }),
+        screen.queryByRole("button", { name: "Copy" }),
       ).not.toBeInTheDocument();
 
       setHook({ isLoading: false, completion: "" }, { finish: true });
       expect(
-        screen.queryByRole("button", { name: /copy analysis to clipboard/i }),
+        screen.queryByRole("button", { name: "Copy" }),
       ).not.toBeInTheDocument();
     });
   });
