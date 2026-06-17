@@ -19,6 +19,13 @@ export const NEWS_DEFAULT_LIMIT = 5;
 // -- AI / LLM -----------------------------------------------------------------
 export const AI_PRICE_HISTORY_DAYS = 14;
 export const AI_NEWS_LIMIT = 5;
+// Per-field character caps for untrusted news text. News titles, descriptions,
+// and source names are attacker-influenceable (a crafted headline is a
+// prompt-injection vector), so each field is sanitized and length-capped before
+// it enters the analyst prompt.
+export const AI_NEWS_TITLE_MAX_CHARS = 200;
+export const AI_NEWS_DESCRIPTION_MAX_CHARS = 100;
+export const AI_NEWS_SOURCE_MAX_CHARS = 100;
 // Default OpenAI model. Override per-environment with the OPENAI_MODEL env var.
 // gpt-5.5 is the current flagship reasoning model; switch to gpt-5.4 or
 // gpt-5.4-mini via OPENAI_MODEL for lower cost/latency if needed. Overrides must
