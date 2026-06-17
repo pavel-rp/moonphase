@@ -178,9 +178,13 @@ describe('OpenAiAnalysisAdapter', () => {
       const call = mockGenerateText.mock.calls[0][0];
       const prompt = call.prompt as string;
 
-      // News is wrapped in exactly one well-formed untrusted-data block.
+      // News is wrapped in exactly one well-formed untrusted-data block, with
+      // the open tag strictly before the close tag.
       expect((prompt.match(/<untrusted_news_data>/g) ?? []).length).toBe(1);
       expect((prompt.match(/<\/untrusted_news_data>/g) ?? []).length).toBe(1);
+      expect(prompt.indexOf('<untrusted_news_data>')).toBeLessThan(
+        prompt.indexOf('</untrusted_news_data>'),
+      );
 
       // The forged close delimiter is neutralized to inert escaped text, so it
       // cannot terminate the block early.
