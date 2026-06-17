@@ -288,4 +288,132 @@ describe("AiAnalysisCard", () => {
 
     expect(mockStop).toHaveBeenCalled();
   });
+
+  describe("copy-to-clipboard", () => {
+    // Capture the original `navigator.clipboard` descriptor so each test's mock
+    // is reverted afterwards and never leaks into other tests.
+    const originalClipboard = Object.getOwnPropertyDescriptor(
+      navigator,
+      "clipboard",
+    );
+    afterEach(() => {
+      if (originalClipboard) {
+        Object.defineProperty(navigator, "clipboard", originalClipboard);
+      } else {
+        Reflect.deleteProperty(navigator, "clipboard");
+      }
+    });
+
+    /** Install a controllable `navigator.clipboard.writeText` mock. */
+    function mockClipboard(impl: () => Promise<void>) {
+      const writeText = jest.fn(impl);
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText },
+        configurable: true,
+      });
+      return writeText;
+    }
+
+    it("copies the raw markdown analysis and shows a confirmation", async () => {
+      const writeText = mockClipboard(() => Promise.resolve());
+      render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
+      setHook(
+        { isLoading: false, completion: "## Bias\nBullish momentum." },
+        { finish: true },
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Copy" }),
+      );
+
+      expect(writeText).toHaveBeenCalledWith("## Bias\nBullish momentum.");
+      // The confirmation appears once the async write resolves.
+      expect(await screen.findByText("Copied")).toBeInTheDocument();
+      expect(
+        screen.getByText("Analysis copied to clipboard."),
+      ).toBeInTheDocument();
+    });
+
+    it("reverts the confirmation after the timeout", async () => {
+      jest.useFakeTimers();
+      try {
+        mockClipboard(() => Promise.resolve());
+        render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
+        setHook({ isLoading: false, completion: "Done." }, { finish: true });
+
+        fireEvent.click(
+          screen.getByRole("button", { name: "Copy" }),
+        );
+        // Flush the writeText microtask so `copied` flips to true.
+        await act(async () => {
+          await Promise.resolve();
+        });
+        expect(screen.getByText("Copied")).toBeInTheDocument();
+
+        act(() => {
+          jest.advanceTimersByTime(2000);
+        });
+        expect(screen.getByText("Copy")).toBeInTheDocument();
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
+    it("does not confirm when the clipboard write is rejected", async () => {
+      mockClipboard(() => Promise.reject(new Error("denied")));
+      render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
+      setHook({ isLoading: false, completion: "Done." }, { finish: true });
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Copy" }),
+      );
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(screen.queryByText("Copied")).not.toBeInTheDocument();
+    });
+
+    it("is a no-op when the clipboard API is unavailable", () => {
+      Object.defineProperty(navigator, "clipboard", {
+        value: undefined,
+        configurable: true,
+      });
+      render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
+      setHook({ isLoading: false, completion: "Done." }, { finish: true });
+
+      const button = screen.getByRole("button", {
+        name: "Copy",
+      });
+      expect(() => fireEvent.click(button)).not.toThrow();
+      expect(screen.queryByText("Copied")).not.toBeInTheDocument();
+    });
+
+    it("omits the copy button while streaming and for an empty completed stream", () => {
+      render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
+
+      setHook({ isLoading: true, completion: "Streaming…" });
+      expect(
+        screen.queryByRole("button", { name: "Copy" }),
+      ).not.toBeInTheDocument();
+
+      setHook({ isLoading: false, completion: "" }, { finish: true });
+      expect(
+        screen.queryByRole("button", { name: "Copy" }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("renders a completion timestamp on complete but not while streaming", () => {
+    render(<AiAnalysisCard name="Bitcoin" symbol="BTC" />);
+
+    setHook({ isLoading: true, completion: "Partial analysis" });
+    expect(screen.queryByText(/generated at/i)).not.toBeInTheDocument();
+
+    setHook(
+      { isLoading: false, completion: "Partial analysis done." },
+      { finish: true },
+    );
+    expect(screen.getByText(/generated at/i)).toBeInTheDocument();
+  });
 });

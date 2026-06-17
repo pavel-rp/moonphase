@@ -9,7 +9,7 @@ import {
   CardAction,
 } from "@/components/ui/card";
 import { ActionButton } from "@/components/ui/action-button";
-import { BrainCircuit } from "lucide-react";
+import { BrainCircuit, Check, Copy } from "lucide-react";
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { Components } from "react-markdown";
 import {
@@ -187,6 +187,64 @@ function ModeToggle({
   );
 }
 
+/**
+ * Secondary control that copies the analysis to the clipboard. Deliberately a
+ * plain button — `ActionButton` stays reserved for the prominent Regenerate CTA.
+ * Shows a transient "Copied" confirmation (Check icon + label) for ~2s, with a
+ * polite live region distinct from the card's "Analysis ready." announcement.
+ */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  // Hold the reset timer so it can be cleared on unmount and before re-arming,
+  // avoiding a setState after unmount.
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
+  const handleCopy = async () => {
+    // Guard environments without the async Clipboard API (older browsers / SSR).
+    if (typeof navigator === "undefined" || !navigator.clipboard) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Write rejected (e.g. denied permission) — fail silently, no confirmation.
+      return;
+    }
+    setCopied(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors cursor-pointer hover:bg-muted/40 hover:text-foreground"
+      >
+        {copied ? (
+          <Check aria-hidden="true" className="size-4" />
+        ) : (
+          <Copy aria-hidden="true" className="size-4" />
+        )}
+        {copied ? "Copied" : "Copy"}
+      </button>
+      {/* Polite announcement of the copy result. Kept OUTSIDE the button so the
+          button's accessible name stays equal to its visible label ("Copy" /
+          "Copied", WCAG 2.5.3) rather than a stale `aria-label`. No
+          `role="status"` — that would add a second status region alongside the
+          card's "Analysis ready." one; `aria-live` alone announces the change. */}
+      <span className="sr-only" aria-live="polite">
+        {copied ? "Analysis copied to clipboard." : ""}
+      </span>
+    </>
+  );
+}
+
 export function AiAnalysisCard({
   name,
   symbol,
@@ -202,6 +260,10 @@ export function AiAnalysisCard({
   // text, so an empty-but-successful response still reveals the completed card
   // (matching the pre-migration behavior) instead of silently reverting to idle.
   const [hasCompleted, setHasCompleted] = useState(false);
+  // When the current run finished, captured once on `onFinish`. Drives the
+  // complete-state timestamp; cleared on regenerate so a new run shows no time
+  // until it finishes. Set/cleared alongside `hasCompleted`.
+  const [completedAt, setCompletedAt] = useState<Date | null>(null);
   const titleId = useId();
 
   // The AI SDK hook owns the streaming lifecycle: `completion` accumulates the
@@ -212,7 +274,10 @@ export function AiAnalysisCard({
   const { completion, complete, error, isLoading, stop } = useCompletion({
     api: `/api/ai-analysis/${symbol}`,
     streamProtocol: "text",
-    onFinish: () => setHasCompleted(true),
+    onFinish: () => {
+      setHasCompleted(true);
+      setCompletedAt(new Date());
+    },
   });
 
   // Abort any in-flight stream when the component unmounts (e.g. the user
@@ -235,6 +300,7 @@ export function AiAnalysisCard({
         ? { headers: { [AI_ANALYSIS_MODE_HEADER]: requestedMode } }
         : undefined;
     setHasCompleted(false);
+    setCompletedAt(null);
     void complete("", options);
   };
 
@@ -305,7 +371,29 @@ export function AiAnalysisCard({
               analysis…" while streaming that morphs into the active Regenerate
               CTA on completion — same element, same position, fixed height, so
               there is no layout shift on the streaming → complete transition. */}
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            {/* Copy + timestamp surface only in the complete state. While
+                streaming an empty spacer holds the layout so the Regenerate
+                button keeps its right-aligned position — no shift on the morph. */}
+            {isStreaming ? (
+              <span />
+            ) : (
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                {/* Only offer copy when there's text — a successful stream can
+                    complete empty (reached via `hasCompleted`), and a Copy
+                    button there would confirm a copy of nothing. */}
+                {completion.length > 0 && <CopyButton text={completion} />}
+                {completedAt && (
+                  <span>
+                    Generated at{" "}
+                    {completedAt.toLocaleTimeString(undefined, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
             <ActionButton
               loading={isStreaming}
               onClick={handleGenerate}
