@@ -131,13 +131,24 @@ export class CachingAiAnalysisAdapter implements AiAnalysisPort {
     this.model = opts.model;
   }
 
-  /** Cache key: mode and model guard against cross-mode/stale-model bleed. */
-  private key(symbol: string): string {
-    return `${this.mode}:${this.model}:${symbol.toUpperCase()}`;
+  /**
+   * Canonical cache form for a symbol: trimmed + uppercased. Used for BOTH the
+   * cache key and the inner-adapter call so a cached result never depends on the
+   * first caller's casing/whitespace (e.g. `btc`, `BTC`, and ` BTC ` all map to
+   * the same key AND drive the same upstream prompt).
+   */
+  private normalizeSymbol(symbol: string): string {
+    return symbol.trim().toUpperCase();
+  }
+
+  /** Cache key (symbol already normalized): mode and model guard against cross-mode/stale-model bleed. */
+  private key(normalizedSymbol: string): string {
+    return `${this.mode}:${this.model}:${normalizedSymbol}`;
   }
 
   async analyzeAsset(symbol: string): Promise<string> {
-    const key = this.key(symbol);
+    const normalized = this.normalizeSymbol(symbol);
+    const key = this.key(normalized);
 
     const cached = readFresh(key);
     if (cached !== undefined) return cached;
@@ -145,7 +156,7 @@ export class CachingAiAnalysisAdapter implements AiAnalysisPort {
     const existing = inflightTexts.get(key);
     if (existing) return existing;
 
-    const promise = this.inner.analyzeAsset(symbol).then((text) => {
+    const promise = this.inner.analyzeAsset(normalized).then((text) => {
       if (text.trim().length > 0) writeCache(key, text);
       return text;
     });
@@ -161,7 +172,8 @@ export class CachingAiAnalysisAdapter implements AiAnalysisPort {
   }
 
   async *analyzeAssetStream(symbol: string): AsyncIterable<string> {
-    const key = this.key(symbol);
+    const normalized = this.normalizeSymbol(symbol);
+    const key = this.key(normalized);
 
     const cached = readFresh(key);
     if (cached !== undefined) {
@@ -179,7 +191,7 @@ export class CachingAiAnalysisAdapter implements AiAnalysisPort {
       return;
     }
 
-    const broadcaster = createStreamBroadcaster(this.inner.analyzeAssetStream(symbol), {
+    const broadcaster = createStreamBroadcaster(this.inner.analyzeAssetStream(normalized), {
       onComplete: (fullText) => {
         if (fullText.trim().length > 0) writeCache(key, fullText);
       },

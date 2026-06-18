@@ -184,14 +184,34 @@ describe('CachingAiAnalysisAdapter', () => {
       expect(innerB.analyzeAsset).toHaveBeenCalledTimes(1);
     });
 
-    it('normalizes symbol case so BTC and btc share an entry', async () => {
+    it('normalizes symbol case and whitespace so BTC, btc and " btc " share an entry', async () => {
       const inner = makeInner();
       inner.analyzeAsset.mockResolvedValue('shared');
       const adapter = new CachingAiAnalysisAdapter(inner, OPTS);
 
       await adapter.analyzeAsset('BTC');
       await adapter.analyzeAsset('btc');
+      await adapter.analyzeAsset(' btc ');
       expect(inner.analyzeAsset).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes the normalized (trimmed + uppercased) symbol to the inner adapter', async () => {
+      const inner = makeInner();
+      inner.analyzeAsset.mockResolvedValue('text');
+      const adapter = new CachingAiAnalysisAdapter(inner, OPTS);
+
+      await adapter.analyzeAsset(' btc ');
+      // The cached content must not depend on the first caller's casing/whitespace.
+      expect(inner.analyzeAsset).toHaveBeenCalledWith('BTC');
+    });
+
+    it('passes the normalized symbol to the inner stream adapter', async () => {
+      const inner = makeInner();
+      inner.analyzeAssetStream.mockReturnValue(gen(['ok']));
+      const adapter = new CachingAiAnalysisAdapter(inner, OPTS);
+
+      await collect(adapter.analyzeAssetStream(' eth '));
+      expect(inner.analyzeAssetStream).toHaveBeenCalledWith('ETH');
     });
   });
 
