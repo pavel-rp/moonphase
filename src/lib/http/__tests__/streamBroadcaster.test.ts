@@ -177,6 +177,27 @@ describe('createStreamBroadcaster', () => {
     expect(bc.subscribe()).toBeNull();
   });
 
+  it('honors return() and cancels a silent source while parked awaiting the next chunk', async () => {
+    const src = manualSource();
+    const bc = createStreamBroadcaster(src.source);
+
+    const it = bc.subscribe()![Symbol.asyncIterator]();
+    src.push('a');
+    await it.next(); // receives 'a'
+
+    // Pull again with no further chunks: the generator parks on the internal
+    // wait while the source stays silent.
+    const pending = it.next();
+    await tick();
+
+    // Disconnect while parked. The periodic wake must let return() run the
+    // generator's finally so the last-consumer cancellation fires.
+    const ret = it.return!();
+    await Promise.all([ret, pending.catch(() => undefined)]);
+
+    expect(src.isReturned()).toBe(true);
+  });
+
   it('refuses new joiners after the source has errored', async () => {
     const src = manualSource();
     const bc = createStreamBroadcaster(src.source);

@@ -8,19 +8,24 @@
  * requests share a single upstream call.
  *
  * Lifecycle:
- * - The source starts on the first `subscribe()` pull, not when the broadcaster
- *   is created (so creating one is cheap and side-effect free).
+ * - The source starts on the first `subscribe()`, not when the broadcaster is
+ *   created (so creating one is cheap and side-effect free).
  * - Consumers are ref-counted. The source is canceled (its iterator `.return()`
  *   is called) only when the last consumer detaches *before* the source has
  *   finished — a single consumer disconnecting never kills a stream others are
  *   still reading. The port takes no abort signal, so iterator `.return()` is
  *   the cancellation mechanism.
+ * - Each subscriber is a hand-rolled async iterator whose `return()` detaches
+ *   the consumer (decrement + maybe-cancel) SYNCHRONOUSLY. A native async
+ *   generator parked at `await` cannot run its `finally` until the awaited
+ *   promise settles, so a queued `.return()` on a silent source would never
+ *   release the slot; an explicit `return()` method avoids that trap.
  * - `onComplete` fires once, only on natural completion of the source (not on
  *   error, not on cancellation), with the full concatenated text. This is the
  *   single place a caller should persist a successful result.
- * - A source error is surfaced to every subscriber (each `subscribe()` loop
- *   rethrows after draining what it had buffered), so callers never treat a
- *   failed run as success.
+ * - A source error is surfaced to every subscriber (each `next()` rethrows
+ *   after draining what it had buffered), so callers never treat a failed run
+ *   as success.
  */
 
 export interface StreamBroadcaster {
@@ -32,10 +37,10 @@ export interface StreamBroadcaster {
    * rather than replay a truncated buffer or a cached failure. (Consumers that
    * are already attached when the error lands still receive the error.)
    *
-   * The returned iterable reserves a consumer slot synchronously; the caller
-   * MUST drive it (at least one `.next()`, e.g. via `yield*` or `for await`) so
-   * the slot is released in its `finally`. Abandoning it unpulled leaks the
-   * slot and pins the source open.
+   * Reserves a consumer slot synchronously. The slot is released when the
+   * returned iterator completes, throws, or its `return()` is called (e.g. a
+   * `for await` that breaks, or the route canceling its stream on client
+   * disconnect).
    */
   subscribe(): AsyncIterable<string> | null;
   /** Resolves when the source settles (completed, errored, or canceled). */
@@ -52,7 +57,6 @@ export function createStreamBroadcaster(
   callbacks: BroadcasterCallbacks = {},
 ): StreamBroadcaster {
   const buffer: string[] = [];
-  let waiters: Array<() => void> = [];
   let done = false;
   let errored = false;
   let error: unknown;
@@ -61,15 +65,27 @@ export function createStreamBroadcaster(
   let consumers = 0;
   let sourceIterator: AsyncIterator<string> | undefined;
 
-  let resolveSettled: () => void;
+  // A single re-armable promise all parked subscribers await; `notify()` resolves
+  // the current one and arms the next. (Assigned synchronously in the executors
+  // below, so the definite-assignment assertions are safe.)
+  let triggerWake!: () => void;
+  let wakeup = new Promise<void>((resolve) => {
+    triggerWake = resolve;
+  });
+
+  let resolveSettled!: () => void;
   const settled = new Promise<void>((resolve) => {
     resolveSettled = resolve;
   });
 
+  // Wake every parked subscriber (new chunk, terminal state, or a detach so a
+  // parked next() can resolve to done), then arm a fresh promise for the next.
   function notify(): void {
-    const pending = waiters;
-    waiters = [];
-    for (const resolve of pending) resolve();
+    const resolve = triggerWake;
+    wakeup = new Promise<void>((next) => {
+      triggerWake = next;
+    });
+    resolve();
   }
 
   async function pump(): Promise<void> {
@@ -124,26 +140,50 @@ export function createStreamBroadcaster(
     // subscriber replays the buffer and then sees the terminal state.)
     consumers++;
     startIfNeeded();
-    return iterate();
-  }
 
-  async function* iterate(): AsyncIterable<string> {
     let index = 0;
-    try {
-      while (true) {
-        while (index < buffer.length) {
-          yield buffer[index++];
-        }
-        // Buffer fully drained: only now surface terminal state, so a late
-        // subscriber still replays every buffered chunk before the end/error.
-        if (errored) throw error;
-        if (done) return;
-        await new Promise<void>((resolve) => waiters.push(resolve));
-      }
-    } finally {
+    let detached = false;
+
+    // Release this consumer's slot exactly once. Called from return() (caller
+    // disconnect) and from next() on terminal state. Crucially this runs
+    // synchronously in return(), so it does not depend on a parked next()
+    // completing — which a native generator's finally could not guarantee.
+    function detach(): void {
+      if (detached) return;
+      detached = true;
       consumers--;
       maybeCancel();
+      // Wake any parked next() so it can observe `detached`/terminal and resolve.
+      notify();
     }
+
+    const iterator: AsyncIterator<string> = {
+      async next(): Promise<IteratorResult<string>> {
+        while (true) {
+          if (index < buffer.length) {
+            return { done: false, value: buffer[index++] };
+          }
+          // Buffer fully drained: a late subscriber has now replayed every
+          // buffered chunk before seeing the terminal state.
+          if (detached) return { done: true, value: undefined };
+          if (errored) {
+            detach();
+            throw error;
+          }
+          if (done) {
+            detach();
+            return { done: true, value: undefined };
+          }
+          await wakeup;
+        }
+      },
+      async return(): Promise<IteratorResult<string>> {
+        detach();
+        return { done: true, value: undefined };
+      },
+    };
+
+    return { [Symbol.asyncIterator]: () => iterator };
   }
 
   return { subscribe, settled };
