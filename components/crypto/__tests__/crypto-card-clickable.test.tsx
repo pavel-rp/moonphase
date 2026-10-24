@@ -39,15 +39,13 @@ jest.mock("next/link", () => ({
 
 // Mock HoverEffectCard
 jest.mock("../../ui/animation/hover-effect-card.client", () => ({
-  HoverEffectCard: ({ children, onClick, glowColor }: {
+  HoverEffectCard: ({ children, glowColor }: {
     children: React.ReactNode;
-    onClick?: () => void;
     glowColor: string;
   }) => (
     <div
       data-testid="hover-effect-card"
       data-glow-color={glowColor}
-      onClick={onClick}
       style={{ cursor: "pointer" }}
     >
       {children}

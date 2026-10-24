@@ -8,7 +8,8 @@ export interface Asset {
   marketCapUsd: number;
   volumeUsd24Hr: number;
   priceUsd: number;
-  changePercent24Hr: number;
+  /** null when CoinCap has no 24h change (thinly traded assets). */
+  changePercent24Hr: number | null;
   vwap24Hr: number;
   explorer: string;
 }

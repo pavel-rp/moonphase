@@ -192,6 +192,15 @@ describe('POST /api/ai-analysis/[symbol]', () => {
     });
   });
 
+  it('analyzes the trimmed symbol, not the raw path segment', async () => {
+    mockAnalyzeAssetStream.mockReturnValue(iterableOf(['ok']));
+    const [req, ctx] = makeRequest(' btc ');
+    const res = await POST(req, ctx);
+
+    expect(res.status).toBe(200);
+    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('btc', expect.anything());
+  });
+
   it('returns 400 for an invalid symbol without invoking the stream', async () => {
     const [req, ctx] = makeRequest('A'.repeat(21));
     const res = await POST(req, ctx);

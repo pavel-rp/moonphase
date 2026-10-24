@@ -5,11 +5,12 @@ import { NewsArticle } from '@/domain/newsArticle';
  * Mock adapter returning deterministic news data for UI development.
  */
 export class MockNewsAdapter implements NewsPort {
-  async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
-    const { symbol, limit = 5 } = params;
+  async fetchNews(params: { symbol: string; limit?: number; signal?: AbortSignal }): Promise<NewsArticle[]> {
+    const { symbol, limit = 5, signal } = params;
 
     // Simulate async delay
     await new Promise((resolve) => setTimeout(resolve, 100));
+    signal?.throwIfAborted();
 
     const mockArticles: NewsArticle[] = [
       {

@@ -1,8 +1,9 @@
 import { z } from 'zod';
-import { logError } from '@/lib/observability';
 
 // CoinCap returns null for some metrics on thinly traded assets; read as 0.
 const metric = z.string().nullable().transform((v) => (v === null ? 0 : Number(v)));
+// A missing value kept as null: a 0 would display as a real flat move.
+const nullableMetric = z.string().nullable().transform((v) => (v === null ? null : Number(v)));
 
 const AssetSchema = z.object({
   id: z.string(),
@@ -10,26 +11,39 @@ const AssetSchema = z.object({
   symbol: z.string(),
   name: z.string(),
   supply: metric,
-  maxSupply: z.string().nullable().transform((val) => (val === null ? null : Number(val))),
+  maxSupply: nullableMetric,
   marketCapUsd: metric,
   volumeUsd24Hr: metric,
   priceUsd: z.string().transform(Number),
-  changePercent24Hr: metric,
+  changePercent24Hr: nullableMetric,
   vwap24Hr: metric,
   explorer: z.string().optional().nullable().transform((v) => v ?? ''),
 });
 
 type ParsedAsset = z.output<typeof AssetSchema>;
 
-export const ListAssetsResponseSchema = z.object({
-  // Parsed per item: a malformed asset is dropped (and logged) instead of
-  // failing the whole list, which would blank the grid and 404 every detail page.
-  data: z
-    .array(
-      AssetSchema.nullable().catch(({ input, error }) => {
-        logError(error, { adapter: 'CoinCapAdapter', droppedAsset: (input as { id?: unknown })?.id });
-        return null;
-      }),
-    )
-    .transform((assets) => assets.filter((a): a is ParsedAsset => a !== null)),
-});
+export interface DroppedAsset {
+  id: string;
+  error: z.ZodError;
+}
+
+// Parsed per item: a malformed asset is dropped instead of failing the whole
+// list, which would blank the grid and 404 every detail page. Dropped assets
+// are returned rather than logged here, since cached responses are re-parsed on
+// every request; the adapter decides what is worth logging.
+export const ListAssetsResponseSchema = z
+  .object({ data: z.array(z.unknown()) })
+  .transform(({ data }) => {
+    const assets: ParsedAsset[] = [];
+    const dropped: DroppedAsset[] = [];
+    for (const item of data) {
+      const result = AssetSchema.safeParse(item);
+      if (result.success) {
+        assets.push(result.data);
+      } else {
+        const id = (item as { id?: unknown } | null)?.id;
+        dropped.push({ id: typeof id === 'string' ? id : '(no id)', error: result.error });
+      }
+    }
+    return { data: assets, dropped };
+  });

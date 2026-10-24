@@ -82,12 +82,15 @@ describe("AssetsGridContent", () => {
 
   it("shows an error message when assets fail to load", async () => {
     const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
-    mockFetchAssets.mockRejectedValue(new Error("CoinCap API error 500"));
+    try {
+      mockFetchAssets.mockRejectedValue(new Error("CoinCap API error 500"));
 
-    render(await AssetsGridContent());
+      render(await AssetsGridContent());
 
-    expect(screen.getByText(/Error loading assets: CoinCap API error 500/)).toBeInTheDocument();
-    expect(screen.queryAllByTestId("crypto-card-clickable")).toHaveLength(0);
-    errorSpy.mockRestore();
+      expect(screen.getByText(/Error loading assets: CoinCap API error 500/)).toBeInTheDocument();
+      expect(screen.queryAllByTestId("crypto-card-clickable")).toHaveLength(0);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });

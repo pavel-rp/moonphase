@@ -20,6 +20,8 @@ export async function POST(
         { status: 400 }
       );
     }
+    // Continue with the trimmed symbol the schema produced, not the raw param.
+    symbol = parsed.data;
 
     // The client may request a mode via header; the server stays authoritative —
     // `resolveAiAnalysisMode` only honors it where override is permitted.

@@ -83,15 +83,18 @@ describe('CryptoSparkline', () => {
 
     it('falls back to a static placeholder when the price fetch fails', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
-      mockFetchPrices.mockRejectedValue(new Error('Binance API 451'))
+      try {
+        mockFetchPrices.mockRejectedValue(new Error('Binance API 451'))
 
-      render(await CryptoSparklineLoader({ symbol: 'BTC' }))
+        render(await CryptoSparklineLoader({ symbol: 'BTC' }))
 
-      const placeholder = screen.getByTestId('loading-sparkline')
-      expect(placeholder).not.toHaveClass('animate-pulse')
-      expect(screen.queryByTestId('animated-sparkline')).not.toBeInTheDocument()
-      expect(consoleError).toHaveBeenCalled()
-      consoleError.mockRestore()
+        const placeholder = screen.getByTestId('loading-sparkline')
+        expect(placeholder).not.toHaveClass('animate-pulse')
+        expect(screen.queryByTestId('animated-sparkline')).not.toBeInTheDocument()
+        expect(consoleError).toHaveBeenCalled()
+      } finally {
+        consoleError.mockRestore()
+      }
     })
   })
 })

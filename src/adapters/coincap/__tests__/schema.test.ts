@@ -40,7 +40,7 @@ describe('ListAssetsResponseSchema', () => {
     });
   });
 
-  it('reads null metrics as 0 instead of failing the list', () => {
+  it('reads null metrics as 0 and a null 24h change as null instead of failing the list', () => {
     const { data } = ListAssetsResponseSchema.parse({
       data: [
         rawAsset({
@@ -58,13 +58,13 @@ describe('ListAssetsResponseSchema', () => {
       supply: 0,
       marketCapUsd: 0,
       volumeUsd24Hr: 0,
-      changePercent24Hr: 0,
+      changePercent24Hr: null,
       vwap24Hr: 0,
     });
   });
 
   it('drops a malformed asset and keeps the rest', () => {
-    const { data } = ListAssetsResponseSchema.parse({
+    const { data, dropped } = ListAssetsResponseSchema.parse({
       data: [
         rawAsset(),
         rawAsset({ id: 'broken', symbol: 'BRK', priceUsd: null }),
@@ -73,7 +73,9 @@ describe('ListAssetsResponseSchema', () => {
     });
 
     expect(data.map((a) => a.symbol)).toEqual(['BTC', 'ETH']);
-    expect(logSpy).toHaveBeenCalled();
+    expect(dropped.map((d) => d.id)).toEqual(['broken']);
+    // Logging is the adapter's job: parsing stays free of side effects.
+    expect(logSpy).not.toHaveBeenCalled();
   });
 
   it('still rejects a response without a data array', () => {

@@ -56,4 +56,32 @@ describe('MockAiAnalysisAdapter', () => {
       ExternalException,
     );
   });
+
+  describe('caller abort', () => {
+    it('rejects with the signal reason when already aborted', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      controller.abort(reason);
+
+      await expect(adapter.analyzeAsset('BTC', { signal: controller.signal })).rejects.toBe(reason);
+      const iterator = adapter
+        .analyzeAssetStream('BTC', { signal: controller.signal })
+        [Symbol.asyncIterator]();
+      await expect(iterator.next()).rejects.toBe(reason);
+    });
+
+    it('ends a running stream with the signal reason without waiting out the chunk delay', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      const iterator = adapter
+        .analyzeAssetStream('BTC', { signal: controller.signal })
+        [Symbol.asyncIterator]();
+
+      expect((await iterator.next()).done).toBe(false);
+      const pending = iterator.next();
+      controller.abort(reason);
+
+      await expect(pending).rejects.toBe(reason);
+    });
+  });
 });

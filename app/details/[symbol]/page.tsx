@@ -19,6 +19,7 @@ import MarketDataCard from "@/components/crypto/card/market-data-card";
 import TradingActivityCard from "@/components/crypto/card/trading-activity-card";
 import { getEnv } from "@/lib/env";
 import { isClientOverrideAllowed } from "@/lib/aiAnalysisMode";
+import { COINCAP_MAX_REQUEST_LIMIT } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -38,11 +39,13 @@ interface SymbolDetailsPageProps {
 // propagate to the error boundary (app/error.tsx) instead of posing as
 // "page not found".
 async function getAssetBySymbol(symbol: string): Promise<Asset | null> {
-  const assets = await fetchAssets();
+  const find = (assets: Asset[]) =>
+    assets.find((asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()) ?? null;
+  // The home grid's page covers the common case from the same cached read; any
+  // other whitelisted asset is looked up in the full list.
   return (
-    assets.find(
-      (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()
-    ) || null
+    find(await fetchAssets()) ??
+    find(await fetchAssets({ limit: COINCAP_MAX_REQUEST_LIMIT }))
   );
 }
 

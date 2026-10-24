@@ -23,15 +23,22 @@ function asset(rank: number, symbol: string): Asset {
   };
 }
 
-/** 300 ranked assets; every third one (W1, W2, ...) is whitelisted. */
-const market = Array.from({ length: 300 }, (_, i) =>
-  i % 3 === 2 ? asset(i + 1, `W${(i + 1) / 3}`) : asset(i + 1, `X${i + 1}`),
-);
-const allowedSymbols = market.filter((a) => a.symbol.startsWith('W')).map((a) => a.symbol);
+/** `length` ranked assets; every `every`-th one (W1, W2, ...) is whitelisted. */
+function makeMarket(length: number, every: number): Asset[] {
+  return Array.from({ length }, (_, i) =>
+    (i + 1) % every === 0 ? asset(i + 1, `W${(i + 1) / every}`) : asset(i + 1, `X${i + 1}`),
+  );
+}
 
-function makeDeps(symbols: string[] = allowedSymbols) {
+const whitelisted = (assets: Asset[]) => assets.filter((a) => a.symbol.startsWith('W')).map((a) => a.symbol);
+
+/** 300 ranked assets; every third one is whitelisted. */
+const market = makeMarket(300, 3);
+const allowedSymbols = whitelisted(market);
+
+function makeDeps(symbols: string[] = allowedSymbols, assets: Asset[] = market) {
   const coinCap: jest.Mocked<CoinCapPort> = {
-    listAssets: jest.fn(async ({ limit = 19, offset = 0 } = {}) => market.slice(offset, offset + limit)),
+    listAssets: jest.fn(async ({ limit = 19, offset = 0 } = {}) => assets.slice(offset, offset + limit)),
   };
   const whitelist: AssetWhitelistPort = { listAllowedSymbols: async () => symbols };
   return { coinCap, whitelist };
@@ -58,6 +65,41 @@ describe('getAssets', () => {
 
     expect(deps.coinCap.listAssets).toHaveBeenNthCalledWith(1, { limit: 95, offset: 0 });
     expect(deps.coinCap.listAssets).toHaveBeenNthCalledWith(2, { limit: 150, offset: 0 });
+  });
+
+  it('pages without gaps when fewer than 1 in 5 ranks is whitelisted', async () => {
+    // 1 in 6: a 5x read of the top 200 ranks holds only 33 of the 40 assets
+    // that offset 20 needs, which used to return a short page and skip W34-W40.
+    const sparse = makeMarket(600, 6);
+    const deps = makeDeps(whitelisted(sparse), sparse);
+
+    const pages = [
+      await getAssets(deps, { limit: 20, offset: 0 }),
+      await getAssets(deps, { limit: 20, offset: 20 }),
+      await getAssets(deps, { limit: 20, offset: 40 }),
+    ];
+
+    expect(pages.flatMap(symbols)).toEqual(Array.from({ length: 60 }, (_, i) => `W${i + 1}`));
+  });
+
+  it('reads again at full depth when the 5x read leaves a page short', async () => {
+    const sparse = makeMarket(600, 6);
+    const deps = makeDeps(whitelisted(sparse), sparse);
+
+    await getAssets(deps, { limit: 20, offset: 20 });
+
+    expect(deps.coinCap.listAssets).toHaveBeenNthCalledWith(1, { limit: 200, offset: 0 });
+    expect(deps.coinCap.listAssets).toHaveBeenNthCalledWith(2, { limit: COINCAP_MAX_REQUEST_LIMIT, offset: 0 });
+  });
+
+  it('does not read again when CoinCap has no more assets', async () => {
+    const sparse = makeMarket(150, 6);
+    const deps = makeDeps(whitelisted(sparse), sparse);
+
+    const result = await getAssets(deps, { limit: 20, offset: 20 });
+
+    expect(symbols(result)).toEqual(['W21', 'W22', 'W23', 'W24', 'W25']);
+    expect(deps.coinCap.listAssets).toHaveBeenCalledTimes(1);
   });
 
   it('caps the upstream request size for deep offsets', async () => {

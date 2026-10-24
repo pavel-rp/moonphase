@@ -122,6 +122,31 @@ describe('NewsAdapter', () => {
       expect(result).toEqual([]);
     });
 
+    it('rejects with the caller\'s reason, without logging, when the caller aborts', async () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        mockGet.mockImplementation(
+          (_url, init) =>
+            new Promise<Response>((_resolve, reject) => {
+              init!.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+            }),
+        );
+        const controller = new AbortController();
+        const reason = new Error('client left');
+
+        const pending = adapter.fetchNews({ symbol: 'BTC', signal: controller.signal });
+        controller.abort(reason);
+
+        await expect(pending).rejects.toBe(reason);
+        // Let the cancelled fetch settle inside the adapter.
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(mockGet.mock.calls[0][1]!.signal!.aborted).toBe(true);
+        expect(errorSpy).not.toHaveBeenCalled();
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
+
     it('should handle invalid JSON response gracefully', async () => {
       mockGet.mockResolvedValue({
         ok: true,

@@ -9,11 +9,11 @@ import { toDisplayName } from '@/lib/symbolMeta';
 import { NEWS_DEFAULT_LIMIT, NEWS_REVALIDATE_S } from '@/lib/config';
 
 export class NewsAdapter implements NewsPort {
-  async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
-    const { symbol, limit = NEWS_DEFAULT_LIMIT } = params;
+  async fetchNews(params: { symbol: string; limit?: number; signal?: AbortSignal }): Promise<NewsArticle[]> {
+    const { symbol, limit = NEWS_DEFAULT_LIMIT, signal } = params;
     const key = inflightKey('news/newsapiai', { symbol, limit });
 
-    return dedupe(key, async () => {
+    return dedupe(key, async (sharedSignal) => {
       let url: string | undefined;
       try {
         const searchTerm = toDisplayName(symbol);
@@ -37,9 +37,9 @@ export class NewsAdapter implements NewsPort {
 
         let res: Response;
         try {
-          res = await get(url, { next: { revalidate: NEWS_REVALIDATE_S } as never });
+          res = await get(url, { next: { revalidate: NEWS_REVALIDATE_S } as never, signal: sharedSignal });
         } catch (fetchError) {
-          logError(fetchError, { symbol, limit, stage: 'fetch' });
+          if (!sharedSignal.aborted) logError(fetchError, { symbol, limit, stage: 'fetch' });
           throw fetchError;
         }
 
@@ -59,10 +59,13 @@ export class NewsAdapter implements NewsPort {
 
         return articles;
       } catch (err) {
+        // Every caller has already given up (and rejected with its own reason),
+        // so this is a cancellation, not a failure worth logging.
+        if (sharedSignal.aborted) throw err;
         logError(err, { symbol, limit, url });
         // Graceful degradation: return empty array on failure
         return [];
       }
-    });
+    }, signal);
   }
 }

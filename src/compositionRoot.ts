@@ -5,11 +5,16 @@ import { BinanceAdapter } from '@/adapters/binance/BinanceAdapter';
 import { MockMarketDataAdapter } from '@/adapters/mock/MockMarketDataAdapter';
 import { MockTradingActivityAdapter } from '@/adapters/mock/MockTradingActivityAdapter';
 import { OpenAiAnalysisAdapter } from '@/adapters/openai/OpenAiAnalysisAdapter';
-import { MockAiAnalysisAdapter } from '@/adapters/mock/MockAiAnalysisAdapter';
+import {
+  MOCK_MID_STREAM_ERROR_SYMBOL,
+  MOCK_PRE_STREAM_ERROR_SYMBOL,
+  MockAiAnalysisAdapter,
+} from '@/adapters/mock/MockAiAnalysisAdapter';
 import { NewsAdapter } from '@/adapters/news/NewsAdapter';
 import { MockNewsAdapter } from '@/adapters/news/MockNewsAdapter';
 import { getEnv } from '@/lib/env';
 import type { AiAnalysisMode } from '@/lib/aiAnalysisMode';
+import type { AiAnalysisDeps } from '@/usecases/getAiAnalysis';
 
 import type { CoinCapPort } from '@/ports/CoinCapPort';
 import type { AssetWhitelistPort } from '@/ports/AssetWhitelistPort';
@@ -35,7 +40,16 @@ export const tradingActivityDeps = { tradingActivity } as const;
 // adapter instance (promise-based locking). `live` builds the OpenAI adapter
 // (with the news swap); `mock` builds the inference-free stub, which needs no
 // API key. Both carry the whitelist the usecase gates symbols on.
-type AiAnalysisDeps = { ai: AiAnalysisPort; whitelist: AssetWhitelistPort };
+
+// Mock mode also admits the mock's reserved failure symbols, so QA can reach the
+// simulated failures through the real route. Live mode never accepts them.
+const mockModeWhitelist: AssetWhitelistPort = {
+  listAllowedSymbols: async () => [
+    ...(await whitelist.listAllowedSymbols()),
+    MOCK_PRE_STREAM_ERROR_SYMBOL,
+    MOCK_MID_STREAM_ERROR_SYMBOL,
+  ],
+};
 
 const _aiAnalysisInit = new Map<AiAnalysisMode, Promise<AiAnalysisDeps>>();
 
@@ -45,7 +59,7 @@ export function getAiAnalysisDeps(mode: AiAnalysisMode): Promise<AiAnalysisDeps>
 
   const init = (async () => {
     if (mode === 'mock') {
-      return { ai: new MockAiAnalysisAdapter() as AiAnalysisPort, whitelist };
+      return { ai: new MockAiAnalysisAdapter() as AiAnalysisPort, whitelist: mockModeWhitelist };
     }
     const env = getEnv();
     const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();

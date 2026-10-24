@@ -61,6 +61,16 @@ describe('fetchWithRetry', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('cancels the body of a discarded 5xx response before retrying', async () => {
+    const failed = new Response('overloaded', { status: 503 });
+    const cancel = jest.spyOn(failed.body!, 'cancel');
+    fetchMock.mockResolvedValueOnce(failed).mockResolvedValueOnce(okResponse());
+
+    await fetchWithRetry('https://example.test', {}, { delayMs: 0 });
+
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
   it('does not retry when the caller aborts', async () => {
     const signals: AbortSignal[] = [];
     fetchMock.mockImplementation(hangingFetch(signals));

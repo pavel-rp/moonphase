@@ -6,7 +6,7 @@ import { AiAnalysisOptions, AiAnalysisPort } from "@/ports/AiAnalysisPort";
 import { AssetWhitelistPort } from "@/ports/AssetWhitelistPort";
 import { ExternalException } from "@/lib/errors";
 
-type AiAnalysisDeps = {
+export type AiAnalysisDeps = {
   ai: AiAnalysisPort;
   whitelist: AssetWhitelistPort;
 };

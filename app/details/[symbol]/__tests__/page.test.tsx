@@ -165,6 +165,7 @@ jest.mock("next/dynamic", () => ({
 
 import { notFound } from "next/navigation";
 import { fetchAssets } from "@/lib/data/assets";
+import { COINCAP_MAX_REQUEST_LIMIT } from "@/lib/config";
 
 const mockFetchAssets = fetchAssets as jest.MockedFunction<typeof fetchAssets>;
 
@@ -227,6 +228,18 @@ describe("SymbolDetailsPage", () => {
     }).rejects.toThrow();
 
     expect(notFound).toHaveBeenCalledTimes(1);
+  });
+
+  it("finds an asset outside the home page's top assets", async () => {
+    const arbitrum = { ...mockAsset, id: "arbitrum", symbol: "ARB", name: "Arbitrum", rank: 45 };
+    mockFetchAssets.mockResolvedValueOnce([mockAsset]).mockResolvedValueOnce([mockAsset, arbitrum]);
+
+    render(await SymbolDetailsPage({ params: Promise.resolve({ symbol: "arb" }) }));
+
+    expect(notFound).not.toHaveBeenCalled();
+    expect(mockFetchAssets).toHaveBeenNthCalledWith(1);
+    expect(mockFetchAssets).toHaveBeenNthCalledWith(2, { limit: COINCAP_MAX_REQUEST_LIMIT });
+    expect(screen.getByText("Arbitrum")).toBeInTheDocument();
   });
 
   it("handles case-insensitive symbol matching", async () => {

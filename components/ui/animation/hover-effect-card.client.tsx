@@ -14,7 +14,6 @@ export type HoverEffectCardProps = {
   children: React.ReactNode;
   className?: string;
   glowColor: string;
-  onClick?: () => void;
 };
 
 const ROTATION_RANGE = 20;
@@ -24,7 +23,6 @@ export function HoverEffectCard({
   glowColor,
   children,
   className,
-  onClick,
 }: HoverEffectCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
 
@@ -90,7 +88,6 @@ export function HoverEffectCard({
           "min-h-[202px]"
         )}
         style={glowColorVarStyle}
-        onClick={onClick}
       >
         {children}
       </Card>

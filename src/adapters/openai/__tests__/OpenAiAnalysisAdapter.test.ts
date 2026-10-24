@@ -120,9 +120,9 @@ describe('OpenAiAnalysisAdapter', () => {
       const result = await freshAdapter().analyzeAsset('BTC');
 
       expect(result).toBe('ANALYSIS RESULT');
-      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14);
-      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT');
-      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5 });
+      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14, { signal: undefined });
+      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT', { signal: undefined });
+      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5, signal: undefined });
 
       const call = mockGenerateText.mock.calls[0][0];
       expect(call.providerOptions).toEqual({ openai: { reasoningEffort: 'low' } });
@@ -355,6 +355,49 @@ describe('OpenAiAnalysisAdapter', () => {
       expect(out).toEqual(['Partial ']);
     });
 
+    it('does not time out a stream whose consumer reads slowly after the model finished', async () => {
+      // The budget covers waiting on the model, not time a delivered chunk
+      // spends waiting at `yield` for a slow client.
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          yield 'First ';
+          // Like the real SDK, end early if the signal aborted while suspended.
+          if (abortSignal.aborted) return;
+          yield 'last.';
+        })(),
+      }));
+
+      const out: string[] = [];
+      for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+        out.push(chunk);
+        await new Promise((resolve) => setTimeout(resolve, 40));
+      }
+
+      expect(out).toEqual(['First ', 'last.']);
+    });
+
+    it('releases the model stream when the consumer stops early', async () => {
+      let released = false;
+      mockStreamText.mockReturnValue({
+        textStream: (async function* () {
+          try {
+            yield 'one';
+            yield 'two';
+          } finally {
+            released = true;
+          }
+        })(),
+      });
+
+      for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+        void chunk;
+        break;
+      }
+
+      expect(released).toBe(true);
+    });
+
     it('does not classify an analyzeAsset buildPrompt failure as Timeout (signal not yet created)', async () => {
       process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
       deps.binance.getDailyCandles.mockImplementation(() => {
@@ -409,6 +452,30 @@ describe('OpenAiAnalysisAdapter', () => {
       for await (const chunk of stream) out.push(chunk);
       return out;
     }
+
+    it('passes the caller signal to the Binance and news fetches', async () => {
+      const { signal } = new AbortController();
+      mockGenerateText.mockResolvedValue({ text: 'ok' });
+
+      await freshAdapter().analyzeAsset('BTC', { signal });
+
+      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14, { signal });
+      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT', { signal });
+      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5, signal });
+    });
+
+    it('starts no fetches when the caller has already aborted', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      controller.abort(reason);
+
+      await expect(
+        collect(freshAdapter().analyzeAssetStream('BTC', { signal: controller.signal })),
+      ).rejects.toBe(reason);
+      expect(deps.binance.getDailyCandles).not.toHaveBeenCalled();
+      expect(deps.news.fetchNews).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
 
     it('skips the model call when the caller aborts while the prompt is built', async () => {
       const controller = new AbortController();

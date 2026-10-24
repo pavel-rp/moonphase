@@ -8,7 +8,7 @@ import { getPriceMovementColorVar, getPriceMovementColorValue } from "@/lib/util
 
 interface CryptoCardClickableProps {
   symbol: string;
-  changePercent24Hr: number;
+  changePercent24Hr: number | null;
   children: React.ReactNode;
 }
 
