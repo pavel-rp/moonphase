@@ -34,20 +34,22 @@ export const tradingActivityDeps = { tradingActivity } as const;
 // AI analysis deps are memoized per mode so concurrent callers share a single
 // adapter instance (promise-based locking). `live` builds the OpenAI adapter
 // (with the news swap); `mock` builds the inference-free stub, which needs no
-// API key. The promise return type is kept so callers stay unchanged.
-const _aiAnalysisInit = new Map<AiAnalysisMode, Promise<{ ai: AiAnalysisPort }>>();
+// API key. Both carry the whitelist the usecase gates symbols on.
+type AiAnalysisDeps = { ai: AiAnalysisPort; whitelist: AssetWhitelistPort };
 
-export function getAiAnalysisDeps(mode: AiAnalysisMode): Promise<{ ai: AiAnalysisPort }> {
+const _aiAnalysisInit = new Map<AiAnalysisMode, Promise<AiAnalysisDeps>>();
+
+export function getAiAnalysisDeps(mode: AiAnalysisMode): Promise<AiAnalysisDeps> {
   const cached = _aiAnalysisInit.get(mode);
   if (cached) return cached;
 
   const init = (async () => {
     if (mode === 'mock') {
-      return { ai: new MockAiAnalysisAdapter() as AiAnalysisPort };
+      return { ai: new MockAiAnalysisAdapter() as AiAnalysisPort, whitelist };
     }
     const env = getEnv();
     const news = env.NEWS_API_KEY ? new NewsAdapter() : new MockNewsAdapter();
-    return { ai: new OpenAiAnalysisAdapter({ binance, news }) as AiAnalysisPort };
+    return { ai: new OpenAiAnalysisAdapter({ binance, news }) as AiAnalysisPort, whitelist };
   })();
 
   // Reset the cached promise on failure so a later call can retry. The adapter

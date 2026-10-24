@@ -294,6 +294,10 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
       for await (const chunk of result.textStream) {
         yield chunk;
       }
+      // On abort, `streamText` closes the text stream cleanly instead of
+      // throwing, so a timed-out (truncated) analysis would otherwise look
+      // complete. Turn it into the same Timeout error as an in-flight abort.
+      if (signal.aborted) throw this.timeoutException(symbol);
     } catch (error) {
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAssetStream', symbol });
       // The timeout signal is the only abort source, so `aborted` means we hit it.

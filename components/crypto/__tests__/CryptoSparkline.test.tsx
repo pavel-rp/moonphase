@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { CryptoSparkline } from '../crypto-sparkline'
+import { CryptoSparkline, CryptoSparklineLoader } from '../crypto-sparkline'
 import { generateRandomWalk } from '@/lib/utils/random-walk'
+import { fetchPrices } from '@/lib/data/prices'
 
 // Mock the random walk function
 jest.mock('@/lib/utils/random-walk')
@@ -11,6 +12,17 @@ const mockGenerateRandomWalk = generateRandomWalk as jest.MockedFunction<typeof 
 jest.mock('../../ui/sparkline', () => ({
   Sparkline: ({ data, className }: { data: number[]; className: string }) => (
     <div data-testid="sparkline" data-color={className}>
+      {data.join(',')}
+    </div>
+  ),
+}))
+
+jest.mock('@/lib/data/prices')
+const mockFetchPrices = fetchPrices as jest.MockedFunction<typeof fetchPrices>
+
+jest.mock('../../ui/animation/animated-sparkline.client', () => ({
+  AnimatedSparkline: ({ data, className }: { data: number[]; className: string }) => (
+    <div data-testid="animated-sparkline" data-color={className}>
       {data.join(',')}
     </div>
   ),
@@ -55,5 +67,31 @@ describe('CryptoSparkline', () => {
     
     // Component should render with any symbol
     expect(screen.getByTestId('loading-sparkline')).toBeInTheDocument()
+  })
+
+  // The async loader can't render through Suspense in jsdom, so await it directly.
+  describe('CryptoSparklineLoader', () => {
+    it('renders the price sparkline colored by trend', async () => {
+      mockFetchPrices.mockResolvedValue([1, 2, 3])
+
+      render(await CryptoSparklineLoader({ symbol: 'BTC' }))
+
+      const sparkline = screen.getByTestId('animated-sparkline')
+      expect(sparkline).toHaveTextContent('1,2,3')
+      expect(sparkline).toHaveAttribute('data-color', 'text-green-700')
+    })
+
+    it('falls back to a static placeholder when the price fetch fails', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
+      mockFetchPrices.mockRejectedValue(new Error('Binance API 451'))
+
+      render(await CryptoSparklineLoader({ symbol: 'BTC' }))
+
+      const placeholder = screen.getByTestId('loading-sparkline')
+      expect(placeholder).not.toHaveClass('animate-pulse')
+      expect(screen.queryByTestId('animated-sparkline')).not.toBeInTheDocument()
+      expect(consoleError).toHaveBeenCalled()
+      consoleError.mockRestore()
+    })
   })
 })

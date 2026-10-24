@@ -327,6 +327,34 @@ describe('OpenAiAnalysisAdapter', () => {
       });
     });
 
+    it('maps a timeout that ends the text stream cleanly to ExternalException(Timeout)', async () => {
+      // Mirrors the real AI SDK: on abort, `streamText` enqueues an `abort` part
+      // and closes the stream, so `textStream` completes without throwing.
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          yield 'Partial ';
+          await new Promise<void>((resolve) => {
+            abortSignal.addEventListener('abort', () => resolve(), { once: true });
+          });
+        })(),
+      }));
+
+      const out: string[] = [];
+      const run = async () => {
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+          out.push(chunk);
+        }
+      };
+
+      await expect(run()).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Timeout',
+        timeoutMs: 20,
+      });
+      expect(out).toEqual(['Partial ']);
+    });
+
     it('does not classify an analyzeAsset buildPrompt failure as Timeout (signal not yet created)', async () => {
       process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
       deps.binance.getDailyCandles.mockImplementation(() => {

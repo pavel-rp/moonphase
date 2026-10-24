@@ -3,8 +3,16 @@ import LoadingSparkline from "./loading-sparkline";
 import { AnimatedSparkline } from "../ui/animation/animated-sparkline.client";
 import { fetchPrices } from "@/lib/data/prices";
 
-async function CryptoSparklineLoader({ symbol }: { symbol: string }) {
-  const data = await fetchPrices(symbol);
+export async function CryptoSparklineLoader({ symbol }: { symbol: string }) {
+  let data: number[];
+  try {
+    data = await fetchPrices(symbol);
+  } catch (error) {
+    // The sparkline is decorative: a failed price fetch (geo-block, delisted
+    // pair, rate limit) must degrade only this chart, not the whole page.
+    console.error(`Error loading sparkline for ${symbol}:`, error);
+    return <LoadingSparkline />;
+  }
 
   const isAscending = data[0] < data[data.length - 1];
   const color = isAscending ? "text-green-700" : "text-red-700";
