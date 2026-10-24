@@ -60,7 +60,7 @@ describe('NewsAdapter', () => {
       expect(result[0].title).toBe('BTC News');
       expect(result[1].title).toBe('BTC Analysis');
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('keyword=Bitcoin+cryptocurrency'),
+        expect.stringContaining('keyword=Bitcoin&keyword=cryptocurrency'),
         expect.objectContaining({ next: { revalidate: 300 } })
       );
     });
@@ -203,7 +203,10 @@ describe('NewsAdapter', () => {
       await adapter.fetchNews({ symbol: 'BTC', limit: 3 });
 
       const callArg = mockGet.mock.calls[0][0];
-      expect(callArg).toContain('keyword=Bitcoin+cryptocurrency');
+      const params = new URLSearchParams(callArg.split('?')[1]);
+      // Separate keywords ANDed together, not one phrase NewsAPI.ai would match exactly.
+      expect(params.getAll('keyword')).toEqual(['Bitcoin', 'cryptocurrency']);
+      expect(params.get('keywordOper')).toBe('and');
       expect(callArg).toContain('articlesSortBy=date');
       expect(callArg).toContain('lang=eng');
       expect(callArg).toContain('articlesCount=3');

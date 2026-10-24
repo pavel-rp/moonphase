@@ -18,15 +18,19 @@ export class NewsAdapter implements NewsPort {
       try {
         const searchTerm = toDisplayName(symbol);
 
-        // NewsAPI.ai uses /article/getArticles endpoint
-        const query = new URLSearchParams({
-          keyword: `${searchTerm} cryptocurrency`,
-          keywordOper: 'and',
-          lang: 'eng',
-          articlesSortBy: 'date',
-          articlesCount: String(limit),
-          resultType: 'articles',
-        });
+        // NewsAPI.ai uses /article/getArticles endpoint. The name and
+        // "cryptocurrency" go in as two keywords ANDed together: a single
+        // multi-word keyword is matched as an exact phrase, which most articles
+        // never contain (e.g. "Chainlink cryptocurrency" returns nothing).
+        const query = new URLSearchParams([
+          ['keyword', searchTerm],
+          ['keyword', 'cryptocurrency'],
+          ['keywordOper', 'and'],
+          ['lang', 'eng'],
+          ['articlesSortBy', 'date'],
+          ['articlesCount', String(limit)],
+          ['resultType', 'articles'],
+        ]);
 
         url = `/article/getArticles?${query.toString()}`;
         logRequest({ url, method: 'GET' });

@@ -13,7 +13,7 @@ export default function AssetsGrid() {
   );
 }
 
-async function AssetsGridContent() {
+export async function AssetsGridContent() {
   let assets;
 
   try {

@@ -6,6 +6,12 @@
 export const COINCAP_REVALIDATE_S = 60;
 export const COINCAP_TIMEOUT_MS = 10_000;
 export const COINCAP_DEFAULT_LIMIT = 19; // Default number of assets to request from CoinCap
+// Our cap on rows per CoinCap request (CoinCap itself accepts more). Deep enough
+// to reach ~200 of the ~210 whitelisted assets, and keeps a large `offset` from
+// turning into an unbounded upstream request.
+export const COINCAP_MAX_REQUEST_LIMIT = 2000;
+// Largest page /api/assets will serve.
+export const ASSETS_API_MAX_LIMIT = 100;
 
 // -- Binance ------------------------------------------------------------------
 export const BINANCE_TICKER_REVALIDATE_S = 30;
