@@ -34,7 +34,7 @@ describe('aiAnalysisServer', () => {
     mockGetAnalysis.mockResolvedValue('Bullish.');
     await expect(analyzeAsset('BTC')).resolves.toBe('Bullish.');
     expect(mockGetDeps).toHaveBeenCalledTimes(1);
-    expect(mockGetAnalysis).toHaveBeenCalledWith(deps, 'BTC');
+    expect(mockGetAnalysis).toHaveBeenCalledWith(deps, 'BTC', { signal: undefined });
   });
 
   it('analyzeAssetStream resolves deps and yields the usecase chunks', async () => {
@@ -51,7 +51,7 @@ describe('aiAnalysisServer', () => {
 
     expect(collected).toEqual(['Bull', 'ish.']);
     expect(mockGetDeps).toHaveBeenCalledTimes(1);
-    expect(mockGetStream).toHaveBeenCalledWith(deps, 'BTC');
+    expect(mockGetStream).toHaveBeenCalledWith(deps, 'BTC', { signal: undefined });
   });
 
   it('selects mock deps when no API key is set', async () => {
@@ -75,5 +75,17 @@ describe('aiAnalysisServer', () => {
     }
 
     expect(mockGetDeps).toHaveBeenCalledWith('live');
+  });
+
+  it('forwards the abort signal to the usecase', async () => {
+    const { signal } = new AbortController();
+    mockGetAnalysis.mockResolvedValue('x');
+    mockGetStream.mockReturnValue((async function* () {})());
+
+    await analyzeAsset('BTC', { signal });
+    for await (const chunk of analyzeAssetStream('BTC', { signal })) void chunk;
+
+    expect(mockGetAnalysis).toHaveBeenCalledWith(deps, 'BTC', { signal });
+    expect(mockGetStream).toHaveBeenCalledWith(deps, 'BTC', { signal });
   });
 });

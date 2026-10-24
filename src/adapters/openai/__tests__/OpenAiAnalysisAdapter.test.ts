@@ -391,6 +391,87 @@ describe('OpenAiAnalysisAdapter', () => {
       expect(mockStreamText).not.toHaveBeenCalled();
     });
   });
+
+  describe('caller abort', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100)]);
+      deps.binance.get24HrStats.mockResolvedValue(100);
+      deps.news.fetchNews.mockResolvedValue([]);
+      errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => errorSpy.mockRestore());
+
+    async function collect(stream: AsyncIterable<string>): Promise<string[]> {
+      const out: string[] = [];
+      for await (const chunk of stream) out.push(chunk);
+      return out;
+    }
+
+    it('skips the model call when the caller aborts while the prompt is built', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      deps.news.fetchNews.mockImplementation(async () => {
+        controller.abort(reason);
+        return [];
+      });
+
+      await expect(
+        collect(freshAdapter().analyzeAssetStream('BTC', { signal: controller.signal })),
+      ).rejects.toBe(reason);
+      await expect(freshAdapter().analyzeAsset('BTC', { signal: controller.signal })).rejects.toBe(reason);
+      expect(mockStreamText).not.toHaveBeenCalled();
+      expect(mockGenerateText).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('stops a running stream with the caller\'s reason, not a Timeout', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      // Like the real AI SDK, the text stream ends cleanly once its signal aborts.
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          yield 'Partial ';
+          await new Promise<void>((resolve) => {
+            if (abortSignal.aborted) return resolve();
+            abortSignal.addEventListener('abort', () => resolve(), { once: true });
+          });
+        })(),
+      }));
+
+      const out: string[] = [];
+      const run = async () => {
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC', { signal: controller.signal })) {
+          out.push(chunk);
+          controller.abort(reason);
+        }
+      };
+
+      await expect(run()).rejects.toBe(reason);
+      expect(out).toEqual(['Partial ']);
+      // The model call's own signal was aborted by the caller, not by our timeout.
+      expect(mockStreamText.mock.calls[0][0].abortSignal.reason).toBe(reason);
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects analyzeAsset with the caller\'s reason when aborted mid-call', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      mockGenerateText.mockImplementation(
+        ({ abortSignal }: { abortSignal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            abortSignal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+            controller.abort(reason);
+          }),
+      );
+
+      await expect(freshAdapter().analyzeAsset('BTC', { signal: controller.signal })).rejects.toBe(reason);
+      expect(mockGenerateText.mock.calls[0][0].abortSignal.reason).toBe(reason);
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('resolveTimeoutMs', () => {

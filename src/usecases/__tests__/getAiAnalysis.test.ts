@@ -30,7 +30,7 @@ describe('getAiAnalysis', () => {
 
       expect(result).toBe(expectedAnalysis);
       expect(mockPort.analyzeAsset).toHaveBeenCalledTimes(1);
-      expect(mockPort.analyzeAsset).toHaveBeenCalledWith('BTC');
+      expect(mockPort.analyzeAsset).toHaveBeenCalledWith('BTC', {});
     });
 
     it('should handle different assets', async () => {
@@ -40,7 +40,7 @@ describe('getAiAnalysis', () => {
       const result = await getAiAnalysis(deps, 'ETH');
 
       expect(result).toBe(expectedAnalysis);
-      expect(mockPort.analyzeAsset).toHaveBeenCalledWith('ETH');
+      expect(mockPort.analyzeAsset).toHaveBeenCalledWith('ETH', {});
     });
 
     it('should propagate errors from port', async () => {
@@ -51,7 +51,7 @@ describe('getAiAnalysis', () => {
         getAiAnalysis(deps, 'BTC')
       ).rejects.toThrow('Analysis failed');
       expect(mockPort.analyzeAsset).toHaveBeenCalledTimes(1);
-      expect(mockPort.analyzeAsset).toHaveBeenCalledWith('BTC');
+      expect(mockPort.analyzeAsset).toHaveBeenCalledWith('BTC', {});
     });
 
     it('accepts a whitelisted symbol case-insensitively', async () => {
@@ -88,7 +88,7 @@ describe('getAiAnalysis', () => {
 
       expect(results).toEqual(chunks);
       expect(mockPort.analyzeAssetStream).toHaveBeenCalledTimes(1);
-      expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('BTC');
+      expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('BTC', {});
     });
 
     it('should handle empty stream', async () => {
@@ -105,7 +105,7 @@ describe('getAiAnalysis', () => {
       }
 
       expect(results).toEqual([]);
-      expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('BTC');
+      expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('BTC', {});
     });
 
     it('should handle different assets', async () => {
@@ -124,7 +124,7 @@ describe('getAiAnalysis', () => {
       }
 
       expect(results).toEqual(chunks);
-      expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('ETH');
+      expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('ETH', {});
     });
 
     it('rejects a non-whitelisted symbol on the first next() without calling the port', async () => {
@@ -136,6 +136,18 @@ describe('getAiAnalysis', () => {
       });
       expect(mockPort.analyzeAssetStream).not.toHaveBeenCalled();
     });
+  });
+
+  it('forwards the abort signal to the port', async () => {
+    const { signal } = new AbortController();
+    mockPort.analyzeAsset.mockResolvedValue('x');
+    mockPort.analyzeAssetStream.mockReturnValue((async function* () {})());
+
+    await getAiAnalysis(deps, 'BTC', { signal });
+    for await (const chunk of getAiAnalysisStream(deps, 'BTC', { signal })) void chunk;
+
+    expect(mockPort.analyzeAsset).toHaveBeenCalledWith('BTC', { signal });
+    expect(mockPort.analyzeAssetStream).toHaveBeenCalledWith('BTC', { signal });
   });
 });
 

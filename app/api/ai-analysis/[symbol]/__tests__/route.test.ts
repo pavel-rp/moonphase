@@ -109,7 +109,10 @@ describe('POST /api/ai-analysis/[symbol]', () => {
 
     await POST(req, ctx);
 
-    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('BTC', { requestedMode: 'mock' });
+    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('BTC', {
+      requestedMode: 'mock',
+      signal: req.signal,
+    });
   });
 
   it('passes requestedMode undefined when the header is absent or invalid', async () => {
@@ -122,7 +125,71 @@ describe('POST /api/ai-analysis/[symbol]', () => {
 
     await POST(req, ctx);
 
-    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('BTC', { requestedMode: undefined });
+    expect(mockAnalyzeAssetStream).toHaveBeenCalledWith('BTC', {
+      requestedMode: undefined,
+      signal: req.signal,
+    });
+  });
+
+  describe('client disconnect', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => errorSpy.mockRestore());
+
+    function disconnectingRequest() {
+      const controller = new AbortController();
+      const req = new Request('http://localhost/api/ai-analysis/BTC', {
+        method: 'POST',
+        signal: controller.signal,
+      });
+      const reason = new Error('client left');
+      return { req, disconnect: () => controller.abort(reason), reason };
+    }
+
+    it('returns 499 without logging an error when the client leaves before the first chunk', async () => {
+      const { req, disconnect, reason } = disconnectingRequest();
+      mockAnalyzeAssetStream.mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: () => {
+            disconnect();
+            return Promise.reject(reason);
+          },
+        }),
+      });
+
+      const res = await POST(req, { params: Promise.resolve({ symbol: 'BTC' }) });
+
+      expect(res.status).toBe(499);
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('ends the stream without logging an error when the client leaves mid-stream', async () => {
+      const { req, disconnect, reason } = disconnectingRequest();
+      let sent = false;
+      mockAnalyzeAssetStream.mockReturnValue({
+        [Symbol.asyncIterator]: () => ({
+          next: () => {
+            if (!sent) {
+              sent = true;
+              return Promise.resolve({ done: false as const, value: 'Partial' });
+            }
+            disconnect();
+            return Promise.reject(reason);
+          },
+        }),
+      });
+
+      const res = await POST(req, { params: Promise.resolve({ symbol: 'BTC' }) });
+      const reader = res.body!.getReader();
+
+      expect(new TextDecoder().decode((await reader.read()).value)).toBe('Partial');
+      await expect(reader.read()).rejects.toBe(reason);
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
   });
 
   it('returns 400 for an invalid symbol without invoking the stream', async () => {

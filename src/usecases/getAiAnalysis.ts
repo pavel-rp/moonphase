@@ -2,7 +2,7 @@
 // whitelist. Future business logic (rate limiting, caching, input enrichment)
 // should be added here rather than in the adapter or wiring layer.
 
-import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
+import { AiAnalysisOptions, AiAnalysisPort } from "@/ports/AiAnalysisPort";
 import { AssetWhitelistPort } from "@/ports/AssetWhitelistPort";
 import { ExternalException } from "@/lib/errors";
 
@@ -33,10 +33,11 @@ async function assertAllowedSymbol(
 /** One-shot AI analysis, delegates to deps.ai.analyzeAsset. */
 export async function getAiAnalysis(
   deps: AiAnalysisDeps,
-  symbol: string
+  symbol: string,
+  opts: AiAnalysisOptions = {}
 ): Promise<string> {
   await assertAllowedSymbol(deps.whitelist, symbol);
-  const analysis = await deps.ai.analyzeAsset(symbol);
+  const analysis = await deps.ai.analyzeAsset(symbol, opts);
   return analysis;
 }
 
@@ -47,8 +48,9 @@ export async function getAiAnalysis(
  */
 export async function* getAiAnalysisStream(
   deps: AiAnalysisDeps,
-  symbol: string
+  symbol: string,
+  opts: AiAnalysisOptions = {}
 ): AsyncIterable<string> {
   await assertAllowedSymbol(deps.whitelist, symbol);
-  yield* deps.ai.analyzeAssetStream(symbol);
+  yield* deps.ai.analyzeAssetStream(symbol, opts);
 }
