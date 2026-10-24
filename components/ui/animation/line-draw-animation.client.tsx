@@ -2,22 +2,23 @@
 
 import { cn } from "@/lib/utils/utils";
 import { useGSAP } from "@gsap/react";
-import { useEffect, useRef, useState } from "react";
+import { ComponentType, Ref, useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
 
-gsap.registerPlugin(DrawSVGPlugin);
+gsap.registerPlugin(useGSAP, DrawSVGPlugin);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function withLineDrawAnimation<T extends React.JSXElementConstructor<any>>(
-  WrappedComponent: T
+type LineDrawTargetProps = {
+  className?: string;
+  lineRef?: Ref<SVGPolylineElement>;
+  containerRef?: Ref<HTMLDivElement>;
+};
+
+export function withLineDrawAnimation<P extends LineDrawTargetProps>(
+  WrappedComponent: ComponentType<P>
 ) {
-  type Props = React.ComponentProps<T>;
-
-  return function AnimatedComponent({ 
-    className, 
-    ...props 
-  }: Props) {
+  return function AnimatedComponent(props: Omit<P, "lineRef" | "containerRef">) {
+    const { className } = props;
     const lineRef = useRef<SVGPolylineElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [classNames, setClassNames] = useState(cn("opacity-0", className));
@@ -26,12 +27,16 @@ export function withLineDrawAnimation<T extends React.JSXElementConstructor<any>
       setClassNames(cn("opacity-100", className));
     }, [className]);
 
+    // Runs once on mount. Depending on `classNames` re-ran it right after the
+    // opacity flip above, restarting both tweens a tick into the animation.
     useGSAP(
       () => {
-        if (lineRef.current) {
-          const tl = gsap.timeline();
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          return;
+        }
 
-          tl.fromTo(
+        if (lineRef.current) {
+          gsap.fromTo(
             lineRef.current,
             { drawSVG: "0%" },
             { drawSVG: "100%", duration: 0.8, ease: "power2.out" }
@@ -46,18 +51,13 @@ export function withLineDrawAnimation<T extends React.JSXElementConstructor<any>
           );
         }
       },
-      { scope: lineRef, dependencies: [classNames] }
+      { scope: containerRef, dependencies: [] }
     );
 
-    // spread ALL props, including className, data, etc., and pass refs as needed
-    return (
-      <WrappedComponent
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        {...(props as any)}
-        className={classNames}
-        lineRef={lineRef}
-        containerRef={containerRef}
-      />
-    );
+    // The wrapped component receives every prop it was given, with the
+    // animated className and the refs the tweens target.
+    const wrappedProps = { ...props, className: classNames, lineRef, containerRef } as P;
+
+    return <WrappedComponent {...wrappedProps} />;
   };
 }

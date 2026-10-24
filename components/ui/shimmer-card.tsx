@@ -8,7 +8,7 @@ interface ShimmerCardProps {
 
 export default function ShimmerCard({ className }: ShimmerCardProps = {}) {
   return (
-    <Card className={cn("glassmorphic p-6 animate-pulse min-h-[202px] flex flex-col justify-between", className)}>
+    <Card className={cn("glassmorphic p-6 animate-pulse motion-reduce:animate-none min-h-[202px] flex flex-col justify-between", className)}>
       <div className="flex items-center justify-between">
         <div className="flex-1 gap-4">
           <div className="h-4 bg-gray-400 rounded w-1/2 opacity-30"></div>

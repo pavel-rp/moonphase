@@ -10,19 +10,27 @@ import {
 import { useSelectedLayoutSegment } from "next/navigation";
 import { memo } from "react";
 
+// Tile size of the repeating moon image, and how fast it scrolls relative to the page.
+const TILE_WIDTH = 1536;
+const TILE_HEIGHT = 1024;
+const PARALLAX_FACTOR = 0.7;
+
 function ParallaxBgInner() {
   const reduce = useReducedMotion();
 
   const { scrollY } = useScroll();
 
-  const bgY = useTransform(scrollY, (v) => v * -0.7);
-  const bgPos = useTransform(bgY, (v) => `center ${v}px`);
+  // The image repeats every TILE_HEIGHT px, so shifting it by the scroll offset
+  // modulo one tile looks identical to shifting it by the full offset. That
+  // keeps the parallax a composited translateY on a layer one tile taller than
+  // the viewport, instead of repainting background-position on every frame.
+  // The double modulo keeps the shift in [0, TILE_HEIGHT) during overscroll.
+  const bgY = useTransform(scrollY, (v) => {
+    const offset = (((v * PARALLAX_FACTOR) % TILE_HEIGHT) + TILE_HEIGHT) % TILE_HEIGHT;
+    return -offset;
+  });
 
   const segment = useSelectedLayoutSegment();
-
-  if (reduce) {
-    return null;
-  }
 
   return (
     <AnimatePresence initial={false}>
@@ -37,14 +45,28 @@ function ParallaxBgInner() {
           position: "fixed",
           inset: 0,
           zIndex: -1,
-          backgroundImage: 'url("/moon-bg.jpg")',
-          backgroundRepeat: "repeat",
-          backgroundSize: "1536px 1024px",
-          backgroundPosition: bgPos,
+          overflow: "hidden",
           pointerEvents: "none",
-          willChange: "opacity, background-position",
         }}
-      />
+      >
+        {/* With reduced motion the background stays put instead of disappearing. */}
+        <motion.div
+          data-testid="parallax-layer"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: `calc(100% + ${TILE_HEIGHT}px)`,
+            backgroundImage: 'url("/moon-bg.jpg")',
+            backgroundRepeat: "repeat",
+            backgroundSize: `${TILE_WIDTH}px ${TILE_HEIGHT}px`,
+            backgroundPosition: "center top",
+            y: reduce ? 0 : bgY,
+            willChange: reduce ? undefined : "transform",
+          }}
+        />
+      </motion.div>
     </AnimatePresence>
   );
 }

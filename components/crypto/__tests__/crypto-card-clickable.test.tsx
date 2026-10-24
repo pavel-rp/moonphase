@@ -64,13 +64,6 @@ jest.mock("../../ui/animation/loading-rings.client", () => ({
 jest.mock("@/lib/utils/ui-helpers", () => ({
   getPriceMovementColorVar: (changePercent: number, variation: number) =>
     `var(--color-${changePercent > 0 ? 'green' : changePercent < 0 ? 'red' : 'slate'}-${variation})`,
-  getPriceMovementColorValue: (changePercent: number, variation: number) => {
-    const color = changePercent > 0 ? 'green' : changePercent < 0 ? 'red' : 'slate';
-    const value = variation === 300
-      ? (color === 'green' ? '#86efac' : color === 'red' ? '#fca5a5' : '#cbd5e1')
-      : (color === 'green' ? '#15803d' : color === 'red' ? '#b91c1c' : '#334155');
-    return value;
-  },
 }));
 
 describe("CryptoCardClickable", () => {
@@ -246,6 +239,63 @@ describe("CryptoCardClickable", () => {
       jest.advanceTimersByTime(300);
     });
     expect(screen.getByTestId("loading-rings")).toBeInTheDocument();
+  });
+
+  it("colors the loading rings with the same CSS variable as the glow", () => {
+    jest.useFakeTimers();
+    render(
+      <CryptoCardClickable {...mockAsset}>
+        <div>Bitcoin Card</div>
+      </CryptoCardClickable>
+    );
+
+    fireEvent.click(screen.getByRole("link"));
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+    expect(screen.getByTestId("loading-rings")).toHaveAttribute(
+      "data-color",
+      "var(--color-green-300)"
+    );
+  });
+
+  it.each(["popstate", "pageshow"])(
+    "hides the loading rings when the page stays after a %s event",
+    (eventType) => {
+      jest.useFakeTimers();
+      render(
+        <CryptoCardClickable {...mockAsset}>
+          <div>Bitcoin Card</div>
+        </CryptoCardClickable>
+      );
+
+      fireEvent.click(screen.getByRole("link"));
+      act(() => {
+        jest.advanceTimersByTime(300);
+      });
+      expect(screen.getByTestId("loading-rings")).toBeInTheDocument();
+
+      act(() => {
+        window.dispatchEvent(new Event(eventType));
+      });
+      expect(screen.queryByTestId("loading-rings")).not.toBeInTheDocument();
+    }
+  );
+
+  it("cancels a pending loading-rings timer on popstate", () => {
+    jest.useFakeTimers();
+    render(
+      <CryptoCardClickable {...mockAsset}>
+        <div>Bitcoin Card</div>
+      </CryptoCardClickable>
+    );
+
+    fireEvent.click(screen.getByRole("link"));
+    act(() => {
+      window.dispatchEvent(new Event("popstate"));
+      jest.advanceTimersByTime(300);
+    });
+    expect(screen.queryByTestId("loading-rings")).not.toBeInTheDocument();
   });
 
   it("does not show the loading rings for a modified (new-tab) click", () => {

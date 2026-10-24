@@ -23,7 +23,7 @@ export async function CryptoSparklineLoader({ symbol }: { symbol: string }) {
 export function CryptoSparkline({ symbol }: { symbol: string }) {
   return (
     <Suspense
-      fallback={<LoadingSparkline opacity={0.5} className="animate-pulse" />}
+      fallback={<LoadingSparkline opacity={0.5} className="animate-pulse motion-reduce:animate-none" />}
     >
       <CryptoSparklineLoader symbol={symbol} />
     </Suspense>
