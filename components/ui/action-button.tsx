@@ -77,10 +77,11 @@ export function ActionButton({
           loading
             ? // Continuous sweep while generating (suppressed for reduced motion).
               "animate-shimmer-sweep motion-reduce:animate-none"
-            : // Hover sweep
+            : // Hover sweep (jumps straight past the edge for reduced motion,
+              // so it never shows).
               cn(
                 "group-hover:translate-x-[360%] group-hover:opacity-100",
-                "transition duration-300 ease-out",
+                "transition duration-300 ease-out motion-reduce:transition-none",
               ),
         )}
       />

@@ -6,7 +6,7 @@ import {
   motion,
   useMotionTemplate,
   useMotionValue,
-  useReducedMotion,
+  useReducedMotionConfig,
   useSpring,
 } from "motion/react";
 import { useRef } from "react";
@@ -26,7 +26,8 @@ export function HoverEffectCard({
   className,
 }: HoverEffectCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const reduceMotion = useReducedMotion();
+  // Follows the root MotionConfig, like the route slide.
+  const reduceMotion = useReducedMotionConfig();
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);

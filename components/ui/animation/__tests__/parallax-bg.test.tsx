@@ -30,7 +30,7 @@ jest.mock("motion/react", () => ({
       );
     },
   },
-  useReducedMotion: () => mockReduceMotion,
+  useReducedMotionConfig: () => mockReduceMotion,
   useScroll: () => ({ scrollY: mockScrollY }),
   useTransform: (_source: unknown, transform: (v: number) => number) => {
     mockScrollTransform = transform;
@@ -78,4 +78,14 @@ describe("ParallaxBg", () => {
     expect(layer).toHaveAttribute("data-y", "0");
     expect(layer.style.backgroundImage).toBe('url("/moon-bg.jpg")');
   });
+
+  it.each([false, true])(
+    "renders the same will-change whatever the reduced-motion setting (%s), so hydration matches",
+    (reduce) => {
+      mockReduceMotion = reduce;
+      render(<ParallaxBg />);
+
+      expect(screen.getByTestId("parallax-layer").style.willChange).toBe("transform");
+    }
+  );
 });

@@ -4,7 +4,7 @@ import {
   motion,
   useScroll,
   useTransform,
-  useReducedMotion,
+  useReducedMotionConfig,
   AnimatePresence,
 } from "motion/react";
 import { useSelectedLayoutSegment } from "next/navigation";
@@ -16,7 +16,8 @@ const TILE_HEIGHT = 1024;
 const PARALLAX_FACTOR = 0.7;
 
 function ParallaxBgInner() {
-  const reduce = useReducedMotion();
+  // Follows the root MotionConfig, like the route slide.
+  const reduce = useReducedMotionConfig();
 
   const { scrollY } = useScroll();
 
@@ -63,7 +64,9 @@ function ParallaxBgInner() {
             backgroundSize: `${TILE_WIDTH}px ${TILE_HEIGHT}px`,
             backgroundPosition: "center top",
             y: reduce ? 0 : bgY,
-            willChange: reduce ? undefined : "transform",
+            // Unconditional: the server can't know the reduced-motion setting,
+            // so a conditional value here would mismatch on hydration.
+            willChange: "transform",
           }}
         />
       </motion.div>

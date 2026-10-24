@@ -3,12 +3,17 @@ import { act, render, screen } from "@testing-library/react";
 import { withLineDrawAnimation } from "../line-draw-animation.client";
 
 const mockFromTo = jest.fn();
+const mockMatchMediaAdd = jest.fn();
 let mockGsapCallback: (() => void) | undefined;
 let mockGsapConfig: { scope?: unknown; dependencies?: unknown[] } | undefined;
 
 jest.mock("gsap", () => ({
   __esModule: true,
-  gsap: { registerPlugin: jest.fn(), fromTo: (...args: unknown[]) => mockFromTo(...args) },
+  gsap: {
+    registerPlugin: jest.fn(),
+    fromTo: (...args: unknown[]) => mockFromTo(...args),
+    matchMedia: () => ({ add: (...args: unknown[]) => mockMatchMediaAdd(...args) }),
+  },
 }));
 
 jest.mock("@gsap/react", () => ({
@@ -39,19 +44,22 @@ function Line({ label, className, lineRef, containerRef }: LineProps) {
 
 const AnimatedLine = withLineDrawAnimation(Line);
 
-function mockReducedMotion(matches: boolean) {
-  window.matchMedia = jest.fn().mockReturnValue({ matches }) as unknown as typeof window.matchMedia;
+// Runs the useGSAP callback, then the matchMedia handler it registered.
+function runAnimation() {
+  act(() => mockGsapCallback!());
+  const [, handler] = mockMatchMediaAdd.mock.calls[0] as [string, () => void];
+  act(() => handler());
 }
 
 describe("withLineDrawAnimation", () => {
   beforeEach(() => {
     mockFromTo.mockClear();
+    mockMatchMediaAdd.mockClear();
     mockGsapCallback = undefined;
     mockGsapConfig = undefined;
   });
 
   it("passes props through and reveals the component after mount", () => {
-    mockReducedMotion(false);
     render(<AnimatedLine label="BTC" className="text-green-700" />);
 
     const container = screen.getByTestId("container");
@@ -61,18 +69,29 @@ describe("withLineDrawAnimation", () => {
   });
 
   it("animates once on mount, scoped to the container", () => {
-    mockReducedMotion(false);
     render(<AnimatedLine label="BTC" />);
 
     expect(mockGsapConfig?.dependencies).toEqual([]);
     expect(mockGsapConfig?.scope).toEqual({ current: screen.getByTestId("container") });
   });
 
-  it("draws the line and fades in the container", () => {
-    mockReducedMotion(false);
+  it("animates only when the user has no reduced-motion preference", () => {
     render(<AnimatedLine label="BTC" />);
 
     act(() => mockGsapCallback!());
+
+    expect(mockMatchMediaAdd).toHaveBeenCalledWith(
+      "(prefers-reduced-motion: no-preference)",
+      expect.any(Function)
+    );
+    // Nothing runs until matchMedia says the query matches.
+    expect(mockFromTo).not.toHaveBeenCalled();
+  });
+
+  it("draws the line and fades in the container", () => {
+    render(<AnimatedLine label="BTC" />);
+
+    runAnimation();
 
     expect(mockFromTo).toHaveBeenCalledTimes(2);
     expect(mockFromTo).toHaveBeenCalledWith(
@@ -85,14 +104,5 @@ describe("withLineDrawAnimation", () => {
       { opacity: 0 },
       expect.objectContaining({ opacity: 1 })
     );
-  });
-
-  it("skips the tweens when the user prefers reduced motion", () => {
-    mockReducedMotion(true);
-    render(<AnimatedLine label="BTC" />);
-
-    act(() => mockGsapCallback!());
-
-    expect(mockFromTo).not.toHaveBeenCalled();
   });
 });

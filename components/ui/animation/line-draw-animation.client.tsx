@@ -31,25 +31,26 @@ export function withLineDrawAnimation<P extends LineDrawTargetProps>(
     // opacity flip above, restarting both tweens a tick into the animation.
     useGSAP(
       () => {
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          return;
-        }
+        // Only animates when the user has no reduced-motion preference. If the
+        // setting changes, matchMedia reverts or replays the tweens, and
+        // useGSAP's context reverts it on unmount.
+        gsap.matchMedia().add("(prefers-reduced-motion: no-preference)", () => {
+          if (lineRef.current) {
+            gsap.fromTo(
+              lineRef.current,
+              { drawSVG: "0%" },
+              { drawSVG: "100%", duration: 0.8, ease: "power2.out" }
+            );
+          }
 
-        if (lineRef.current) {
-          gsap.fromTo(
-            lineRef.current,
-            { drawSVG: "0%" },
-            { drawSVG: "100%", duration: 0.8, ease: "power2.out" }
-          );
-        }
-
-        if (containerRef.current) {
-          gsap.fromTo(
-            containerRef.current,
-            { opacity: 0 },
-            { opacity: 1, duration: 0.4, ease: "power1.inOut" }
-          );
-        }
+          if (containerRef.current) {
+            gsap.fromTo(
+              containerRef.current,
+              { opacity: 0 },
+              { opacity: 1, duration: 0.4, ease: "power1.inOut" }
+            );
+          }
+        });
       },
       { scope: containerRef, dependencies: [] }
     );

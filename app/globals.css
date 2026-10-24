@@ -121,7 +121,14 @@
   body {
     background-color: #b9b7b4;
     overflow-y: scroll;
-    scroll-behavior: smooth;
+  }
+
+  /* Smooth scrolling is motion too, so it's only on without a reduced-motion
+     preference. */
+  @media (prefers-reduced-motion: no-preference) {
+    body {
+      scroll-behavior: smooth;
+    }
   }
 }
 

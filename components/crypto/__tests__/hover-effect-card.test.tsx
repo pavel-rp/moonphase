@@ -32,7 +32,7 @@ jest.mock("motion/react", () => ({
     get: () => initial,
     set: mockSet,
   }),
-  useReducedMotion: () => mockReduceMotion,
+  useReducedMotionConfig: () => mockReduceMotion,
   useSpring: (value: unknown) => value,
 }));
 

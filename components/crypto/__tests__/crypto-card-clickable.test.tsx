@@ -259,28 +259,48 @@ describe("CryptoCardClickable", () => {
     );
   });
 
-  it.each(["popstate", "pageshow"])(
-    "hides the loading rings when the page stays after a %s event",
-    (eventType) => {
-      jest.useFakeTimers();
-      render(
-        <CryptoCardClickable {...mockAsset}>
-          <div>Bitcoin Card</div>
-        </CryptoCardClickable>
-      );
+  const pageshow = (persisted: boolean) =>
+    Object.assign(new Event("pageshow"), { persisted });
 
-      fireEvent.click(screen.getByRole("link"));
-      act(() => {
-        jest.advanceTimersByTime(300);
-      });
-      expect(screen.getByTestId("loading-rings")).toBeInTheDocument();
+  it.each([
+    ["popstate", () => new Event("popstate")],
+    ["back/forward-cache pageshow", () => pageshow(true)],
+  ])("hides the loading rings when the page stays after a %s event", (_name, makeEvent) => {
+    jest.useFakeTimers();
+    render(
+      <CryptoCardClickable {...mockAsset}>
+        <div>Bitcoin Card</div>
+      </CryptoCardClickable>
+    );
 
-      act(() => {
-        window.dispatchEvent(new Event(eventType));
-      });
-      expect(screen.queryByTestId("loading-rings")).not.toBeInTheDocument();
-    }
-  );
+    fireEvent.click(screen.getByRole("link"));
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+    expect(screen.getByTestId("loading-rings")).toBeInTheDocument();
+
+    act(() => {
+      window.dispatchEvent(makeEvent());
+    });
+    expect(screen.queryByTestId("loading-rings")).not.toBeInTheDocument();
+  });
+
+  it("keeps the loading rings on the first-load pageshow", () => {
+    jest.useFakeTimers();
+    render(
+      <CryptoCardClickable {...mockAsset}>
+        <div>Bitcoin Card</div>
+      </CryptoCardClickable>
+    );
+
+    // A slow first load can fire pageshow after the click, mid-navigation.
+    fireEvent.click(screen.getByRole("link"));
+    act(() => {
+      window.dispatchEvent(pageshow(false));
+      jest.advanceTimersByTime(300);
+    });
+    expect(screen.getByTestId("loading-rings")).toBeInTheDocument();
+  });
 
   it("cancels a pending loading-rings timer on popstate", () => {
     jest.useFakeTimers();

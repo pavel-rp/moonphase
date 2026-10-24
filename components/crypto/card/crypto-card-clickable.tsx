@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, RefObject } from "react";
 import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
 import { LoadingRings } from "../../ui/animation/loading-rings.client";
 import { getPriceMovementColorVar } from "@/lib/utils/ui-helpers";
+
+function cancelPendingRings(timeoutRef: RefObject<NodeJS.Timeout | null>) {
+  if (timeoutRef.current) {
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
+}
 
 interface CryptoCardClickableProps {
   symbol: string;
@@ -29,20 +36,23 @@ export default function CryptoCardClickable({
   // back/forward cache), hide them so they don't loop forever.
   useEffect(() => {
     const hideRings = () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      cancelPendingRings(timeoutRef);
       setShowLoadingRings(false);
     };
+    // pageshow also fires on the first load, once the page's images finish,
+    // which can land mid-navigation. Only a back/forward-cache restore counts.
+    const hideRingsOnRestore = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        hideRings();
+      }
+    };
     window.addEventListener("popstate", hideRings);
-    window.addEventListener("pageshow", hideRings);
+    window.addEventListener("pageshow", hideRingsOnRestore);
 
     return () => {
       window.removeEventListener("popstate", hideRings);
-      window.removeEventListener("pageshow", hideRings);
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      window.removeEventListener("pageshow", hideRingsOnRestore);
+      cancelPendingRings(timeoutRef);
     };
   }, []);
 
@@ -53,10 +63,7 @@ export default function CryptoCardClickable({
       return;
     }
 
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    cancelPendingRings(timeoutRef);
 
     // Show loading rings after a brief delay (300ms) to avoid flashing on fast navigations
     timeoutRef.current = setTimeout(() => {
