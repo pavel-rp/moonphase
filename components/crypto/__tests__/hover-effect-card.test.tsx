@@ -149,39 +149,10 @@ describe("HoverEffectCard", () => {
     // The component should be accessible and not have any accessibility violations
   });
 
-  it("calls onClick handler when card is clicked", () => {
-    const mockOnClick = jest.fn();
-    render(<HoverEffectCard {...defaultProps} onClick={mockOnClick} />);
-    
-    const card = screen.getByText("Test Content").closest(".glassmorphic");
-    fireEvent.click(card!);
-    
-    expect(mockOnClick).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not throw error when clicked without onClick handler", () => {
+  it("does not throw when clicked (navigation is the wrapping link's job)", () => {
     render(<HoverEffectCard {...defaultProps} />);
     
     const card = screen.getByText("Test Content").closest(".glassmorphic");
     expect(() => fireEvent.click(card!)).not.toThrow();
-  });
-
-  it("works with onClick and maintains other functionality", () => {
-    const mockOnClick = jest.fn();
-    render(<HoverEffectCard {...defaultProps} onClick={mockOnClick} />);
-    
-    const card = screen.getByText("Test Content").closest(".transform-3d");
-    const cardElement = screen.getByText("Test Content").closest(".glassmorphic");
-    
-    // Test mouse events still work
-    fireEvent.mouseMove(card!);
-    fireEvent.mouseLeave(card!);
-    
-    // Test click works
-    fireEvent.click(cardElement!);
-    expect(mockOnClick).toHaveBeenCalledTimes(1);
-    
-    // Test styling is still applied
-    expect(cardElement).toHaveClass("cursor-pointer");
   });
 });

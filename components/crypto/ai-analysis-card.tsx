@@ -38,10 +38,16 @@ interface AiAnalysisCardProps {
 
 type Status = "idle" | "loading" | "streaming" | "complete" | "error";
 
+// Storage access throws (SecurityError) when the browser blocks site data, and
+// this read runs on every render, so failures fall back to "no preference".
 function readStoredMode(): AiAnalysisMode | null {
   if (typeof window === "undefined") return null;
-  const value = window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY);
-  return value === "live" || value === "mock" ? value : null;
+  try {
+    const value = window.localStorage.getItem(AI_ANALYSIS_MODE_STORAGE_KEY);
+    return value === "live" || value === "mock" ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 // The per-browser mode preference is read through `useSyncExternalStore` so the
@@ -69,7 +75,11 @@ function getServerStoredMode(): AiAnalysisMode | null {
 
 function writeStoredMode(mode: AiAnalysisMode) {
   if (typeof window !== "undefined") {
-    window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, mode);
+    try {
+      window.localStorage.setItem(AI_ANALYSIS_MODE_STORAGE_KEY, mode);
+    } catch {
+      // Blocked or full storage: the preference just won't persist.
+    }
   }
   // Notify same-tab subscribers — the `storage` event only fires cross-tab.
   modeListeners.forEach((listener) => listener());

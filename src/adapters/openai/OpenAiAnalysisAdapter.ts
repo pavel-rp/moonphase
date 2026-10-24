@@ -1,4 +1,4 @@
-import { AiAnalysisPort } from "@/ports/AiAnalysisPort";
+import { AiAnalysisOptions, AiAnalysisPort } from "@/ports/AiAnalysisPort";
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, streamText, type LanguageModel } from "ai";
 import { getEnv } from "@/lib/env";
@@ -47,6 +47,46 @@ function settledError(result: PromiseRejectedResult): string {
 export function resolveTimeoutMs(raw: string | undefined): number {
   const parsed = Number(raw);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : AI_LLM_TIMEOUT_MS;
+}
+
+/**
+ * A model-call timeout that counts only time spent waiting on the model. A
+ * streamed analysis pauses it while a chunk waits at `yield` for a slow
+ * consumer, so text that was fully delivered can't time out afterwards.
+ */
+class ModelCallTimeout {
+  private readonly controller = new AbortController();
+  private remainingMs: number;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+  private resumedAt = 0;
+
+  constructor(timeoutMs: number) {
+    this.remainingMs = timeoutMs;
+  }
+
+  get signal(): AbortSignal {
+    return this.controller.signal;
+  }
+
+  get aborted(): boolean {
+    return this.controller.signal.aborted;
+  }
+
+  resume(): void {
+    if (this.timer !== undefined || this.aborted) return;
+    this.resumedAt = Date.now();
+    this.timer = setTimeout(
+      () => this.controller.abort(new DOMException('The model call timed out', 'TimeoutError')),
+      this.remainingMs,
+    );
+  }
+
+  pause(): void {
+    if (this.timer === undefined) return;
+    clearTimeout(this.timer);
+    this.timer = undefined;
+    this.remainingMs = Math.max(0, this.remainingMs - (Date.now() - this.resumedAt));
+  }
 }
 
 /**
@@ -187,18 +227,28 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
   }
 
   /**
+   * The abort signal for the model call: our timeout, joined with the caller's
+   * signal when there is one.
+   */
+  private modelCallSignal(timeout: AbortSignal, caller?: AbortSignal): AbortSignal {
+    return caller ? AbortSignal.any([timeout, caller]) : timeout;
+  }
+
+  /**
    * Gathers market data in parallel and assembles the synthesis prompt.
    * Each source degrades gracefully: a failed fetch is rendered as an error
-   * line rather than aborting the whole analysis.
+   * line rather than aborting the whole analysis. `signal` cancels the
+   * fetches when the caller gives up; the caller checks it afterwards.
    */
-  private async buildPrompt(symbol: string): Promise<string> {
+  private async buildPrompt(symbol: string, signal?: AbortSignal): Promise<string> {
+    signal?.throwIfAborted();
     const binanceSymbol = toBinancePair(symbol);
     logRequest({ url: `openai/chat (${symbol})`, method: 'POST' });
 
     const [priceResult, vwapResult, newsResult] = await Promise.allSettled([
-      this.binance.getDailyCandles(binanceSymbol, AI_PRICE_HISTORY_DAYS),
-      this.binance.get24HrStats(binanceSymbol),
-      this.news.fetchNews({ symbol: symbol.toUpperCase(), limit: AI_NEWS_LIMIT }),
+      this.binance.getDailyCandles(binanceSymbol, AI_PRICE_HISTORY_DAYS, { signal }),
+      this.binance.get24HrStats(binanceSymbol, { signal }),
+      this.news.fetchNews({ symbol: symbol.toUpperCase(), limit: AI_NEWS_LIMIT, signal }),
     ]);
 
     let context = `Market Data for ${symbol}:\n\n`;
@@ -244,29 +294,35 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
   /**
    * Analyze a cryptocurrency asset by symbol.
    * @param symbol - The asset symbol to analyze.
+   * @param opts - `signal` aborts the analysis (e.g. on client disconnect).
    * @returns The AI-generated analysis.
    */
-  async analyzeAsset(symbol: string): Promise<string> {
-    let signal: AbortSignal | undefined;
+  async analyzeAsset(symbol: string, opts: AiAnalysisOptions = {}): Promise<string> {
+    const { signal: callerSignal } = opts;
+    let timeout: AbortSignal | undefined;
     try {
-      const prompt = await this.buildPrompt(symbol);
+      const prompt = await this.buildPrompt(symbol, callerSignal);
+      // If the caller gave up while the inputs were gathered, skip the paid model call.
+      callerSignal?.throwIfAborted();
       // Start the timeout only for the model call — prompt-building has its own
       // per-source timeouts and must not consume the model-call budget.
-      signal = AbortSignal.timeout(this.timeoutMs);
+      timeout = AbortSignal.timeout(this.timeoutMs);
       const { text } = await generateText({
         model: this.model,
         system: ANALYST_SYSTEM_PROMPT,
         prompt,
         providerOptions: PROVIDER_OPTIONS,
-        abortSignal: signal,
+        abortSignal: this.modelCallSignal(timeout, callerSignal),
       });
       return text;
     } catch (error) {
+      // A caller abort is not an upstream failure: pass its reason through
+      // unlogged rather than reporting it as an error or a timeout.
+      if (callerSignal?.aborted) throw callerSignal.reason;
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAsset', symbol });
-      // The timeout signal is the only abort source, so `aborted` means we hit it.
-      // It only exists once the model call has started, so a buildPrompt error
-      // is never misclassified as a timeout.
-      if (signal?.aborted) throw this.timeoutException(symbol);
+      // The timeout only exists once the model call has started, so a
+      // buildPrompt error is never misclassified as a timeout.
+      if (timeout?.aborted) throw this.timeoutException(symbol);
       throw this.toExternalException(error, symbol);
     }
   }
@@ -275,31 +331,58 @@ export class OpenAiAnalysisAdapter implements AiAnalysisPort {
    * Analyze a cryptocurrency asset by symbol and stream the AI-generated
    * analysis as incremental token chunks.
    * @param symbol - The asset symbol to analyze.
+   * @param opts - `signal` aborts the analysis (e.g. on client disconnect).
    * @returns An async iterable of string chunks.
    */
-  async *analyzeAssetStream(symbol: string): AsyncIterable<string> {
-    let signal: AbortSignal | undefined;
+  async *analyzeAssetStream(symbol: string, opts: AiAnalysisOptions = {}): AsyncIterable<string> {
+    const { signal: callerSignal } = opts;
+    let timeout: ModelCallTimeout | undefined;
     try {
-      const prompt = await this.buildPrompt(symbol);
+      const prompt = await this.buildPrompt(symbol, callerSignal);
+      // If the caller gave up while the inputs were gathered, skip the paid model call.
+      callerSignal?.throwIfAborted();
       // Start the timeout only for the model call — prompt-building has its own
       // per-source timeouts and must not consume the model-call budget.
-      signal = AbortSignal.timeout(this.timeoutMs);
+      timeout = new ModelCallTimeout(this.timeoutMs);
       const result = streamText({
         model: this.model,
         system: ANALYST_SYSTEM_PROMPT,
         prompt,
         providerOptions: PROVIDER_OPTIONS,
-        abortSignal: signal,
+        abortSignal: this.modelCallSignal(timeout.signal, callerSignal),
       });
-      for await (const chunk of result.textStream) {
-        yield chunk;
+      const chunks = result.textStream[Symbol.asyncIterator]();
+      let finished = false;
+      try {
+        while (true) {
+          // The clock runs only while waiting on the model, never while a
+          // chunk waits at `yield` for the consumer.
+          timeout.resume();
+          const next = await chunks.next();
+          timeout.pause();
+          if (next.done) {
+            finished = true;
+            break;
+          }
+          yield next.value;
+        }
+      } finally {
+        timeout.pause();
+        // Release the model stream when the consumer stops early.
+        if (!finished) await chunks.return?.();
       }
+      // On abort, `streamText` closes the text stream cleanly instead of
+      // throwing, so a truncated analysis would otherwise look complete.
+      callerSignal?.throwIfAborted();
+      if (timeout.aborted) throw this.timeoutException(symbol);
     } catch (error) {
+      // A caller abort is not an upstream failure: pass its reason through
+      // unlogged rather than reporting it as an error or a timeout.
+      if (callerSignal?.aborted) throw callerSignal.reason;
       logError(error, { adapter: 'OpenAiAnalysisAdapter', method: 'analyzeAssetStream', symbol });
-      // The timeout signal is the only abort source, so `aborted` means we hit it.
-      // It only exists once the model call has started, so a buildPrompt error
-      // is never misclassified as a timeout.
-      if (signal?.aborted) throw this.timeoutException(symbol);
+      // The timeout only exists once the model call has started, so a
+      // buildPrompt error is never misclassified as a timeout.
+      if (timeout?.aborted) throw this.timeoutException(symbol);
       throw this.toExternalException(error, symbol);
     }
   }

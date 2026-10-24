@@ -1,3 +1,5 @@
+import { isFlatPercent } from "@/lib/utils/numbers";
+
 // NOTE: if you add a new color, you need to add it to the globals.css @source inline()
 export type TwColorVariation = 300 | 700;
 export type TwColor = "red" | "green" | "slate";
@@ -19,8 +21,9 @@ const COLOR_VALUES: Record<TwColor, Record<TwColorVariation, string>> = {
   },
 };
 
-const getPriceMovementColor = (priceChange: number): TwColor => {
-  if (priceChange === 0) {
+// Missing and flat changes are neutral, matching how formatPercent shows them.
+const getPriceMovementColor = (priceChange: number | null): TwColor => {
+  if (priceChange === null || !Number.isFinite(priceChange) || isFlatPercent(priceChange)) {
     return "slate";
   }
   if (priceChange > 0) {
@@ -30,12 +33,12 @@ const getPriceMovementColor = (priceChange: number): TwColor => {
 };
 
 export const getPriceMovementColorVar = (
-  priceChange: number,
+  priceChange: number | null,
   variation: TwColorVariation = 700
 ): string => `var(--color-${getPriceMovementColor(priceChange)}-${variation})`;
 
 export const getPriceMovementTextColorClass = (
-  priceChange: number,
+  priceChange: number | null,
   variation: TwColorVariation = 700
 ): string => `text-${getPriceMovementColor(priceChange)}-${variation}`;
 
@@ -45,6 +48,6 @@ export const getPriceMovementTextColorClass = (
  * (e.g., in CSS filters, canvas, or anywhere CSS variables don't work).
  */
 export const getPriceMovementColorValue = (
-  priceChange: number,
+  priceChange: number | null,
   variation: TwColorVariation = 700
 ): string => COLOR_VALUES[getPriceMovementColor(priceChange)][variation];

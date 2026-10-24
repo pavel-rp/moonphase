@@ -11,6 +11,7 @@ jest.mock('@/adapters/openai/OpenAiAnalysisAdapter', () => ({
   OpenAiAnalysisAdapter: MockOpenAiAnalysisAdapter,
 }));
 jest.mock('@/adapters/mock/MockAiAnalysisAdapter', () => ({
+  ...jest.requireActual('@/adapters/mock/MockAiAnalysisAdapter'),
   MockAiAnalysisAdapter: MockMockAiAnalysisAdapter,
 }));
 jest.mock('@/adapters/news/NewsAdapter', () => ({
@@ -61,6 +62,21 @@ describe('getAiAnalysisDeps', () => {
 
     expect(MockMockAiAnalysisAdapter).toHaveBeenCalledTimes(1);
     expect(MockOpenAiAnalysisAdapter).not.toHaveBeenCalled();
+  });
+
+  it('admits the mock failure symbols in mock mode only', async () => {
+    const { getAiAnalysisDeps } = await import('../compositionRoot');
+    const { MOCK_PRE_STREAM_ERROR_SYMBOL, MOCK_MID_STREAM_ERROR_SYMBOL } = jest.requireActual(
+      '@/adapters/mock/MockAiAnalysisAdapter',
+    );
+
+    const mockSymbols = await (await getAiAnalysisDeps('mock')).whitelist.listAllowedSymbols();
+    const liveSymbols = await (await getAiAnalysisDeps('live')).whitelist.listAllowedSymbols();
+
+    expect(mockSymbols).toEqual(expect.arrayContaining(['BTC', MOCK_PRE_STREAM_ERROR_SYMBOL, MOCK_MID_STREAM_ERROR_SYMBOL]));
+    expect(liveSymbols).toContain('BTC');
+    expect(liveSymbols).not.toContain(MOCK_PRE_STREAM_ERROR_SYMBOL);
+    expect(liveSymbols).not.toContain(MOCK_MID_STREAM_ERROR_SYMBOL);
   });
 
   it('uses MockNewsAdapter when NEWS_API_KEY is not set (live)', async () => {

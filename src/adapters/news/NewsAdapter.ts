@@ -9,33 +9,37 @@ import { toDisplayName } from '@/lib/symbolMeta';
 import { NEWS_DEFAULT_LIMIT, NEWS_REVALIDATE_S } from '@/lib/config';
 
 export class NewsAdapter implements NewsPort {
-  async fetchNews(params: { symbol: string; limit?: number }): Promise<NewsArticle[]> {
-    const { symbol, limit = NEWS_DEFAULT_LIMIT } = params;
+  async fetchNews(params: { symbol: string; limit?: number; signal?: AbortSignal }): Promise<NewsArticle[]> {
+    const { symbol, limit = NEWS_DEFAULT_LIMIT, signal } = params;
     const key = inflightKey('news/newsapiai', { symbol, limit });
 
-    return dedupe(key, async () => {
+    return dedupe(key, async (sharedSignal) => {
       let url: string | undefined;
       try {
         const searchTerm = toDisplayName(symbol);
 
-        // NewsAPI.ai uses /article/getArticles endpoint
-        const query = new URLSearchParams({
-          keyword: `${searchTerm} cryptocurrency`,
-          keywordOper: 'and',
-          lang: 'eng',
-          articlesSortBy: 'date',
-          articlesCount: String(limit),
-          resultType: 'articles',
-        });
+        // NewsAPI.ai uses /article/getArticles endpoint. The name and
+        // "cryptocurrency" go in as two keywords ANDed together: a single
+        // multi-word keyword is matched as an exact phrase, which most articles
+        // never contain (e.g. "Chainlink cryptocurrency" returns nothing).
+        const query = new URLSearchParams([
+          ['keyword', searchTerm],
+          ['keyword', 'cryptocurrency'],
+          ['keywordOper', 'and'],
+          ['lang', 'eng'],
+          ['articlesSortBy', 'date'],
+          ['articlesCount', String(limit)],
+          ['resultType', 'articles'],
+        ]);
 
         url = `/article/getArticles?${query.toString()}`;
         logRequest({ url, method: 'GET' });
 
         let res: Response;
         try {
-          res = await get(url, { next: { revalidate: NEWS_REVALIDATE_S } as never });
+          res = await get(url, { next: { revalidate: NEWS_REVALIDATE_S } as never, signal: sharedSignal });
         } catch (fetchError) {
-          logError(fetchError, { symbol, limit, stage: 'fetch' });
+          if (!sharedSignal.aborted) logError(fetchError, { symbol, limit, stage: 'fetch' });
           throw fetchError;
         }
 
@@ -55,10 +59,13 @@ export class NewsAdapter implements NewsPort {
 
         return articles;
       } catch (err) {
+        // Every caller has already given up (and rejected with its own reason),
+        // so this is a cancellation, not a failure worth logging.
+        if (sharedSignal.aborted) throw err;
         logError(err, { symbol, limit, url });
         // Graceful degradation: return empty array on failure
         return [];
       }
-    });
+    }, signal);
   }
 }

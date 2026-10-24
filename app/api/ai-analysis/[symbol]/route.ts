@@ -20,12 +20,18 @@ export async function POST(
         { status: 400 }
       );
     }
+    // Continue with the trimmed symbol the schema produced, not the raw param.
+    symbol = parsed.data;
 
     // The client may request a mode via header; the server stays authoritative —
     // `resolveAiAnalysisMode` only honors it where override is permitted.
     const requestedMode = parseRequestedMode(req.headers.get(AI_ANALYSIS_MODE_HEADER));
 
-    const iterator = analyzeAssetStream(symbol, { requestedMode })[Symbol.asyncIterator]();
+    // `req.signal` aborts when the client disconnects, which cancels the
+    // analysis even before the first chunk, while no response stream exists yet.
+    const iterator = analyzeAssetStream(symbol, { requestedMode, signal: req.signal })[
+      Symbol.asyncIterator
+    ]();
 
     // Pull the first chunk eagerly: a pre-stream failure (missing config, an
     // invalid request, or a first-token upstream error) is wrapped as an
@@ -58,8 +64,11 @@ export async function POST(
           if (cancelled) return;
           // Headers are already sent, so the status code can no longer change.
           // Error the stream instead — the client reader rejects rather than
-          // receiving a silently truncated analysis.
-          logError(e, { route: 'POST /api/ai-analysis (stream)', symbol: symbolForLog });
+          // receiving a silently truncated analysis. A client disconnect aborts
+          // the analysis on purpose, so only real failures are logged.
+          if (!req.signal.aborted) {
+            logError(e, { route: 'POST /api/ai-analysis (stream)', symbol: symbolForLog });
+          }
           controller.error(e);
         }
       },
@@ -78,6 +87,10 @@ export async function POST(
       },
     });
   } catch (e) {
+    // The client left before the first chunk and the analysis was aborted on
+    // purpose: nobody will read an error, so don't log one. (499 is the
+    // conventional "client closed request" status.)
+    if (req.signal.aborted) return new Response(null, { status: 499 });
     return apiErrorResponse(e, { route: 'POST /api/ai-analysis', symbol });
   }
 }

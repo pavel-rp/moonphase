@@ -1,11 +1,11 @@
-import { AiAnalysisPort } from '@/ports/AiAnalysisPort';
+import { AiAnalysisOptions, AiAnalysisPort } from '@/ports/AiAnalysisPort';
 import { ExternalException } from '@/lib/errors';
 
 /**
  * Reserved symbols that make the mock simulate a failure, so QA can exercise the
  * error UI and the regenerate flow without waiting on a real upstream failure.
- * Both pass `symbolSchema` (length 1–20), so they reach the adapter through the
- * real route.
+ * Both pass `symbolSchema` (length 1–20), and the composition root adds them to
+ * the mock-mode whitelist, so they reach the adapter through the real route.
  */
 export const MOCK_PRE_STREAM_ERROR_SYMBOL = '__ERROR_PRE__';
 export const MOCK_MID_STREAM_ERROR_SYMBOL = '__ERROR_MID__';
@@ -47,7 +47,21 @@ function toChunks(text: string): string[] {
   return chunks;
 }
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+/** Waits `ms`, or rejects with the signal's reason as soon as it aborts. */
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal?.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
 
 /**
  * Inference-free implementation of the AiAnalysisPort. Streams a deterministic,
@@ -56,7 +70,8 @@ const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
  * failures.
  */
 export class MockAiAnalysisAdapter implements AiAnalysisPort {
-  async analyzeAsset(symbol: string): Promise<string> {
+  async analyzeAsset(symbol: string, opts: AiAnalysisOptions = {}): Promise<string> {
+    opts.signal?.throwIfAborted();
     if (symbol === MOCK_PRE_STREAM_ERROR_SYMBOL || symbol === MOCK_MID_STREAM_ERROR_SYMBOL) {
       throw new ExternalException(
         { kind: 'Unavailable', details: { symbol, simulated: true } },
@@ -66,7 +81,9 @@ export class MockAiAnalysisAdapter implements AiAnalysisPort {
     return buildAnalysis(symbol);
   }
 
-  async *analyzeAssetStream(symbol: string): AsyncIterable<string> {
+  async *analyzeAssetStream(symbol: string, opts: AiAnalysisOptions = {}): AsyncIterable<string> {
+    const { signal } = opts;
+    signal?.throwIfAborted();
     // Pre-stream failure: throw before yielding anything, so the route maps it to
     // a JSON HTTP error before streaming headers are sent.
     if (symbol === MOCK_PRE_STREAM_ERROR_SYMBOL) {
@@ -79,7 +96,8 @@ export class MockAiAnalysisAdapter implements AiAnalysisPort {
     const chunks = toChunks(buildAnalysis(symbol));
 
     for (let i = 0; i < chunks.length; i++) {
-      await delay(CHUNK_DELAY_MS);
+      // Like the real adapter, a caller abort ends the stream with the signal's reason.
+      await delay(CHUNK_DELAY_MS, signal);
       yield chunks[i];
 
       // Mid-stream failure: throw after the first chunk so the client reader

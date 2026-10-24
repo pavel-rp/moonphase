@@ -60,7 +60,7 @@ describe('NewsAdapter', () => {
       expect(result[0].title).toBe('BTC News');
       expect(result[1].title).toBe('BTC Analysis');
       expect(mockGet).toHaveBeenCalledWith(
-        expect.stringContaining('keyword=Bitcoin+cryptocurrency'),
+        expect.stringContaining('keyword=Bitcoin&keyword=cryptocurrency'),
         expect.objectContaining({ next: { revalidate: 300 } })
       );
     });
@@ -120,6 +120,31 @@ describe('NewsAdapter', () => {
       const result = await adapter.fetchNews({ symbol: 'BTC' });
 
       expect(result).toEqual([]);
+    });
+
+    it('rejects with the caller\'s reason, without logging, when the caller aborts', async () => {
+      const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        mockGet.mockImplementation(
+          (_url, init) =>
+            new Promise<Response>((_resolve, reject) => {
+              init!.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+            }),
+        );
+        const controller = new AbortController();
+        const reason = new Error('client left');
+
+        const pending = adapter.fetchNews({ symbol: 'BTC', signal: controller.signal });
+        controller.abort(reason);
+
+        await expect(pending).rejects.toBe(reason);
+        // Let the cancelled fetch settle inside the adapter.
+        await new Promise((resolve) => setImmediate(resolve));
+        expect(mockGet.mock.calls[0][1]!.signal!.aborted).toBe(true);
+        expect(errorSpy).not.toHaveBeenCalled();
+      } finally {
+        errorSpy.mockRestore();
+      }
     });
 
     it('should handle invalid JSON response gracefully', async () => {
@@ -203,7 +228,10 @@ describe('NewsAdapter', () => {
       await adapter.fetchNews({ symbol: 'BTC', limit: 3 });
 
       const callArg = mockGet.mock.calls[0][0];
-      expect(callArg).toContain('keyword=Bitcoin+cryptocurrency');
+      const params = new URLSearchParams(callArg.split('?')[1]);
+      // Separate keywords ANDed together, not one phrase NewsAPI.ai would match exactly.
+      expect(params.getAll('keyword')).toEqual(['Bitcoin', 'cryptocurrency']);
+      expect(params.get('keywordOper')).toBe('and');
       expect(callArg).toContain('articlesSortBy=date');
       expect(callArg).toContain('lang=eng');
       expect(callArg).toContain('articlesCount=3');

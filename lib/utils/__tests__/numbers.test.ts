@@ -1,4 +1,4 @@
-import { prettifyNumber, formatNumber, formatPercent } from '../numbers'
+import { prettifyNumber, formatNumber, formatPercent, isFlatPercent } from '../numbers'
 
 describe('prettifyNumber', () => {
   it('should format small numbers with grouping', () => {
@@ -60,15 +60,16 @@ describe('formatNumber', () => {
 })
 
 describe('formatPercent', () => {
-  it('should format percentages with 2 decimal places', () => {
-    expect(formatPercent(5.123)).toBe('5.12%')
-    expect(formatPercent(5.1)).toBe('5.10%')
-    expect(formatPercent(5)).toBe('5.00%')
+  it('should format gains with a + sign and 2 decimal places', () => {
+    expect(formatPercent(5.123)).toBe('+5.12%')
+    expect(formatPercent(5.1)).toBe('+5.10%')
+    expect(formatPercent(5)).toBe('+5.00%')
   })
 
-  it('should handle null and undefined', () => {
-    expect(formatPercent(null as unknown as number)).toBe('0.00%')
-    expect(formatPercent(undefined as unknown as number)).toBe('0.00%')
+  it('should show a missing value as n/a', () => {
+    expect(formatPercent(null)).toBe('n/a')
+    expect(formatPercent(undefined)).toBe('n/a')
+    expect(formatPercent(NaN)).toBe('n/a')
   })
 
   it('should handle zero', () => {
@@ -77,5 +78,20 @@ describe('formatPercent', () => {
 
   it('should handle negative numbers', () => {
     expect(formatPercent(-5.123)).toBe('-5.12%')
+  })
+
+  it('should not sign values that round to zero', () => {
+    expect(formatPercent(0.004)).toBe('0.00%')
+    expect(formatPercent(-0.004)).toBe('0.00%')
+  })
+})
+
+describe('isFlatPercent', () => {
+  it('is true exactly when the value displays as 0.00%', () => {
+    expect(isFlatPercent(0)).toBe(true)
+    expect(isFlatPercent(0.004)).toBe(true)
+    expect(isFlatPercent(-0.004)).toBe(true)
+    expect(isFlatPercent(0.005)).toBe(false)
+    expect(isFlatPercent(-0.01)).toBe(false)
   })
 })

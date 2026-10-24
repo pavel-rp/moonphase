@@ -6,12 +6,14 @@ import { resolveAiAnalysisMode, type AiAnalysisMode } from '@/lib/aiAnalysisMode
 export interface AnalyzeOptions {
   /** Client-requested mode (e.g. from the gated `x-ai-analysis-mode` header). */
   requestedMode?: AiAnalysisMode;
+  /** Aborts the analysis, e.g. the route's `req.signal` on client disconnect. */
+  signal?: AbortSignal;
 }
 
 export async function analyzeAsset(symbol: string, opts: AnalyzeOptions = {}): Promise<string> {
   const mode = resolveAiAnalysisMode(getEnv(), opts.requestedMode);
   const deps = await getAiAnalysisDeps(mode);
-  return getAiAnalysis(deps, symbol);
+  return getAiAnalysis(deps, symbol, { signal: opts.signal });
 }
 
 /**
@@ -28,5 +30,5 @@ export async function* analyzeAssetStream(
 ): AsyncIterable<string> {
   const mode = resolveAiAnalysisMode(getEnv(), opts.requestedMode);
   const deps = await getAiAnalysisDeps(mode);
-  yield* getAiAnalysisStream(deps, symbol);
+  yield* getAiAnalysisStream(deps, symbol, { signal: opts.signal });
 }

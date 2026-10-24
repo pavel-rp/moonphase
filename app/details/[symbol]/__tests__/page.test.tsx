@@ -93,8 +93,8 @@ jest.mock("@/components/crypto/crypto-sparkline", () => ({
 
 // Mock utility functions
 jest.mock("@/lib/utils/numbers", () => ({
+  ...jest.requireActual("@/lib/utils/numbers"),
   formatNumber: (num: number) => num.toLocaleString(),
-  formatPercent: (num: number) => `${num.toFixed(2)}%`,
   prettifyNumber: (num: number) => `${(num / 1000000).toFixed(1)}M`,
 }));
 
@@ -165,6 +165,7 @@ jest.mock("next/dynamic", () => ({
 
 import { notFound } from "next/navigation";
 import { fetchAssets } from "@/lib/data/assets";
+import { COINCAP_MAX_REQUEST_LIMIT } from "@/lib/config";
 
 const mockFetchAssets = fetchAssets as jest.MockedFunction<typeof fetchAssets>;
 
@@ -203,7 +204,7 @@ describe("SymbolDetailsPage", () => {
 
     // Check price section
     expect(screen.getByText("Price Information")).toBeInTheDocument();
-    expect(screen.getByText("2.50%")).toBeInTheDocument();
+    expect(screen.getByText("+2.50%")).toBeInTheDocument();
     expect(screen.getByTestId("crypto-sparkline")).toBeInTheDocument();
 
     // Check market data section (mocked card)
@@ -227,6 +228,18 @@ describe("SymbolDetailsPage", () => {
     }).rejects.toThrow();
 
     expect(notFound).toHaveBeenCalledTimes(1);
+  });
+
+  it("finds an asset outside the home page's top assets", async () => {
+    const arbitrum = { ...mockAsset, id: "arbitrum", symbol: "ARB", name: "Arbitrum", rank: 45 };
+    mockFetchAssets.mockResolvedValueOnce([mockAsset]).mockResolvedValueOnce([mockAsset, arbitrum]);
+
+    render(await SymbolDetailsPage({ params: Promise.resolve({ symbol: "arb" }) }));
+
+    expect(notFound).not.toHaveBeenCalled();
+    expect(mockFetchAssets).toHaveBeenNthCalledWith(1);
+    expect(mockFetchAssets).toHaveBeenNthCalledWith(2, { limit: COINCAP_MAX_REQUEST_LIMIT });
+    expect(screen.getByText("Arbitrum")).toBeInTheDocument();
   });
 
   it("handles case-insensitive symbol matching", async () => {
@@ -263,17 +276,23 @@ describe("SymbolDetailsPage", () => {
     expect(screen.getByText("#2")).toBeInTheDocument();
   });
 
-  it("handles fetch errors gracefully", async () => {
-    mockFetchAssets.mockRejectedValue(new Error("API Error"));
-    
-    const params = Promise.resolve({ symbol: "btc" });
-    
-    // This should call notFound() due to the error
-    await expect(async () => {
-      await SymbolDetailsPage({ params });
-    }).rejects.toThrow();
+  it("shows a minus sign on a 24h loss", async () => {
+    mockFetchAssets.mockResolvedValue([{ ...mockAsset, changePercent24Hr: -3.1 }]);
 
-    expect(notFound).toHaveBeenCalledTimes(1);
+    const params = Promise.resolve({ symbol: "btc" });
+    const component = await SymbolDetailsPage({ params });
+    render(component);
+
+    expect(screen.getByText("-3.10%")).toBeInTheDocument();
+  });
+
+  it("propagates fetch errors to the error boundary instead of a 404", async () => {
+    mockFetchAssets.mockRejectedValue(new Error("API Error"));
+
+    const params = Promise.resolve({ symbol: "btc" });
+
+    await expect(SymbolDetailsPage({ params })).rejects.toThrow("API Error");
+    expect(notFound).not.toHaveBeenCalled();
   });
 
   it("renders all required UI components", async () => {

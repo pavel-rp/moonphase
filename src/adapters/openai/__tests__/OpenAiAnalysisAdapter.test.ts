@@ -120,9 +120,9 @@ describe('OpenAiAnalysisAdapter', () => {
       const result = await freshAdapter().analyzeAsset('BTC');
 
       expect(result).toBe('ANALYSIS RESULT');
-      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14);
-      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT');
-      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5 });
+      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14, { signal: undefined });
+      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT', { signal: undefined });
+      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5, signal: undefined });
 
       const call = mockGenerateText.mock.calls[0][0];
       expect(call.providerOptions).toEqual({ openai: { reasoningEffort: 'low' } });
@@ -327,6 +327,77 @@ describe('OpenAiAnalysisAdapter', () => {
       });
     });
 
+    it('maps a timeout that ends the text stream cleanly to ExternalException(Timeout)', async () => {
+      // Mirrors the real AI SDK: on abort, `streamText` enqueues an `abort` part
+      // and closes the stream, so `textStream` completes without throwing.
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          yield 'Partial ';
+          await new Promise<void>((resolve) => {
+            abortSignal.addEventListener('abort', () => resolve(), { once: true });
+          });
+        })(),
+      }));
+
+      const out: string[] = [];
+      const run = async () => {
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+          out.push(chunk);
+        }
+      };
+
+      await expect(run()).rejects.toMatchObject({
+        name: 'ExternalException',
+        kind: 'Timeout',
+        timeoutMs: 20,
+      });
+      expect(out).toEqual(['Partial ']);
+    });
+
+    it('does not time out a stream whose consumer reads slowly after the model finished', async () => {
+      // The budget covers waiting on the model, not time a delivered chunk
+      // spends waiting at `yield` for a slow client.
+      process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          yield 'First ';
+          // Like the real SDK, end early if the signal aborted while suspended.
+          if (abortSignal.aborted) return;
+          yield 'last.';
+        })(),
+      }));
+
+      const out: string[] = [];
+      for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+        out.push(chunk);
+        await new Promise((resolve) => setTimeout(resolve, 40));
+      }
+
+      expect(out).toEqual(['First ', 'last.']);
+    });
+
+    it('releases the model stream when the consumer stops early', async () => {
+      let released = false;
+      mockStreamText.mockReturnValue({
+        textStream: (async function* () {
+          try {
+            yield 'one';
+            yield 'two';
+          } finally {
+            released = true;
+          }
+        })(),
+      });
+
+      for await (const chunk of freshAdapter().analyzeAssetStream('BTC')) {
+        void chunk;
+        break;
+      }
+
+      expect(released).toBe(true);
+    });
+
     it('does not classify an analyzeAsset buildPrompt failure as Timeout (signal not yet created)', async () => {
       process.env.AI_ANALYSIS_TIMEOUT_MS = '20';
       deps.binance.getDailyCandles.mockImplementation(() => {
@@ -361,6 +432,111 @@ describe('OpenAiAnalysisAdapter', () => {
         kind: 'Unavailable',
       });
       expect(mockStreamText).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('caller abort', () => {
+    let errorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      deps.binance.getDailyCandles.mockResolvedValue([candle(100)]);
+      deps.binance.get24HrStats.mockResolvedValue(100);
+      deps.news.fetchNews.mockResolvedValue([]);
+      errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    });
+
+    afterEach(() => errorSpy.mockRestore());
+
+    async function collect(stream: AsyncIterable<string>): Promise<string[]> {
+      const out: string[] = [];
+      for await (const chunk of stream) out.push(chunk);
+      return out;
+    }
+
+    it('passes the caller signal to the Binance and news fetches', async () => {
+      const { signal } = new AbortController();
+      mockGenerateText.mockResolvedValue({ text: 'ok' });
+
+      await freshAdapter().analyzeAsset('BTC', { signal });
+
+      expect(deps.binance.getDailyCandles).toHaveBeenCalledWith('BTCUSDT', 14, { signal });
+      expect(deps.binance.get24HrStats).toHaveBeenCalledWith('BTCUSDT', { signal });
+      expect(deps.news.fetchNews).toHaveBeenCalledWith({ symbol: 'BTC', limit: 5, signal });
+    });
+
+    it('starts no fetches when the caller has already aborted', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      controller.abort(reason);
+
+      await expect(
+        collect(freshAdapter().analyzeAssetStream('BTC', { signal: controller.signal })),
+      ).rejects.toBe(reason);
+      expect(deps.binance.getDailyCandles).not.toHaveBeenCalled();
+      expect(deps.news.fetchNews).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('skips the model call when the caller aborts while the prompt is built', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      deps.news.fetchNews.mockImplementation(async () => {
+        controller.abort(reason);
+        return [];
+      });
+
+      await expect(
+        collect(freshAdapter().analyzeAssetStream('BTC', { signal: controller.signal })),
+      ).rejects.toBe(reason);
+      await expect(freshAdapter().analyzeAsset('BTC', { signal: controller.signal })).rejects.toBe(reason);
+      expect(mockStreamText).not.toHaveBeenCalled();
+      expect(mockGenerateText).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('stops a running stream with the caller\'s reason, not a Timeout', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      // Like the real AI SDK, the text stream ends cleanly once its signal aborts.
+      mockStreamText.mockImplementation(({ abortSignal }: { abortSignal: AbortSignal }) => ({
+        textStream: (async function* () {
+          yield 'Partial ';
+          await new Promise<void>((resolve) => {
+            if (abortSignal.aborted) return resolve();
+            abortSignal.addEventListener('abort', () => resolve(), { once: true });
+          });
+        })(),
+      }));
+
+      const out: string[] = [];
+      const run = async () => {
+        for await (const chunk of freshAdapter().analyzeAssetStream('BTC', { signal: controller.signal })) {
+          out.push(chunk);
+          controller.abort(reason);
+        }
+      };
+
+      await expect(run()).rejects.toBe(reason);
+      expect(out).toEqual(['Partial ']);
+      // The model call's own signal was aborted by the caller, not by our timeout.
+      expect(mockStreamText.mock.calls[0][0].abortSignal.reason).toBe(reason);
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects analyzeAsset with the caller\'s reason when aborted mid-call', async () => {
+      const controller = new AbortController();
+      const reason = new Error('client left');
+      mockGenerateText.mockImplementation(
+        ({ abortSignal }: { abortSignal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            abortSignal.addEventListener('abort', () => reject(new Error('aborted')), { once: true });
+            controller.abort(reason);
+          }),
+      );
+
+      await expect(freshAdapter().analyzeAsset('BTC', { signal: controller.signal })).rejects.toBe(reason);
+      expect(mockGenerateText.mock.calls[0][0].abortSignal.reason).toBe(reason);
+      expect(errorSpy).not.toHaveBeenCalled();
     });
   });
 });

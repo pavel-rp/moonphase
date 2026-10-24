@@ -8,7 +8,7 @@ const BASE_URL = BINANCE_BASE_URL ?? 'https://api.binance.com/api/v3';
 
 export async function get(
   path: string,
-  { next }: { next?: NextFetchRequestConfig } = {},
+  { next, signal }: { next?: NextFetchRequestConfig; signal?: AbortSignal } = {},
 ) {
   const { BINANCE_API_KEY } = getEnv();
   const url = `${BASE_URL}${path}`;
@@ -19,7 +19,7 @@ export async function get(
   }
   return fetchWithRetry(
     url,
-    { next, headers },
+    { next, headers, signal },
     { timeoutMs: BINANCE_TIMEOUT_MS },
   );
 }

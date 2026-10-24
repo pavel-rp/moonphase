@@ -278,6 +278,30 @@ describe("AiAnalysisCard", () => {
     });
   });
 
+  it("still renders and toggles when browser storage access throws", () => {
+    const blocked = () => {
+      throw new DOMException("The operation is insecure.", "SecurityError");
+    };
+    const getItem = jest
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(blocked);
+    const setItem = jest
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(blocked);
+
+    try {
+      render(<AiAnalysisCard name="Bitcoin" symbol="BTC" aiOverrideAllowed />);
+
+      fireEvent.click(screen.getByRole("button", { name: /^mock$/i }));
+      expect(
+        screen.getByRole("button", { name: /generate ai analysis/i }),
+      ).toBeInTheDocument();
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
+  });
+
   it("aborts the in-flight stream on unmount", () => {
     const { unmount } = render(
       <AiAnalysisCard name="Bitcoin" symbol="BTC" />,
