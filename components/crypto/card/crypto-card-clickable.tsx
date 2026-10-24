@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
 import { LoadingRings } from "../../ui/animation/loading-rings.client";
@@ -17,7 +17,6 @@ export default function CryptoCardClickable({
   changePercent24Hr,
   children,
 }: CryptoCardClickableProps) {
-  const router = useRouter();
   const [showLoadingRings, setShowLoadingRings] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -36,7 +35,13 @@ export default function CryptoCardClickable({
     };
   }, []);
 
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Modified clicks open a new tab/window and leave this page in place, so
+    // they shouldn't start the navigation spinner.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+      return;
+    }
+
     // Clear any existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -46,16 +51,22 @@ export default function CryptoCardClickable({
     timeoutRef.current = setTimeout(() => {
       setShowLoadingRings(true);
     }, 300);
-
-    // Navigate to detail page
-    router.push(`/details/${symbol.toLowerCase()}`, { scroll: false });
   };
 
+  // A real link (not a click handler on a div) so the card is reachable and
+  // activatable by keyboard and screen readers, and supports open-in-new-tab.
+  // Prefetch stays off to keep the home page from rendering every detail page.
   return (
     <div className="relative">
-      <HoverEffectCard glowColor={glowColor} onClick={handleCardClick}>
-        {children}
-      </HoverEffectCard>
+      <Link
+        href={`/details/${symbol.toLowerCase()}`}
+        scroll={false}
+        prefetch={false}
+        onClick={handleCardClick}
+        className="block rounded-3xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      >
+        <HoverEffectCard glowColor={glowColor}>{children}</HoverEffectCard>
+      </Link>
       {showLoadingRings && <LoadingRings color={ringColor} />}
     </div>
   );

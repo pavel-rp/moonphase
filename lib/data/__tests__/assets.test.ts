@@ -125,7 +125,11 @@ describe('fetchAssets', () => {
 
     expect(mockFetch).toHaveBeenCalledWith(
       'https://rest.coincap.io/v3/assets?limit=19&offset=0',
-      { next: { revalidate: 60 }, headers: { Authorization: 'Bearer test-api-key' } }
+      {
+        next: { revalidate: 60 },
+        headers: { Authorization: 'Bearer test-api-key' },
+        signal: expect.any(AbortSignal),
+      }
     )
   })
 

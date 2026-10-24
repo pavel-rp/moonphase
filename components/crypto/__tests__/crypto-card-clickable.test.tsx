@@ -1,14 +1,40 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import CryptoCardClickable from "../card/crypto-card-clickable";
 import { Asset } from "@/lib/data/assets";
 
-// Mock useRouter
-const mockPush = jest.fn();
-jest.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
+// Render next/link as a plain anchor (exposing its routing props) and stop
+// jsdom's unimplemented navigation on click.
+jest.mock("next/link", () => ({
+  __esModule: true,
+  default: ({
+    href,
+    children,
+    onClick,
+    scroll,
+    prefetch,
+    className,
+  }: {
+    href: string;
+    children: React.ReactNode;
+    onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+    scroll?: boolean;
+    prefetch?: boolean;
+    className?: string;
+  }) => (
+    <a
+      href={href}
+      className={className}
+      data-scroll={String(scroll)}
+      data-prefetch={String(prefetch)}
+      onClick={(e) => {
+        onClick?.(e);
+        e.preventDefault();
+      }}
+    >
+      {children}
+    </a>
+  ),
 }));
 
 // Mock HoverEffectCard
@@ -65,8 +91,8 @@ describe("CryptoCardClickable", () => {
     explorer: "https://blockchair.com/bitcoin",
   };
 
-  beforeEach(() => {
-    mockPush.mockClear();
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it("renders children correctly", () => {
@@ -80,18 +106,18 @@ describe("CryptoCardClickable", () => {
     expect(screen.getByTestId("hover-effect-card")).toBeInTheDocument();
   });
 
-  it("navigates to correct symbol detail page when clicked", () => {
+  it("links to the symbol detail page without scroll reset or prefetch", () => {
     render(
       <CryptoCardClickable {...mockAsset}>
         <div>Bitcoin Card</div>
       </CryptoCardClickable>
     );
 
-    const card = screen.getByTestId("hover-effect-card");
-    fireEvent.click(card);
-
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith("/details/btc", { scroll: false });
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("href", "/details/btc");
+    expect(link).toHaveAttribute("data-scroll", "false");
+    expect(link).toHaveAttribute("data-prefetch", "false");
+    expect(link).toContainElement(screen.getByTestId("hover-effect-card"));
   });
 
   it("handles symbols with different cases correctly", () => {
@@ -102,10 +128,7 @@ describe("CryptoCardClickable", () => {
       </CryptoCardClickable>
     );
 
-    const card = screen.getByTestId("hover-effect-card");
-    fireEvent.click(card);
-
-    expect(mockPush).toHaveBeenCalledWith("/details/btc", { scroll: false });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/details/btc");
   });
 
   it("passes correct glow color based on price change", () => {
@@ -168,10 +191,7 @@ describe("CryptoCardClickable", () => {
       </CryptoCardClickable>
     );
 
-    const card = screen.getByTestId("hover-effect-card");
-    fireEvent.click(card);
-
-    expect(mockPush).toHaveBeenCalledWith("/details/eth", { scroll: false });
+    expect(screen.getByRole("link")).toHaveAttribute("href", "/details/eth");
     expect(screen.getByTestId("hover-effect-card")).toHaveAttribute(
       "data-glow-color",
       "var(--color-red-300)"
@@ -192,26 +212,57 @@ describe("CryptoCardClickable", () => {
         </CryptoCardClickable>
       );
 
-      const card = screen.getByTestId("hover-effect-card");
-      fireEvent.click(card);
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        `/details/${asset.symbol.toLowerCase()}`
+      );
 
-      expect(mockPush).toHaveBeenCalledWith(`/details/${asset.symbol.toLowerCase()}`, { scroll: false });
-      
       unmount();
-      mockPush.mockClear();
     });
   });
 
-  it("maintains accessibility", () => {
+  it("is reachable by keyboard as a link", () => {
     render(
       <CryptoCardClickable {...mockAsset}>
         <div>Accessible Content</div>
       </CryptoCardClickable>
     );
 
-    const card = screen.getByTestId("hover-effect-card");
-    expect(card).toHaveStyle({ cursor: "pointer" });
-    expect(card).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /accessible content/i });
+    link.focus();
+    expect(link).toHaveFocus();
+  });
+
+  it("shows the loading rings shortly after a plain click", () => {
+    jest.useFakeTimers();
+    render(
+      <CryptoCardClickable {...mockAsset}>
+        <div>Bitcoin Card</div>
+      </CryptoCardClickable>
+    );
+
+    fireEvent.click(screen.getByRole("link"));
+    expect(screen.queryByTestId("loading-rings")).not.toBeInTheDocument();
+
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+    expect(screen.getByTestId("loading-rings")).toBeInTheDocument();
+  });
+
+  it("does not show the loading rings for a modified (new-tab) click", () => {
+    jest.useFakeTimers();
+    render(
+      <CryptoCardClickable {...mockAsset}>
+        <div>Bitcoin Card</div>
+      </CryptoCardClickable>
+    );
+
+    fireEvent.click(screen.getByRole("link"), { metaKey: true });
+    act(() => {
+      jest.advanceTimersByTime(300);
+    });
+    expect(screen.queryByTestId("loading-rings")).not.toBeInTheDocument();
   });
 
   it("renders complex children correctly", () => {

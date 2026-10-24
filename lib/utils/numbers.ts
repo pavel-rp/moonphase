@@ -30,7 +30,11 @@ export const formatNumber = (num: number) => {
   }).format(num);
 };
 
+// Always signed ("+1.23%" / "-1.23%") per the data-display convention, except
+// values that round to zero, which read "0.00%" rather than "+0.00%"/"-0.00%".
 export const formatPercent = (num: number) => {
   num = num ?? 0;
-  return `${num.toFixed(2)}%`;
+  const fixed = Math.abs(num).toFixed(2);
+  const sign = fixed === "0.00" ? "" : num > 0 ? "+" : num < 0 ? "-" : "";
+  return `${sign}${fixed}%`;
 };

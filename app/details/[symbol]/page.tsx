@@ -34,18 +34,16 @@ interface SymbolDetailsPageProps {
   params: Promise<{ symbol: string }>;
 }
 
+// Only a symbol missing from a successful response is a 404. Upstream failures
+// propagate to the error boundary (app/error.tsx) instead of posing as
+// "page not found".
 async function getAssetBySymbol(symbol: string): Promise<Asset | null> {
-  try {
-    const assets = await fetchAssets();
-    return (
-      assets.find(
-        (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()
-      ) || null
-    );
-  } catch (error) {
-    console.error(`Error fetching asset for symbol "${symbol}":`, error);
-    return null;
-  }
+  const assets = await fetchAssets();
+  return (
+    assets.find(
+      (asset) => asset.symbol.toLowerCase() === symbol.toLowerCase()
+    ) || null
+  );
 }
 
 export default async function SymbolDetailsPage({
