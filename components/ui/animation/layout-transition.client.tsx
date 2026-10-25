@@ -4,6 +4,7 @@ import { AnimatePresence, motion, Transition } from "motion/react";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { LayoutRouterContext } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { useContext, useState } from "react";
+import { ScrollOnEnter, useRouteScrollRestoration } from "./route-scroll-restoration.client";
 
 function usePreviousValue<T>(value: T): T | undefined {
   const [current, setCurrent] = useState(value);
@@ -48,6 +49,7 @@ export function LayoutTransition({
   transition = { duration: 0.15, ease: [0.22, 1, 0.36, 1] },
 }: LayoutTransitionProps) {
   const segment = useSelectedLayoutSegment();
+  const onPageEnter = useRouteScrollRestoration();
 
   const variants = {
     enter: { x: "100%", opacity: 1 }, 
@@ -64,14 +66,7 @@ export function LayoutTransition({
         overflowX: "clip",
       }}
     >
-      {/* Scroll to the top once the old page has left and before the new one
-          enters. Cards link with `scroll={false}`, so scrolling after the enter
-          animation slid the new page in at the old offset and then jumped. */}
-      <AnimatePresence
-        mode="wait"
-        initial={false}
-        onExitComplete={() => window.scrollTo({ top: 0, behavior: "instant" })}
-      >
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={segment}
           variants={variants}
@@ -85,6 +80,10 @@ export function LayoutTransition({
             willChange: "transform",
           }}
         >
+          {/* Places the entering page's scroll (top, or its saved offset on
+              Back/Forward) once it's in the DOM and before it paints. It
+              starts off-screen at x: 100%, so the jump is never seen. */}
+          <ScrollOnEnter onEnter={onPageEnter} />
           <FrozenRouter>{children}</FrozenRouter>
         </motion.div>
       </AnimatePresence>
