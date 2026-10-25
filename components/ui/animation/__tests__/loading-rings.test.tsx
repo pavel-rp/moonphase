@@ -18,6 +18,17 @@ describe("LoadingRings", () => {
     expect(rings.length).toBe(3);
   });
 
+  it("staggers the rings on the theme animation and stops them under reduced motion", () => {
+    const { container } = render(<LoadingRings color="var(--color-green-300)" />);
+
+    const rings = Array.from(container.querySelectorAll<HTMLElement>("div[style*='border']"));
+    expect(rings.map((ring) => ring.style.animationDelay)).toEqual(["0s", "0.5s", "1s"]);
+    rings.forEach((ring) => {
+      expect(ring).toHaveClass("animate-expand-fade", "motion-reduce:animate-none");
+      expect(ring.style.filter).toBe("drop-shadow(0 0 8px var(--color-green-300))");
+    });
+  });
+
   it("applies correct border color", () => {
     const testColor = "#3b82f6";
     const { container } = render(<LoadingRings color={testColor} />);

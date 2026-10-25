@@ -17,6 +17,9 @@ jest.mock("@/components/crypto/crypto-sparkline", () => ({
   ),
 }));
 
+const mockSet = jest.fn();
+let mockReduceMotion = false;
+
 // Mock motion/react components
 jest.mock("motion/react", () => ({
   motion: {
@@ -27,8 +30,9 @@ jest.mock("motion/react", () => ({
   useMotionTemplate: (template: string) => template,
   useMotionValue: (initial: number) => ({
     get: () => initial,
-    set: jest.fn(),
+    set: mockSet,
   }),
+  useReducedMotionConfig: () => mockReduceMotion,
   useSpring: (value: unknown) => value,
 }));
 
@@ -88,6 +92,32 @@ describe("HoverEffectCard", () => {
     // Simulate mouse move event
     fireEvent.mouseMove(card!);
     // The component should handle the event without throwing errors
+  });
+
+  it("tilts toward the pointer on mouse move", () => {
+    mockSet.mockClear();
+    mockReduceMotion = false;
+    render(<HoverEffectCard {...defaultProps} />);
+
+    const card = screen.getByText("Test Content").closest(".transform-3d");
+    fireEvent.mouseMove(card!, { clientX: 10, clientY: 10 });
+
+    expect(mockSet).toHaveBeenCalled();
+  });
+
+  it("does not tilt when the user prefers reduced motion", () => {
+    mockSet.mockClear();
+    mockReduceMotion = true;
+    try {
+      render(<HoverEffectCard {...defaultProps} />);
+
+      const card = screen.getByText("Test Content").closest(".transform-3d");
+      fireEvent.mouseMove(card!, { clientX: 10, clientY: 10 });
+
+      expect(mockSet).not.toHaveBeenCalled();
+    } finally {
+      mockReduceMotion = false;
+    }
   });
 
   it("handles mouse leave events", () => {

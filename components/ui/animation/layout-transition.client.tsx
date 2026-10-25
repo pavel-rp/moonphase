@@ -64,7 +64,14 @@ export function LayoutTransition({
         overflowX: "clip",
       }}
     >
-      <AnimatePresence mode="wait" initial={false}>
+      {/* Scroll to the top once the old page has left and before the new one
+          enters. Cards link with `scroll={false}`, so scrolling after the enter
+          animation slid the new page in at the old offset and then jumped. */}
+      <AnimatePresence
+        mode="wait"
+        initial={false}
+        onExitComplete={() => window.scrollTo({ top: 0, behavior: "instant" })}
+      >
         <motion.div
           key={segment}
           variants={variants}
@@ -76,11 +83,6 @@ export function LayoutTransition({
             position: "absolute",
             inset: 0,
             willChange: "transform",
-          }}
-          onAnimationComplete={() => {
-            if (typeof window !== "undefined") {
-              window.scrollTo({ top: 0, behavior: "instant" });
-            }
           }}
         >
           <FrozenRouter>{children}</FrozenRouter>

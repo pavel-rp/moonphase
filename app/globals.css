@@ -121,7 +121,14 @@
   body {
     background-color: #b9b7b4;
     overflow-y: scroll;
-    scroll-behavior: smooth;
+  }
+
+  /* Smooth scrolling is motion too, so it's only on without a reduced-motion
+     preference. */
+  @media (prefers-reduced-motion: no-preference) {
+    body {
+      scroll-behavior: smooth;
+    }
   }
 }
 
@@ -135,6 +142,12 @@
      — reads as inhale-spin-exhale, not a mechanical linear spinner. */
   --animate-icon-thinking: iconThinking 2.2s cubic-bezier(0.65, 0, 0.35, 1)
     infinite;
+
+  /* ActionButton's looping shine while generating (keyframes below). */
+  --animate-shimmer-sweep: shimmerSweep 1.8s ease-in-out infinite;
+
+  /* LoadingRings' expanding, fading pulse (keyframes below). */
+  --animate-expand-fade: expandFade 1.5s ease-out infinite;
 }
 
 @keyframes iconThinking {

@@ -6,6 +6,7 @@ import {
   motion,
   useMotionTemplate,
   useMotionValue,
+  useReducedMotionConfig,
   useSpring,
 } from "motion/react";
 import { useRef } from "react";
@@ -25,6 +26,8 @@ export function HoverEffectCard({
   className,
 }: HoverEffectCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  // Follows the root MotionConfig, like the route slide.
+  const reduceMotion = useReducedMotionConfig();
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -35,7 +38,9 @@ export function HoverEffectCard({
   const transform = useMotionTemplate`rotateX(${xSpring}deg) rotateY(${ySpring}deg)`;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (!ref.current) {
+    // The tilt is motion triggered by the pointer, so it stays off when the
+    // user asks for reduced motion.
+    if (!ref.current || reduceMotion) {
       return;
     }
 
@@ -62,8 +67,6 @@ export function HoverEffectCard({
   const glowColorVarStyle: React.CSSProperties & { "--tw-glow-color": string } = {
     "--tw-glow-color": glowColor,
   };
-
-  // Removed debug logging for production code.
 
   return (
     <motion.div

@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, RefObject } from "react";
 import { HoverEffectCard } from "../../ui/animation/hover-effect-card.client";
 import { LoadingRings } from "../../ui/animation/loading-rings.client";
-import { getPriceMovementColorVar, getPriceMovementColorValue } from "@/lib/utils/ui-helpers";
+import { getPriceMovementColorVar } from "@/lib/utils/ui-helpers";
+
+function cancelPendingRings(timeoutRef: RefObject<NodeJS.Timeout | null>) {
+  if (timeoutRef.current) {
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }
+}
 
 interface CryptoCardClickableProps {
   symbol: string;
@@ -20,18 +27,32 @@ export default function CryptoCardClickable({
   const [showLoadingRings, setShowLoadingRings] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // CSS variable for HoverEffectCard glow (works in regular CSS)
+  // One CSS variable colors both the card glow and the loading rings, including
+  // the rings' drop-shadow filter.
   const glowColor = getPriceMovementColorVar(changePercent24Hr, 300);
-  // Actual hex value for LoadingRings filter (CSS variables don't work in filters)
-  const ringColor = getPriceMovementColorValue(changePercent24Hr, 300);
 
-  // Cleanup timeout and reset loading state on unmount
+  // The rings normally go away when navigation unmounts this card. If the page
+  // stays instead (Back pressed mid-navigation, or a restore from the
+  // back/forward cache), hide them so they don't loop forever.
   useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+    const hideRings = () => {
+      cancelPendingRings(timeoutRef);
       setShowLoadingRings(false);
+    };
+    // pageshow also fires on the first load, once the page's images finish,
+    // which can land mid-navigation. Only a back/forward-cache restore counts.
+    const hideRingsOnRestore = (e: PageTransitionEvent) => {
+      if (e.persisted) {
+        hideRings();
+      }
+    };
+    window.addEventListener("popstate", hideRings);
+    window.addEventListener("pageshow", hideRingsOnRestore);
+
+    return () => {
+      window.removeEventListener("popstate", hideRings);
+      window.removeEventListener("pageshow", hideRingsOnRestore);
+      cancelPendingRings(timeoutRef);
     };
   }, []);
 
@@ -42,10 +63,7 @@ export default function CryptoCardClickable({
       return;
     }
 
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+    cancelPendingRings(timeoutRef);
 
     // Show loading rings after a brief delay (300ms) to avoid flashing on fast navigations
     timeoutRef.current = setTimeout(() => {
@@ -67,7 +85,7 @@ export default function CryptoCardClickable({
       >
         <HoverEffectCard glowColor={glowColor}>{children}</HoverEffectCard>
       </Link>
-      {showLoadingRings && <LoadingRings color={ringColor} />}
+      {showLoadingRings && <LoadingRings color={glowColor} />}
     </div>
   );
 }
