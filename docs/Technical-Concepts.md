@@ -12,8 +12,8 @@ The App Router encourages nested layouts, streaming, and server components for e
 ### Zod Validation
 Schema-first validation and type inference used for environment parsing and API response coercion. Docs: [zod.dev](https://zod.dev)
 
-### GSAP Animations
-The sparkline animation uses GSAP and the DrawSVG plugin through a client-side HOC. Docs: [gsap.com/docs](https://gsap.com/docs/)
+### Motion Animations
+The sparkline client HOC uses Motion to draw its non-scaling stroke over 0.8s (cubic-out) and fade its container over 0.4s (quadratic-in/out). Screen-scaled polyline lengths are measured once in a batch before dash writes. The same library drives route slides, hover tilt and parallax. Animations respect reduced motion, including live preference changes. Docs: [motion.dev/docs/react](https://motion.dev/docs/react)
 
 ### Tailwind CSS
 Utility-first CSS for rapid UI design. Docs: [tailwindcss.com/docs](https://tailwindcss.com/docs)

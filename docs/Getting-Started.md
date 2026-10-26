@@ -40,7 +40,7 @@ pnpm test:coverage  # coverage report
 ### Troubleshooting
 - **Invalid environment configuration**: Thrown from `getEnv()` if variables are malformed. Ensure `.env.local` matches `src/lib/env.ts` schema.
 - **502 from /api/assets**: Upstream CoinCap error or bad API key. Verify `COINCAP_API_KEY` and network access.
-- **ESM/test issues with animations**: GSAP and client-only animations are mocked in `jest.setup.js`.
+- **ESM/test issues with animations**: The animated sparkline is mocked in `jest.setup.js`; animation unit tests mock Motion locally.
 - **Port in use (3000)**: Set `PORT=3001 pnpm dev` to use another port.
 - **Node version mismatch**: Use Node 20.x to match CI.
 

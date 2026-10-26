@@ -58,7 +58,7 @@ The API route `app/api/assets/route.ts` exposes `GET /api/assets?limit&offset`, 
 
 ### UI & rendering
 - **Next.js App Router**: Server components with `Suspense` boundaries for async data.
-- **Sparklines**: `components/ui/sparkline.tsx` renders an SVG sparkline; a client HOC adds a GSAP line-draw animation.
+- **Sparklines**: `components/ui/sparkline.tsx` renders an SVG sparkline; a client HOC adds a Motion-driven line-draw animation.
 - **Details page**: `app/details/[symbol]/page.tsx` fetches assets, performs case-insensitive symbol lookup, and renders metrics.
 
 ### Design decisions
