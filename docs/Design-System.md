@@ -18,7 +18,7 @@ MoonPhase embraces a sleek, futuristic aesthetic that reinforces its AI-powered 
 
 #### Semantic & Purposeful Animation
 - Animations communicate meaning/state. Example: cards glow green/red on hover to reinforce positive/negative deltas.
-- Sparkline charts animate with a draw-on effect (GSAP) to highlight recent performance.
+- Sparkline charts animate with a draw-on effect (Motion) to highlight recent performance.
 - Hover transitions use ~200ms ease; component entry/updates use ~300ms ease-out. Prefer transforms/opacity over layout shifts.
 
 #### Ambient Feedback & Cues

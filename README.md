@@ -6,7 +6,7 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 
 - Interactive assets grid with featured BTC tile and graceful loading states
 - Token details page at `/details/[symbol]` with price change, market cap, and sparkline
-- Animated UI with GSAP and custom Parallax background
+- Animated UI with Motion and custom parallax background
 - Accessible component composition via Radix Slot and iconography (Lucide, cryptocurrency icons)
 - Strong typing, strict TS config, and Next.js App Router
 
@@ -15,7 +15,7 @@ A Next.js 15 app that displays live crypto assets with animated sparkline charts
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **UI**: Tailwind CSS 4, Radix Slot, Lucide
-- **Animation**: GSAP, custom parallax background
+- **Animation**: Motion, custom parallax background
 - **Testing**: Jest 30, @testing-library/react, jest-dom
 - **Linting**: ESLint (next/core-web-vitals + TypeScript rules)
 - **Package manager**: pnpm
@@ -77,7 +77,7 @@ BINANCE_API_KEY=your_binance_key
 Jest is configured via `jest.config.js` and `jest.setup.js`:
 - jsdom environment
 - Next and path aliases mapped (`@/...`)
-- Mocks for `next/image`, CSS modules, GSAP, and animated sparkline
+- Mocks for `next/image`, CSS modules, and animated sparkline
 - Tests are located under `components/crypto/__tests__/` and `lib/**/__tests__/`
 
 Run tests:

@@ -8,7 +8,6 @@ This project uses **Jest** and **@testing-library/react** with a jsdom environme
 - Setup file: `jest.setup.js`
   - Mocks `next/image`
   - Mocks CSS modules
-  - Mocks GSAP and animation HOCs
   - Mocks `AnimatedSparkline`
 - Module aliases (`^@/(.*)$`) map to `src/` and top-level folders
 
