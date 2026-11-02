@@ -19,9 +19,9 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          # Pinned: floating `latest` pulls pnpm 11, which needs Node >= 22.13
-          # and breaks the Node 20.x matrix. 10.13.1 matches the lockfile.
-          version: 10.13.1
+          # Pinned to match package.json#packageManager. pnpm 12 is a native
+          # binary (engines node >=18), so it runs on the Node 20.x matrix.
+          version: 12.16.1
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

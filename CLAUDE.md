@@ -16,6 +16,7 @@ Clean/Hexagonal: `app/` → `lib/data/` → `src/usecases/` → `src/ports/` →
 ## Conventions
 
 - Main branch: `develop`
+- Package manager: pnpm only (pnpm 12, owner decision 2026-11-02). Never npm/npx/yarn; never commit package-lock.json.
 - Tailwind v4 configless — no `tailwind.config.ts`; all config in `app/globals.css` via `@theme inline`
 - Use `ActionButton` (not `Button`) for prominent CTAs
 - Data display: green = gains, red = losses; always show `+`/`-` signs

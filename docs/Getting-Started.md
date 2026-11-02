@@ -2,7 +2,7 @@
 
 ### Prerequisites
 - **Node.js**: 20.x (CI uses Node 20)
-- **pnpm**: Latest (`pnpm -v`)
+- **pnpm**: 12 (pinned in `package.json#packageManager`; `pnpm -v`)
 
 ### Installation
 ```bash
